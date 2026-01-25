@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   Wrench, 
   Users, 
-  Car, 
   CheckCircle, 
   Settings,
   Sparkles,
@@ -116,7 +115,6 @@ export default function Landing() {
   const scrollCarousel = (direction: 'left' | 'right') => {
     if (carouselRef.current) {
       const isMobile = window.innerWidth < 640;
-      const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
       
       // Get first card width
       const firstCard = carouselRef.current.querySelector('div') as HTMLElement;
