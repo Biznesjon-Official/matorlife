@@ -1,228 +1,218 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import Service from '../models/Service';
-import CarService from '../models/CarService';
-import Car from '../models/Car';
-import { AuthRequest } from '../middleware/auth';
+import path from 'path';
+import fs from 'fs';
 
-export const createService = async (req: AuthRequest, res: Response) => {
+export const createService = async (req: Request, res: Response) => {
   try {
-    const { carId, parts, totalPrice } = req.body;
-    const userId = req.user?.id;
+    console.log('=== CREATE SERVICE REQUEST ===');
+    console.log('Body:', req.body);
+    console.log('File:', req.file);
+    console.log('User:', (req as any).user);
+    
+    const { name, description } = req.body;
+    const user = (req as any).user;
 
-    // If carId is provided, create a CarService instead
-    if (carId) {
-      // Verify car exists
-      const car = await Car.findById(carId);
-      if (!car) {
-        return res.status(404).json({ message: 'Car not found' });
-      }
-
-      const carService = new CarService({
-        car: carId,
-        items: parts,
-        totalPrice,
-        createdBy: userId
-      });
-
-      await carService.save();
-
-      // Populate car details for response
-      await carService.populate('car');
-      await carService.populate('createdBy', 'name email');
-
-      return res.status(201).json({
-        message: 'Car service created successfully',
-        service: carService
+    // Validation
+    if (!name || !name.trim()) {
+      console.log('Validation failed: name is empty');
+      return res.status(400).json({
+        success: false,
+        message: 'Xizmat nomi kiritilishi shart',
       });
     }
 
-    // Original service creation logic for template services
-    const { name, description, basePrice, category, estimatedHours } = req.body;
+    if (!description || !description.trim()) {
+      console.log('Validation failed: description is empty');
+      return res.status(400).json({
+        success: false,
+        message: 'Tavsif kiritilishi shart',
+      });
+    }
 
-    const service = new Service({
-      name,
-      description,
-      basePrice,
-      category,
-      estimatedHours,
-      parts: parts || []
-    });
+    if (!user || !user._id) {
+      console.log('Validation failed: user not authenticated');
+      return res.status(401).json({
+        success: false,
+        message: 'Autentifikatsiya talab qilinadi',
+      });
+    }
 
-    await service.save();
+    const serviceData: any = {
+      name: name.trim(),
+      description: description.trim(),
+      createdBy: user._id,
+    };
+
+    if (req.file) {
+      serviceData.image = `/uploads/services/${req.file.filename}`;
+    }
+
+    console.log('Creating service with data:', serviceData);
+    const service = await Service.create(serviceData);
+    console.log('Service created successfully:', service._id);
 
     res.status(201).json({
-      message: 'Service created successfully',
-      service
+      success: true,
+      data: service,
+      message: 'Xizmat muvaffaqiyatli yaratildi',
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getServices = async (req: AuthRequest, res: Response) => {
-  try {
-    const { category, isActive, includeCarServices } = req.query;
-    const filter: any = {};
-
-    if (category) filter.category = category;
-    if (isActive !== undefined) filter.isActive = isActive === 'true';
-
-    // Get template services
-    const services = await Service.find(filter).sort({ category: 1, name: 1 });
-
-    // If includeCarServices is true, also get car services
-    let carServices: any[] = [];
-    if (includeCarServices === 'true') {
-      carServices = await CarService.find({})
-        .populate('car')
-        .populate('createdBy', 'name email')
-        .sort({ createdAt: -1 });
+    console.error('Create service error:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Mongoose validation error
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validatsiya xatosi',
+        error: error.message,
+      });
     }
 
-    res.json({ 
-      services,
-      carServices
+    res.status(500).json({
+      success: false,
+      message: 'Xizmat yaratishda xatolik',
+      error: error.message,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-export const getServiceById = async (req: AuthRequest, res: Response) => {
+export const getServices = async (req: Request, res: Response) => {
   try {
-    const service = await Service.findById(req.params.id);
-
-    if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+    const user = (req as any).user;
+    
+    if (!user || !user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Autentifikatsiya talab qilinadi',
+      });
     }
 
-    res.json({ service });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const updateService = async (req: AuthRequest, res: Response) => {
-  try {
-    const updates = req.body;
-    const service = await Service.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true }
-    );
-
-    if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
-    }
+    const services = await Service.find({ 
+      isActive: true,
+      createdBy: user._id 
+    })
+      .populate('createdBy', 'name')
+      .sort({ createdAt: -1 });
 
     res.json({
-      message: 'Service updated successfully',
-      service
+      success: true,
+      data: services,
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const deleteService = async (req: AuthRequest, res: Response) => {
-  try {
-    const service = await Service.findByIdAndDelete(req.params.id);
-
-    if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
-    }
-
-    res.json({ message: 'Service deleted successfully' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-export const getServiceCategories = async (req: AuthRequest, res: Response) => {
-  try {
-    const categories = await Service.distinct('category');
-    res.json({ categories });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-// Add part to service
-export const addServicePart = async (req: AuthRequest, res: Response) => {
-  try {
-    const { serviceId } = req.params;
-    const { name, description, price, quantity, isRequired, category } = req.body;
-
-    const service = await Service.findById(serviceId);
-    if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
-    }
-
-    service.parts.push({
-      name,
-      description,
-      price,
-      quantity,
-      isRequired,
-      category
+    console.error('Get services error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Xizmatlarni olishda xatolik',
+      error: error.message,
     });
+  }
+};
 
-    await service.save();
+export const getPublicServices = async (req: Request, res: Response) => {
+  try {
+    const services = await Service.find({ isActive: true })
+      .select('name description image')
+      .sort({ createdAt: -1 });
+
+    const servicesWithUrls = services.map(service => ({
+      _id: service._id,
+      name: service.name,
+      description: service.description,
+      imageUrl: service.image ? `${process.env.API_URL || 'http://localhost:4000'}${service.image}` : null,
+    }));
 
     res.json({
-      message: 'Part added to service successfully',
-      service
+      success: true,
+      services: servicesWithUrls,
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Get public services error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Xizmatlarni olishda xatolik',
+      error: error.message,
+    });
   }
 };
 
-// Update service part
-export const updateServicePart = async (req: AuthRequest, res: Response) => {
+export const updateService = async (req: Request, res: Response) => {
   try {
-    const { serviceId, partId } = req.params;
-    const updates = req.body;
+    const { id } = req.params;
+    const { name, description } = req.body;
 
-    const service = await Service.findById(serviceId);
+    const service = await Service.findById(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Xizmat topilmadi',
+      });
     }
 
-    const partIndex = service.parts.findIndex(part => part._id?.toString() === partId);
-    if (partIndex === -1) {
-      return res.status(404).json({ message: 'Part not found' });
+    const updateData: any = { name, description };
+
+    if (req.file) {
+      // Delete old image
+      if (service.image) {
+        const oldImagePath = path.join(__dirname, '../../', service.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+      updateData.image = `/uploads/services/${req.file.filename}`;
     }
 
-    Object.assign(service.parts[partIndex], updates);
-    await service.save();
+    const updatedService = await Service.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     res.json({
-      message: 'Service part updated successfully',
-      service
+      success: true,
+      data: updatedService,
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Update service error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Xizmatni yangilashda xatolik',
+      error: error.message,
+    });
   }
 };
 
-// Remove service part
-export const removeServicePart = async (req: AuthRequest, res: Response) => {
+export const deleteService = async (req: Request, res: Response) => {
   try {
-    const { serviceId, partId } = req.params;
+    const { id } = req.params;
 
-    const service = await Service.findById(serviceId);
+    const service = await Service.findById(id);
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      return res.status(404).json({
+        success: false,
+        message: 'Xizmat topilmadi',
+      });
     }
 
-    service.parts = service.parts.filter(part => part._id?.toString() !== partId);
-    await service.save();
+    // Delete image
+    if (service.image) {
+      const imagePath = path.join(__dirname, '../../', service.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    await Service.findByIdAndDelete(id);
 
     res.json({
-      message: 'Service part removed successfully',
-      service
+      success: true,
+      message: 'Xizmat o\'chirildi',
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Delete service error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Xizmatni o\'chirishda xatolik',
+      error: error.message,
+    });
   }
 };

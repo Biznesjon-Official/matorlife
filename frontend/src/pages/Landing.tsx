@@ -39,6 +39,8 @@ export default function Landing() {
   const [showAIChat, setShowAIChat] = useState(false);
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [isLoadingTeam, setIsLoadingTeam] = useState(true);
+  const [services, setServices] = useState<any[]>([]);
+  const [isLoadingServices, setIsLoadingServices] = useState(true);
   const carouselRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -58,12 +60,10 @@ export default function Landing() {
     const fetchTeamMembers = async () => {
       try {
         setIsLoadingTeam(true);
-        // Use public endpoint (no auth required)
         const response = await api.get('/auth/public/apprentices');
         setTeamMembers(response.data.users || []);
       } catch (error) {
         console.error('Error fetching team members:', error);
-        // Fallback to empty array if error
         setTeamMembers([]);
       } finally {
         setIsLoadingTeam(false);
@@ -72,80 +72,66 @@ export default function Landing() {
 
     fetchTeamMembers();
   }, []);
+
+  // Fetch services from backend
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setIsLoadingServices(true);
+        const response = await api.get('/services/public');
+        const backendServices = response.data.services || [];
+        
+        // Default images for services
+        const defaultImages = [
+          'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&h=600&fit=crop',
+          'https://images.unsplash.com/photo-1625047509168-a7026f36de04?w=800&h=600&fit=crop'
+        ];
+        
+        // Map backend services to frontend format
+        const mappedServices = backendServices.map((service: any, index: number) => ({
+          id: service._id,
+          title: service.name,
+          icon: Settings,
+          image: service.imageUrl || defaultImages[index % defaultImages.length],
+          shortDesc: service.description.length > 100 ? service.description.substring(0, 100) + '...' : service.description,
+          fullDesc: service.description,
+          features: []
+        }));
+
+        setServices(mappedServices);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        // Fallback to empty array if error
+        setServices([]);
+      } finally {
+        setIsLoadingServices(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
   
   const scrollCarousel = (direction: 'left' | 'right') => {
     if (carouselRef.current) {
-      // Calculate scroll amount for one card (25% of container + gap)
-      const containerWidth = carouselRef.current.offsetWidth;
-      const cardWidth = containerWidth / 4; // One card width (25%)
-      const gap = 24; // gap-6 = 24px
+      const isMobile = window.innerWidth < 640;
+      const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
+      
+      // Get first card width
+      const firstCard = carouselRef.current.querySelector('div') as HTMLElement;
+      if (!firstCard) return;
+      
+      const cardWidth = firstCard.offsetWidth;
+      const gap = isMobile ? 16 : 24;
       const scrollAmount = cardWidth + gap;
+      
       carouselRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
     }
   };
-
-  // Services data
-  const services = [
-    {
-      id: 1,
-      title: t('Dvigatel Ta\'mirlash', language),
-      icon: Settings,
-      image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop',
-      shortDesc: t('Professional dvigatel diagnostika va ta\'mirlash', language),
-      fullDesc: t('Barcha turdagi avtomobil dvigatellarini professional darajada diagnostika qilish va ta\'mirlash. Zamonaviy uskunalar va tajribali mutaxassislar bilan ishlaymiz. Kafolat beriladi.', language),
-      features: [
-        t('Kompyuter diagnostika', language),
-        t('Dvigatel yig\'ish-ajratish', language),
-        t('Qismlar almashtirish', language),
-        t('Test va sozlash', language)
-      ]
-    },
-    {
-      id: 2,
-      title: t('Elektr Tizimi', language),
-      icon: Sparkles,
-      image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=800&h=600&fit=crop',
-      shortDesc: t('Elektr tizimi diagnostika va ta\'mirlash', language),
-      fullDesc: t('Avtomobilning barcha elektr tizimlarini diagnostika qilish va ta\'mirlash. Generator, starter, akkumulyator, yoritish tizimlari va boshqalar. Tez va sifatli xizmat.', language),
-      features: [
-        t('Elektr diagnostika', language),
-        t('Simlar almashtirish', language),
-        t('Akkumulyator tekshirish', language),
-        t('Yoritish sozlash', language)
-      ]
-    },
-    {
-      id: 3,
-      title: t('Tormoz Tizimi', language),
-      icon: Car,
-      image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&h=600&fit=crop',
-      shortDesc: t('Tormoz tizimi ta\'mirlash va sozlash', language),
-      fullDesc: t('Xavfsizlik uchun eng muhim tizim - tormoz tizimini professional ta\'mirlash. Tormoz disklari, kolodkalar, tormoz suyuqligi almashtirish va sozlash.', language),
-      features: [
-        t('Tormoz diagnostika', language),
-        t('Disklar almashtirish', language),
-        t('Kolodkalar o\'rnatish', language),
-        t('ABS tizimi sozlash', language)
-      ]
-    },
-    {
-      id: 4,
-      title: t('Podveska Ta\'mirlash', language),
-      icon: Wrench,
-      image: 'https://images.unsplash.com/photo-1625047509168-a7026f36de04?w=800&h=600&fit=crop',
-      shortDesc: t('Podveska diagnostika va qismlar almashtirish', language),
-      fullDesc: t('Avtomobil podveskasini to\'liq diagnostika qilish va ta\'mirlash. Amortizatorlar, pruzhina, rulman va boshqa qismlarni almashtirish. Sifatli ehtiyot qismlar.', language),
-      features: [
-        t('Podveska diagnostika', language),
-        t('Amortizator almashtirish', language),
-        t('Rulman o\'rnatish', language),
-        t('Geometriya sozlash', language)
-      ]
-    }
-  ];
 
   // Helper function to get avatar gradient
   const getAvatarGradient = (index: number) => {
@@ -163,10 +149,12 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 overflow-hidden">
 
-      {/* Animated Background */}
+      {/* Enhanced Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl animate-float"></div>
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-400/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/4 right-1/3 w-80 h-80 bg-cyan-400/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }}></div>
       </div>
 
       {/* Navbar */}
@@ -283,29 +271,37 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero Section - Enhanced */}
       <section className="relative pt-20 sm:pt-24 lg:pt-28 pb-8 sm:pb-12 lg:pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute top-20 left-0 w-72 h-72 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-indigo-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
+        
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             {/* Left Content */}
             <div className="text-center lg:text-left space-y-4 sm:space-y-5 lg:space-y-6 animate-slide-up">
-              {/* Badge */}
-              <div className="inline-flex items-center space-x-2 bg-white/90 backdrop-blur-sm border-2 border-blue-200 rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-all">
-                <Sparkles className="h-4 w-4 text-blue-600 animate-pulse" />
-                <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              {/* Badge - Enhanced */}
+              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 backdrop-blur-sm border-2 border-blue-300/50 rounded-full px-5 py-2.5 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                <Sparkles className="h-5 w-5 text-blue-600 animate-pulse" />
+                <span className="text-sm font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   {t("#1 Professional Mator Servisi", language)}
                 </span>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
               
-              {/* Heading */}
+              {/* Heading - Enhanced */}
               <div className="space-y-2 sm:space-y-3">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] tracking-tight">
-                  <span className="block text-gray-900 mb-2">{t("Mator Life", language)}</span>
-                  <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block text-gray-900 mb-2 drop-shadow-sm">{t("Mator Life", language)}</span>
+                  <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent animate-gradient">
                     {t("Professional Platforma", language)}
                   </span>
                 </h1>
-                <div className="h-1.5 w-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mx-auto lg:mx-0"></div>
+                <div className="flex items-center gap-2 mx-auto lg:mx-0 w-fit">
+                  <div className="h-1.5 w-20 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-full animate-pulse"></div>
+                  <div className="h-1.5 w-1.5 bg-blue-600 rounded-full animate-ping"></div>
+                </div>
               </div>
               
               {/* Description */}
@@ -313,122 +309,181 @@ export default function Landing() {
                 {t("Avtomobil servislari uchun to'liq boshqaruv ekotizimi. Professional xizmat, tajribali mutaxassislar va zamonaviy uskunalar.", language)}
               </p>
               
-              {/* CTA Buttons */}
+              {/* CTA Buttons - Enhanced */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-md mx-auto lg:mx-0">
                 <Link to="/login" className="group relative flex-1">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                  <div className="relative flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all group-hover:scale-[1.02]">
-                    <Rocket className="mr-2 h-5 w-5" />
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-all duration-300 animate-pulse"></div>
+                  <div className="relative flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-xl hover:shadow-2xl transition-all group-hover:scale-105 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    <Rocket className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
                     {t("Boshlash", language)}
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </Link>
                 <a 
                   href="#services"
-                  className="group flex-1 flex items-center justify-center px-6 py-4 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-xl shadow-md hover:shadow-lg hover:border-blue-300 transition-all hover:scale-[1.02]"
+                  className="group flex-1 flex items-center justify-center px-6 py-4 bg-white/80 backdrop-blur-sm border-2 border-gray-300 text-gray-700 font-bold rounded-xl shadow-lg hover:shadow-xl hover:border-blue-400 hover:bg-blue-50 transition-all hover:scale-105"
                 >
-                  <Wrench className="mr-2 h-5 w-5 text-blue-600 group-hover:animate-pulse" />
+                  <Wrench className="mr-2 h-5 w-5 text-blue-600 group-hover:rotate-12 transition-transform" />
                   {t("Xizmatlar", language)}
                 </a>
               </div>
               
-              {/* Stats */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 sm:gap-6 pt-3 sm:pt-4 border-t border-gray-200 lg:border-0">
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">15+</div>
-                  <div className="text-sm text-gray-600 font-semibold mt-1">{t('Yillik Tajriba', language)}</div>
+              {/* Stats - Clean Style */}
+              <div className="flex flex-wrap items-stretch justify-center lg:justify-start gap-3 sm:gap-4 pt-3 sm:pt-4">
+                {/* Yillik Tajriba */}
+                <div className="flex-shrink-0 text-center px-6 py-4 rounded-2xl bg-white">
+                  <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1">15+</div>
+                  <div className="text-sm text-gray-700 font-semibold">{t('Yillik Tajriba', language)}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">500+</div>
-                  <div className="text-sm text-gray-600 font-semibold mt-1">{t('Mijozlar', language)}</div>
+                
+                {/* Mijozlar */}
+                <div className="flex-shrink-0 text-center px-6 py-4 rounded-2xl bg-white">
+                  <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">500+</div>
+                  <div className="text-sm text-gray-700 font-semibold">{t('Mijozlar', language)}</div>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center space-x-1">
+                
+                {/* Reyting */}
+                <div className="flex-shrink-0 flex flex-col items-center justify-center px-6 py-4 rounded-2xl bg-white">
+                  <div className="flex items-center space-x-1 mb-1">
                     {[1, 2, 3, 4, 5].map((i) => (
                       <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
                     ))}
                   </div>
-                  <span className="text-xl font-black text-gray-900 mt-1">4.9 {t('Reyting', language)}</span>
+                  <div className="text-xl font-black text-gray-900">4.9 {t('Reyting', language)}</div>
                 </div>
               </div>
             </div>
             
-            {/* Right Content - Logo */}
+            {/* Right Content - Logo Enhanced */}
             <div className="relative animate-fade-in mt-6 lg:mt-0 hidden lg:block">
-              {/* Glow Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-indigo-500/30 rounded-3xl blur-3xl animate-pulse"></div>
+              {/* Multi-layer Glow Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 via-indigo-500/30 to-purple-500/30 rounded-3xl blur-3xl animate-pulse"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-pink-500/20 rounded-3xl blur-2xl animate-pulse" style={{ animationDelay: '1s' }}></div>
               
               {/* Main Card */}
-              <div className="relative bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 backdrop-blur-xl rounded-3xl p-6 sm:p-8 lg:p-12 shadow-2xl border-2 border-white/50">
+              <div className="relative bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/50 backdrop-blur-xl rounded-3xl p-6 sm:p-8 lg:p-12 shadow-2xl border-2 border-white/50 overflow-hidden group">
+                {/* Animated Border */}
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-0 group-hover:opacity-20 transition-opacity duration-500"></div>
+                
                 <img 
                   src="/logo.jpg" 
                   alt="Mator Life" 
-                  className="w-full h-auto rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                  className="relative w-full h-auto rounded-2xl shadow-2xl transform group-hover:scale-105 group-hover:rotate-1 transition-all duration-500"
                 />
                 
-                {/* Decorative Elements */}
-                <div className="absolute -top-4 -left-4 w-20 h-20 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-2xl opacity-50 animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-2xl opacity-50 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                {/* Enhanced Decorative Elements */}
+                <div className="absolute -top-4 -left-4 w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full blur-2xl opacity-60 animate-pulse"></div>
+                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full blur-2xl opacity-60 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-1/2 -right-4 w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-full blur-2xl opacity-50 animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+                
+                {/* Floating Particles */}
+                <div className="absolute top-10 left-10 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                <div className="absolute bottom-20 right-10 w-2 h-2 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
-      <section id="services" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative">
+      {/* Services Section - Enhanced */}
+      <section id="services" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background Decoration */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-20 left-10 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-purple-400/10 rounded-full blur-3xl"></div>
+        </div>
+        
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-10 animate-slide-up">
-            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-full px-5 py-2 mb-4">
-              <Wrench className="h-5 w-5 text-blue-600" />
-              <span className="font-bold text-blue-600">{t("Bizning Xizmatlar", language)}</span>
+            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-300/50 rounded-full px-6 py-3 mb-4 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+              <Wrench className="h-5 w-5 text-blue-600 animate-pulse" />
+              <span className="font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{t("Bizning Xizmatlar", language)}</span>
             </div>
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-3">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-gray-900 mb-3 drop-shadow-sm">
               {t("Mator Xizmatlari", language)}
             </h2>
-            <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full mx-auto mb-3"></div>
+            <div className="flex items-center gap-2 mx-auto w-fit mb-3">
+              <div className="h-1.5 w-24 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-full animate-pulse"></div>
+              <div className="h-1.5 w-1.5 bg-blue-600 rounded-full animate-ping"></div>
+            </div>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               {t("Professional mator xizmatlari - sifat va ishonch kafolati", language)}
             </p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {services.map((service, index) => (
-              <div 
-                key={service.id}
-                onClick={() => setSelectedService(service)}
-                className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <div className="relative z-10">
-                  <div className="w-full h-48 mb-4 rounded-xl overflow-hidden">
-                    <img 
-                      src={service.image} 
-                      alt={service.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  
-                  <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg mb-4 group-hover:scale-110 transition-transform">
-                    <service.icon className="h-6 w-6 text-white" />
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                    {service.shortDesc}
-                  </p>
-                  
-                  <button className="text-blue-600 font-semibold flex items-center group-hover:translate-x-2 transition-transform">
-                    {t('Batafsil', language)}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </button>
+            {isLoadingServices ? (
+              // Loading skeleton
+              Array.from({ length: 4 }).map((_, index) => (
+                <div 
+                  key={index}
+                  className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white overflow-hidden animate-pulse"
+                >
+                  <div className="w-full h-48 mb-4 rounded-xl bg-gray-200"></div>
+                  <div className="w-16 h-16 rounded-xl bg-gray-200 mb-4"></div>
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                 </div>
+              ))
+            ) : services.length === 0 ? (
+              // Empty state
+              <div className="col-span-full text-center py-12">
+                <Wrench className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {t("Hozircha xizmatlar yo'q", language)}
+                </h3>
+                <p className="text-gray-600">
+                  {t("Tez orada yangi xizmatlar qo'shiladi", language)}
+                </p>
               </div>
-            ))}
+            ) : (
+              // Services list
+              services.map((service, index) => (
+                <div 
+                  key={service.id}
+                  onClick={() => setSelectedService(service)}
+                  className="group relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="w-full h-48 mb-4 rounded-xl overflow-hidden shadow-lg">
+                      <img 
+                        src={service.image} 
+                        alt={service.title}
+                        className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-all duration-500"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    
+                    <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 shadow-lg mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                      <service.icon className="h-6 w-6 text-white" />
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                      {service.shortDesc}
+                    </p>
+                    
+                    <button className="inline-flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform">
+                      {t('Batafsil', language)}
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </div>
+                  
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -514,21 +569,21 @@ export default function Landing() {
           </div>
           
           {/* Carousel Container */}
-          <div className="relative px-12">
-            {/* Scroll Buttons - Only show if more than 4 members */}
-            {teamMembers.length > 4 && (
+          <div className="relative sm:px-12">
+            {/* Scroll Buttons - Only show if more than visible cards */}
+            {teamMembers.length > 1 && (
               <>
                 <button 
                   onClick={() => scrollCarousel('left')}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-xl hover:bg-gray-50 transition-all"
+                  className="absolute left-2 sm:left-0 top-1/2 -translate-y-1/2 z-10 p-2 sm:p-3 bg-white rounded-full shadow-xl hover:bg-gray-50 transition-all"
                 >
-                  <ChevronLeft className="h-6 w-6 text-gray-600" />
+                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
                 </button>
                 <button 
                   onClick={() => scrollCarousel('right')}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-xl hover:bg-gray-50 transition-all"
+                  className="absolute right-2 sm:right-0 top-1/2 -translate-y-1/2 z-10 p-2 sm:p-3 bg-white rounded-full shadow-xl hover:bg-gray-50 transition-all"
                 >
-                  <ChevronRight className="h-6 w-6 text-gray-600" />
+                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
                 </button>
               </>
             )}
@@ -547,30 +602,25 @@ export default function Landing() {
               ) : (
                 <div 
                   ref={carouselRef}
-                  className="flex gap-6 overflow-x-scroll scrollbar-hide scroll-smooth pb-4"
+                  className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4 snap-x snap-mandatory"
                   style={{ 
                     scrollbarWidth: 'none', 
-                    msOverflowStyle: 'none',
-                    scrollSnapType: 'x mandatory'
+                    msOverflowStyle: 'none'
                   }}
                 >
                   {teamMembers.map((member, index) => (
                     <div 
                       key={member._id}
-                      className="flex-shrink-0 group relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300"
-                      style={{ 
-                        width: 'calc((100% - 72px) / 4)', // 72px = 3 gaps of 24px (gap-6)
-                        scrollSnapAlign: 'start'
-                      }}
+                      className="flex-shrink-0 group relative bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300 snap-start w-[85%] sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       
                       <div className="relative z-10">
                         {/* Avatar Image */}
-                        <div className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-white shadow-xl overflow-hidden group-hover:scale-110 transition-transform">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto mb-3 sm:mb-4 rounded-full border-4 border-white shadow-xl overflow-hidden group-hover:scale-110 transition-transform">
                           {member.profileImage ? (
                             <img 
-                              src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000'}${member.profileImage}`}
+                              src={`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${member.profileImage}`}
                               alt={member.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -582,7 +632,7 @@ export default function Landing() {
                             />
                           ) : null}
                           <div 
-                            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${getAvatarGradient(index)} text-white font-bold text-3xl`}
+                            className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${getAvatarGradient(index)} text-white font-bold text-2xl sm:text-3xl`}
                             style={{ display: member.profileImage ? 'none' : 'flex' }}
                           >
                             {member.name.charAt(0).toUpperCase()}
@@ -591,10 +641,10 @@ export default function Landing() {
                         
                         {/* Info */}
                         <div className="text-center">
-                          <h3 className="text-xl font-bold text-gray-900 mb-1">
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">
                             {member.name}
                           </h3>
-                          <p className="text-blue-600 font-semibold mb-2">
+                          <p className="text-sm sm:text-base text-blue-600 font-semibold mb-2">
                             {member.profession || t('Mator', language)}
                           </p>
                           {member.experience !== undefined && member.experience > 0 && (

@@ -1,35 +1,87 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 
-interface UseServicesParams {
-  search?: string;
-  category?: string;
-  isActive?: boolean;
+export interface Service {
+  _id: string;
+  name: string;
+  description: string;
+  image?: string;
+  imageUrl?: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export const useServices = (params: UseServicesParams = {}) => {
+export const useServices = () => {
   return useQuery({
-    queryKey: ['services', params],
+    queryKey: ['services'],
     queryFn: async () => {
-      const searchParams = new URLSearchParams();
-      
-      if (params.search) searchParams.append('search', params.search);
-      if (params.category) searchParams.append('category', params.category);
-      if (params.isActive !== undefined) searchParams.append('isActive', params.isActive.toString());
-      
-      const response = await api.get(`/services?${searchParams.toString()}`);
+      const response = await api.get('/services');
       return response.data;
     },
   });
 };
 
-export const useService = (id: string) => {
+export const usePublicServices = () => {
   return useQuery({
-    queryKey: ['service', id],
+    queryKey: ['services', 'public'],
     queryFn: async () => {
-      const response = await api.get(`/services/${id}`);
+      const response = await api.get('/services/public');
       return response.data;
     },
-    enabled: !!id,
+  });
+};
+
+export const useCreateService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await api.post('/services', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['services', 'public'] });
+    },
+  });
+};
+
+export const useUpdateService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
+      const response = await api.put(`/services/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['services', 'public'] });
+    },
+  });
+};
+
+export const useDeleteService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/services/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services'] });
+      queryClient.invalidateQueries({ queryKey: ['services', 'public'] });
+    },
   });
 };

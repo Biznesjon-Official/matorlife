@@ -12,7 +12,6 @@ dotenv.config();
 import authRoutes from './routes/auth';
 import taskRoutes from './routes/tasks';
 import carRoutes from './routes/cars';
-import serviceRoutes from './routes/services';
 import carServiceRoutes from './routes/carServices';
 import debtRoutes from './routes/debts';
 import aiRoutes from './routes/ai';
@@ -22,6 +21,7 @@ import statsRoutes from './routes/stats';
 import telegramRoutes from './routes/telegram';
 import installRoutes from './routes/install';
 import sparePartRoutes from './routes/spareParts';
+import serviceRoutes from './routes/services';
 
 // Initialize Telegram Service (must be after dotenv.config())
 // Only initialize if Telegram tokens are provided
@@ -85,7 +85,6 @@ if (process.env.NODE_ENV === 'production') {
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/cars', carRoutes);
-app.use('/api/services', serviceRoutes);
 app.use('/api/car-services', carServiceRoutes);
 app.use('/api/debts', debtRoutes);
 app.use('/api/ai', aiRoutes);
@@ -95,6 +94,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/api/install', installRoutes);
 app.use('/api/spare-parts', sparePartRoutes);
+app.use('/api/services', serviceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

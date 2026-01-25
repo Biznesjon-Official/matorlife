@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTaskStats } from '@/hooks/useTasks';
 import { useDebtSummary } from '@/hooks/useDebts';
@@ -20,16 +20,19 @@ import {
   Calendar,
   Star,
   Zap,
-  Wrench
+  Wrench,
+  Settings
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
+import CreateServiceModal from '@/components/CreateServiceModal';
 
 const MasterDashboard: React.FC = memo(() => {
   const { user } = useAuth();
   const { data: taskStats, isLoading: taskStatsLoading } = useTaskStats();
   const { data: debtSummary, isLoading: debtSummaryLoading } = useDebtSummary();
   const { data: apprenticesData, isLoading: apprenticesLoading } = useApprentices();
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
 
   // localStorage'dan tilni o'qish - faqat bir marta
   const language = useMemo<'latin' | 'cyrillic'>(() => {
@@ -315,6 +318,13 @@ const MasterDashboard: React.FC = memo(() => {
               </h3>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:gap-4">
+              <button 
+                onClick={() => setIsServiceModalOpen(true)}
+                className="btn-primary flex items-center justify-center group p-3 sm:p-4 text-sm sm:text-base"
+              >
+                <Settings className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 group-hover:scale-110 transition-transform" />
+                {t("Xizmat qo'shish", language)}
+              </button>
               <Link to="/app/master/tasks" className="btn-primary flex items-center justify-center group p-3 sm:p-4 text-sm sm:text-base">
                 <CheckSquare className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 group-hover:scale-110 transition-transform" />
                 {t("Vazifa berish", language)}
@@ -356,6 +366,15 @@ const MasterDashboard: React.FC = memo(() => {
           </div>
         )}
       </div>
+
+      {/* Service Modal */}
+      <CreateServiceModal
+        isOpen={isServiceModalOpen}
+        onClose={() => setIsServiceModalOpen(false)}
+        onSuccess={() => {
+          // Refresh services if needed
+        }}
+      />
     </div>
   );
 });
