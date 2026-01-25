@@ -1,0 +1,295 @@
+import React, { useState, useEffect } from 'react';
+import { X, Edit3, AlertCircle } from 'lucide-react';
+import { t } from '@/lib/transliteration';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { formatNumber, parseFormattedNumber } from '@/lib/utils';
+import api from '@/lib/api';
+
+interface SparePart {
+  _id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  supplier: string;
+  usageCount: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface EditSparePartModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  sparePart: SparePart;
+  onSuccess: () => void;
+}
+
+const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose, sparePart, onSuccess }) => {
+  const language = React.useMemo<'latin' | 'cyrillic'>(() => {
+    const savedLanguage = localStorage.getItem('language');
+    return (savedLanguage as 'latin' | 'cyrillic') || 'latin';
+  }, []);
+
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState({
+    name: '',
+    price: '',
+    priceDisplay: '', // Formatli ko'rsatish uchun
+    quantity: '',
+    supplier: ''
+  });
+
+  useBodyScrollLock(isOpen);
+
+  useEffect(() => {
+    if (sparePart) {
+      const priceFormatted = formatNumber(sparePart.price.toString());
+      setFormData({
+        name: sparePart.name,
+        price: sparePart.price.toString(),
+        priceDisplay: priceFormatted,
+        quantity: sparePart.quantity.toString(),
+        supplier: sparePart.supplier
+      });
+    }
+  }, [sparePart]);
+
+  if (!isOpen) return null;
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (formData.name.length < 2) {
+      newErrors.name = t("Nom kamida 2 ta belgidan iborat bo'lishi kerak", language);
+    }
+
+    if (!formData.price || Number(formData.price) <= 0) {
+      newErrors.price = t("Narx majburiy va 0 dan katta bo'lishi kerak", language);
+    }
+
+    if (!formData.quantity || Number(formData.quantity) < 0) {
+      newErrors.quantity = t("Miqdor majburiy va 0 dan kichik bo'lmasligi kerak", language);
+    }
+
+    if (formData.supplier.length < 2) {
+      newErrors.supplier = t("Kimdan olingani kamida 2 ta belgidan iborat bo'lishi kerak", language);
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await api.put(`/spare-parts/${sparePart._id}`, {
+        name: formData.name,
+        price: Number(formData.price),
+        quantity: Number(formData.quantity),
+        supplier: formData.supplier
+      });
+
+      onSuccess();
+      onClose();
+      setErrors({});
+    } catch (error: any) {
+      console.error('Error updating spare part:', error);
+      alert(error.response?.data?.message || t('Xatolik yuz berdi', language));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'price') {
+      // Pul formatini boshqarish
+      const formatted = formatNumber(value);
+      const numericValue = parseFormattedNumber(formatted);
+      
+      setFormData(prev => ({
+        ...prev,
+        price: numericValue.toString(),
+        priceDisplay: formatted
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      
+      <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-0 my-4 sm:my-0">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-5">
+          <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+          
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <Edit3 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{t('Zapchastni tahrirlash', language)}</h2>
+              <p className="text-purple-100 text-sm">{t("Zapchast ma'lumotlarini o'zgartiring", language)}</p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Zapchast nomi', language)} *
+            </label>
+            <input
+              type="text"
+              name="name"
+              required
+              value={formData.name}
+              onChange={handleChange}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                errors.name 
+                  ? 'border-red-300 focus:border-red-500' 
+                  : 'border-gray-200 focus:border-purple-500'
+              }`}
+              placeholder={t('Masalan: Tormoz kolodkasi', language)}
+            />
+            {errors.name && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {errors.name}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Narx', language)} ({t("so'm", language)}) *
+            </label>
+            <input
+              type="text"
+              name="price"
+              required
+              value={formData.priceDisplay}
+              onChange={handleChange}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                errors.price 
+                  ? 'border-red-300 focus:border-red-500' 
+                  : 'border-gray-200 focus:border-purple-500'
+              }`}
+              placeholder="1,000,000"
+            />
+            {errors.price && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {errors.price}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Miqdor', language)} *
+            </label>
+            <input
+              type="number"
+              name="quantity"
+              required
+              min="0"
+              value={formData.quantity}
+              onChange={handleChange}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                errors.quantity 
+                  ? 'border-red-300 focus:border-red-500' 
+                  : 'border-gray-200 focus:border-purple-500'
+              }`}
+              placeholder="0"
+            />
+            {errors.quantity && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {errors.quantity}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('Kimdan olingan', language)} *
+            </label>
+            <input
+              type="text"
+              name="supplier"
+              required
+              value={formData.supplier}
+              onChange={handleChange}
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                errors.supplier 
+                  ? 'border-red-300 focus:border-red-500' 
+                  : 'border-gray-200 focus:border-purple-500'
+              }`}
+              placeholder={t('Masalan: Avtomag do\'koni', language)}
+            />
+            {errors.supplier && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {errors.supplier}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              {t('Bekor qilish', language)}
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {t('Saqlanmoqda...', language)}
+                </span>
+              ) : (
+                t('Saqlash', language)
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default EditSparePartModal;
