@@ -743,13 +743,25 @@ ${servicesText}
   }
 
   private formatCarMessage(carData: any, parts: any[]): string {
-    const partsText = parts.length > 0
-      ? parts.map((part, index) => 
+    // Qismlarni manba bo'yicha ajratish
+    const availableParts = parts.filter(part => part.source !== 'tobring');
+    const toBringParts = parts.filter(part => part.source === 'tobring');
+    
+    // Bizda bor qismlar
+    const availablePartsText = availableParts.length > 0
+      ? availableParts.map((part, index) => 
           `${index + 1}. <b>${part.name}</b> - ${part.quantity} dona - ${part.price.toLocaleString('uz-UZ')} so'm`
         ).join('\n')
-      : '<i>Qismlar qo\'shilmagan</i>';
+      : '<i>Yo\'q</i>';
 
-    const totalPartsPrice = parts.reduce((sum, part) => sum + (part.price * part.quantity), 0);
+    // Keltirish kerak bo'lgan qismlar
+    const toBringPartsText = toBringParts.length > 0
+      ? toBringParts.map((part, index) => 
+          `${index + 1}. <b>${part.name}</b> - ${part.quantity} dona`
+        ).join('\n')
+      : '<i>Yo\'q</i>';
+
+    const totalPartsPrice = availableParts.reduce((sum, part) => sum + (part.price * part.quantity), 0);
 
     return `
 🚗 <b>YANGI MASHINA QO'SHILDI</b>
@@ -768,9 +780,14 @@ ${servicesText}
 📞 <b>Telefon:</b> <code>${carData.ownerPhone}</code>
 
 ━━━━━━━━━━━━━━━━━━━━
-🔧 <b>Qo'shiladigan Qismlar:</b>
+✅ <b>Bizda Bor Qismlar:</b>
 
-${partsText}
+${availablePartsText}
+
+━━━━━━━━━━━━━━━━━━━━
+🚚 <b>Keltirish Kerak:</b>
+
+${toBringPartsText}
 
 ━━━━━━━━━━━━━━━━━━━━
 💰 <b>Qismlar Umumiy Narxi:</b> <b>${totalPartsPrice.toLocaleString('uz-UZ')} so'm</b>
@@ -788,13 +805,25 @@ ${partsText}
   }
 
   private formatCarMessageForAdmin(carData: any, parts: any[]): string {
-    const partsText = parts.length > 0
-      ? parts.map((part, index) => 
+    // Qismlarni manba bo'yicha ajratish
+    const availableParts = parts.filter(part => part.source !== 'tobring');
+    const toBringParts = parts.filter(part => part.source === 'tobring');
+    
+    // Bizda bor qismlar
+    const availablePartsText = availableParts.length > 0
+      ? availableParts.map((part, index) => 
           `${index + 1}. <b>${part.name}</b> - ${part.quantity} dona - ${part.price.toLocaleString('uz-UZ')} so'm`
         ).join('\n')
-      : '<i>Qismlar qo\'shilmagan</i>';
+      : '<i>Yo\'q</i>';
 
-    const totalPartsPrice = parts.reduce((sum, part) => sum + (part.price * part.quantity), 0);
+    // Keltirish kerak bo'lgan qismlar
+    const toBringPartsText = toBringParts.length > 0
+      ? toBringParts.map((part, index) => 
+          `${index + 1}. <b>${part.name}</b> - ${part.quantity} dona`
+        ).join('\n')
+      : '<i>Yo\'q</i>';
+
+    const totalPartsPrice = availableParts.reduce((sum, part) => sum + (part.price * part.quantity), 0);
 
     return `
 🔔 <b>ADMIN: YANGI MASHINA QO'SHILDI</b>
@@ -813,9 +842,14 @@ ${partsText}
 📞 <b>Telefon:</b> <code>${carData.ownerPhone}</code>
 
 ━━━━━━━━━━━━━━━━━━━━
-🔧 <b>Qo'shiladigan Qismlar:</b>
+✅ <b>Bizda Bor Qismlar:</b>
 
-${partsText}
+${availablePartsText}
+
+━━━━━━━━━━━━━━━━━━━━
+🚚 <b>Keltirish Kerak:</b>
+
+${toBringPartsText}
 
 ━━━━━━━━━━━━━━━━━━━━
 💰 <b>Qismlar Umumiy Narxi:</b> <b>${totalPartsPrice.toLocaleString('uz-UZ')} so'm</b>

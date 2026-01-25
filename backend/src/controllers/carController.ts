@@ -53,18 +53,16 @@ export const createCar = async (req: AuthRequest, res: Response) => {
     // Telegram'ga xabar yuborish
     let telegramResult = null;
     try {
+      console.log('🔍 DEBUG: Parts data:', JSON.stringify(parts, null, 2));
+      
       const carData = {
         make,
-        carModel, // ✅ To'g'ri maydon nomi
+        carModel,
         year,
         licensePlate,
         ownerName,
         ownerPhone
       };
-      
-      // Debug: Mijoz telefon raqamini tekshirish
-      const phoneCheck = telegramService.checkCustomerPhone(ownerPhone);
-      console.log('🔍 Customer Phone Check Result:', phoneCheck);
       
       telegramResult = await telegramService.sendCarAddedNotification(carData, parts || []);
       console.log('📱 Telegram Result:', telegramResult);
@@ -237,27 +235,10 @@ export const updateCar = async (req: AuthRequest, res: Response) => {
     if (!car) {
       return res.status(404).json({ message: 'Mashina yangilanmadi' });
     }
-    // Telegram'ga xabar yuborish
-    let telegramResult = null;
-    try {
-      const carData = {
-        make: car.make,
-        carModel: car.carModel, // ✅ To'g'ri maydon nomi
-        year: car.year,
-        licensePlate: car.licensePlate,
-        ownerName: car.ownerName,
-        ownerPhone: car.ownerPhone
-      };
-      telegramResult = await telegramService.sendCarUpdatedNotification(carData, car.parts || [], car.serviceItems || []);
-      } catch (telegramError) {
-      // Telegram xatosi asosiy jarayonni to'xtatmasin
-      console.error('Telegram xatosi:', telegramError);
-    }
 
     res.json({
       message: 'Mashina muvaffaqiyatli yangilandi',
-      car,
-      telegramNotification: telegramResult
+      car
     });
   } catch (error: any) {
     // MongoDB duplicate key error

@@ -16,6 +16,7 @@ interface Part {
   quantity: number;
   price: number;
   category: 'part' | 'material' | 'labor';
+  source: 'available' | 'tobring'; // Yangi field: bizda bor yoki keltirish
 }
 
 interface UsedSparePart {
@@ -54,6 +55,7 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
   const [displayItemPrice, setDisplayItemPrice] = useState('0');
   const [itemQuantity, setItemQuantity] = useState('1');
   const [itemCategory, setItemCategory] = useState<'part' | 'material'>('part');
+  const [itemSource, setItemSource] = useState<'available' | 'tobring'>('available'); // Yangi state
   
   // Autocomplete states
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -200,7 +202,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
   const addItem = () => {
     if (itemName && itemPrice !== undefined && itemPrice !== null) {
       const quantity = parseInt(itemQuantity) || 1;
-      const price = parseFloat(itemPrice) || 0; // 0 ham qabul qilamiz
+      // Agar "Keltirish" tanlangan bo'lsa, narx 0 bo'ladi
+      const price = itemSource === 'tobring' ? 0 : (parseFloat(itemPrice) || 0);
       
       // Agar zapchast tanlangan bo'lsa, usedSpareParts ga qo'shish
       if (selectedSparePartId && currentStep === 2) {
@@ -220,7 +223,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         description: '',
         price: price,
         quantity: quantity,
-        category: currentStep === 2 ? itemCategory : 'labor' // 2-bosqich: part/material, 3-bosqich: labor
+        category: currentStep === 2 ? itemCategory : 'labor', // 2-bosqich: part/material, 3-bosqich: labor
+        source: itemSource // Manba: bizda bor yoki keltirish
       }]);
       
       // Reset form
@@ -228,6 +232,7 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       setItemPrice('');
       setDisplayItemPrice('0');
       setItemQuantity('1');
+      setItemSource('available'); // Default ga qaytarish
       setSelectedSparePartId('');
     }
   };
@@ -297,14 +302,16 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         parts: partsAndMaterials.map(part => ({
           name: part.name,
           quantity: part.quantity,
-          price: part.price  // Backend 'price' kutadi
+          price: part.price,  // Backend 'price' kutadi
+          source: part.source || 'available' // Manba: bizda bor yoki keltirish
         })),
         serviceItems: items.map(item => ({
           name: item.name,
           description: item.category === 'labor' ? 'Ish haqi' : 'Xizmat',
           price: item.price,
           quantity: item.quantity,
-          category: item.category
+          category: item.category,
+          source: item.source || 'available' // Manba
         }))
       };
 
@@ -323,15 +330,6 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       setUsedSpareParts([]);
       setCurrentStep(1);
       
-      // Success message
-      const hasServiceItems = items.length > 0;
-      
-      let message = '✅ Mashina muvaffaqiyatli yaratildi!';
-      if (hasServiceItems) {
-        message += '\n🔧 Xizmatlar mashinaga qo\'shildi.';
-      }
-      
-      alert(message);
       onClose();
       window.location.reload();
     } catch (error: any) {
@@ -633,94 +631,117 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={itemName}
-                        onChange={handleItemNameChange}
-                        onFocus={handleItemNameFocus}
-                        onBlur={handleItemNameBlur}
-                        onKeyDown={handleKeyDown}
-                        placeholder={t("Ish nomi", language) + " *"}
-                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      
-                      {/* Autocomplete Dropdown */}
-                      {showSuggestions && suggestions.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {suggestions.map((sparePart: any, index: number) => {
-                            const isOutOfStock = sparePart.quantity <= 0;
-                            
-                            return (
-                              <div
-                                key={sparePart._id}
-                                className={`px-3 py-2 border-b border-gray-100 last:border-b-0 ${
-                                  isOutOfStock 
-                                    ? 'bg-red-50 cursor-not-allowed opacity-60' 
-                                    : `cursor-pointer hover:bg-gray-100 ${index === selectedSuggestionIndex ? 'bg-blue-50 border-blue-200' : ''}`
-                                }`}
-                                onClick={() => !isOutOfStock && selectSuggestion(sparePart)}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <div className={`font-medium ${isOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
-                                      {sparePart.name}
-                                      {isOutOfStock && <span className="ml-2 text-red-500 font-bold">❌ TUGAGAN</span>}
-                                    </div>
-                                    {sparePart.brand && (
-                                      <div className="text-xs text-gray-500">{sparePart.brand}</div>
-                                    )}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={itemName}
+                      onChange={handleItemNameChange}
+                      onFocus={handleItemNameFocus}
+                      onBlur={handleItemNameBlur}
+                      onKeyDown={handleKeyDown}
+                      placeholder={t("Ish nomi", language) + " *"}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    
+                    {/* Autocomplete Dropdown */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {suggestions.map((sparePart: any, index: number) => {
+                          const isOutOfStock = sparePart.quantity <= 0;
+                          
+                          return (
+                            <div
+                              key={sparePart._id}
+                              className={`px-3 py-2 border-b border-gray-100 last:border-b-0 ${
+                                isOutOfStock 
+                                  ? 'bg-red-50 cursor-not-allowed opacity-60' 
+                                  : `cursor-pointer hover:bg-gray-100 ${index === selectedSuggestionIndex ? 'bg-blue-50 border-blue-200' : ''}`
+                              }`}
+                              onClick={() => !isOutOfStock && selectSuggestion(sparePart)}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className={`font-medium ${isOutOfStock ? 'text-red-600' : 'text-gray-900'}`}>
+                                    {sparePart.name}
+                                    {isOutOfStock && <span className="ml-2 text-red-500 font-bold">❌ TUGAGAN</span>}
                                   </div>
-                                  <div className="text-right">
-                                    <div className={`font-semibold ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`}>
-                                      {sparePart.price.toLocaleString()} so'm
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      Mavjud: {sparePart.quantity} dona
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {sparePart.usageCount} marta ishlatilgan
-                                    </div>
+                                  {sparePart.brand && (
+                                    <div className="text-xs text-gray-500">{sparePart.brand}</div>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <div className={`font-semibold ${isOutOfStock ? 'text-red-600' : 'text-green-600'}`}>
+                                    {sparePart.price.toLocaleString()} so'm
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Mavjud: {sparePart.quantity} dona
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {sparePart.usageCount} marta ishlatilgan
                                   </div>
                                 </div>
                               </div>
-                            );
-                          })}
-                          
-                          {/* Yangi qism yaratish opsiyasi */}
-                          <div
-                            className="px-3 py-2 cursor-pointer hover:bg-green-50 border-t-2 border-green-200 bg-green-25"
-                            onClick={createNewSparePart}
-                          >
-                            <div className="flex items-center gap-2 text-green-700">
-                              {isCreatingNewPart ? (
-                                <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
-                              ) : (
-                                <Plus className="h-4 w-4" />
-                              )}
-                              <span className="font-medium">
-                                {isCreatingNewPart ? 'Yaratilmoqda...' : `"${itemName}" yangi qism sifatida qo'shish`}
-                              </span>
                             </div>
-                            <div className="text-xs text-green-600 ml-6">
-                              Keyingi safar avtomatik chiqadi
-                            </div>
+                          );
+                        })}
+                        
+                        {/* Yangi qism yaratish opsiyasi */}
+                        <div
+                          className="px-3 py-2 cursor-pointer hover:bg-green-50 border-t-2 border-green-200 bg-green-25"
+                          onClick={createNewSparePart}
+                        >
+                          <div className="flex items-center gap-2 text-green-700">
+                            {isCreatingNewPart ? (
+                              <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
+                            ) : (
+                              <Plus className="h-4 w-4" />
+                            )}
+                            <span className="font-medium">
+                              {isCreatingNewPart ? 'Yaratilmoqda...' : `"${itemName}" yangi qism sifatida qo'shish`}
+                            </span>
+                          </div>
+                          <div className="text-xs text-green-600 ml-6">
+                            Keyingi safar avtomatik chiqadi
                           </div>
                         </div>
-                      )}
-                      
-                      {/* Search icon */}
-                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    </div>
-                    <select
-                      value={itemCategory}
-                      onChange={(e) => setItemCategory(e.target.value as 'part' | 'material')}
-                      className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
-                    >
-                      <option value="part">{t('Ehtiyot qism', language)}</option>
-                      <option value="material">{t('Material', language)}</option>
-                    </select>
+                      </div>
+                    )}
+                    
+                    {/* Search icon */}
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  </div>
+
+                  {/* Manba tanlash: Bizda bor yoki Keltirish */}
+                  <div className="flex items-center gap-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="itemSource"
+                        value="available"
+                        checked={itemSource === 'available'}
+                        onChange={(e) => setItemSource(e.target.value as 'available' | 'tobring')}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{t('Bizda bor', language)}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="itemSource"
+                        value="tobring"
+                        checked={itemSource === 'tobring'}
+                        onChange={(e) => {
+                          setItemSource(e.target.value as 'available' | 'tobring');
+                          // Keltirish tanlansa, narxni 0 qilamiz
+                          if (e.target.value === 'tobring') {
+                            setItemPrice('0');
+                            setDisplayItemPrice('0');
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{t('Keltirish', language)}</span>
+                    </label>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -740,7 +761,10 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                       onBlur={handlePriceBlur}
                       onKeyDown={(e) => e.key === 'Enter' && addItem()}
                       placeholder={t("Narx", language) + " *"}
-                      className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      disabled={itemSource === 'tobring'} // Keltirish tanlansa, narx kiritish o'chiriladi
+                      className={`px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                        itemSource === 'tobring' ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     />
                     <button
                       type="button"
@@ -770,9 +794,10 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                       // Ushbu item zapchast ekanligini tekshirish
                       const correspondingUsedPart = usedSpareParts.find(up => up.name === item.name);
                       const isFromSpareParts = !!correspondingUsedPart;
+                      const isToBring = item.source === 'tobring';
                       
                       return (
-                        <div key={index} className="bg-white border-2 border-gray-100 hover:border-gray-300 rounded-lg p-3">
+                        <div key={index} className={`bg-white border-2 ${isToBring ? 'border-orange-200 bg-orange-50' : 'border-gray-100'} hover:border-gray-300 rounded-lg p-3`}>
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -781,7 +806,11 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                                 <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${getCategoryColor(item.category)}`}>
                                   {item.category === 'part' ? t('Qism', language) : t('Material', language)}
                                 </span>
-                                {isFromSpareParts && (
+                                {isToBring ? (
+                                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-orange-100 text-orange-700">
+                                    🚚 {t('Keltirish', language)}
+                                  </span>
+                                ) : isFromSpareParts && (
                                   <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-blue-100 text-blue-700">
                                     📦 Zapchast
                                   </span>
@@ -790,10 +819,16 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                               <div className="flex items-center gap-3 ml-6">
                                 <span className="text-xs text-gray-600">{item.quantity} dona</span>
                                 <span className="text-xs text-gray-400">×</span>
-                                <span className="text-xs font-bold text-green-600">{formatCurrency(item.price)}</span>
-                                <span className="text-xs text-gray-400">=</span>
-                                <span className="text-sm font-bold text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
-                                {isFromSpareParts && (
+                                <span className={`text-xs font-bold ${isToBring ? 'text-orange-600' : 'text-green-600'}`}>
+                                  {isToBring ? t('Mijoz keltiradi', language) : formatCurrency(item.price)}
+                                </span>
+                                {!isToBring && (
+                                  <>
+                                    <span className="text-xs text-gray-400">=</span>
+                                    <span className="text-sm font-bold text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
+                                  </>
+                                )}
+                                {isFromSpareParts && !isToBring && (
                                   <span className="text-xs text-blue-600 font-medium">
                                     (Zapchastlar sonidan kamayadi)
                                   </span>
@@ -881,7 +916,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                           description: '',
                           price: parseFloat(itemPrice),
                           quantity: 1,
-                          category: 'labor'
+                          category: 'labor',
+                          source: 'available' // Ish haqi har doim bizda bor
                         }]);
                         setItemName('');
                         setItemPrice('');

@@ -6,6 +6,7 @@ export interface IPart {
   price: number;
   quantity: number;
   status: 'needed' | 'ordered' | 'available' | 'installed';
+  source?: 'available' | 'tobring'; // Bizda bor yoki keltirish
 }
 
 export interface IServiceItem {
@@ -52,6 +53,11 @@ const partSchema = new Schema<IPart>({
     type: String,
     enum: ['needed', 'ordered', 'available', 'installed'],
     default: 'needed'
+  },
+  source: {
+    type: String,
+    enum: ['available', 'tobring'],
+    default: 'available'
   }
 });
 
