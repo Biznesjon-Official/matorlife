@@ -512,7 +512,11 @@ export default function Landing() {
                           alt={service.title}
                           className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-all duration-500"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
+                            const target = e.target as HTMLImageElement;
+                            // Agar rasm yuklanmasa, default rasm ko'rsatish
+                            if (!target.src.includes('unsplash.com')) {
+                              target.src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
+                            }
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -553,6 +557,12 @@ export default function Landing() {
                 src={selectedService.image.startsWith('http') ? selectedService.image : `${getServerBaseUrl()}${selectedService.image}`}
                 alt={selectedService.title}
                 className="w-full h-48 sm:h-56 md:h-64 object-cover rounded-t-2xl sm:rounded-t-3xl"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.includes('unsplash.com')) {
+                    target.src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
+                  }
+                }}
               />
               <button 
                 onClick={() => setSelectedService(null)}
