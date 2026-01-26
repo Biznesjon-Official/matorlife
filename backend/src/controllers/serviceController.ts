@@ -116,12 +116,22 @@ export const getPublicServices = async (req: Request, res: Response) => {
       .select('name description image')
       .sort({ createdAt: -1 });
 
-    const servicesWithUrls = services.map(service => ({
-      _id: service._id,
-      name: service.name,
-      description: service.description,
-      imageUrl: service.image ? `${process.env.API_URL || 'http://localhost:4000'}${service.image}` : null,
-    }));
+    console.log('🔍 Found services:', services.length);
+    
+    const servicesWithUrls = services.map(service => {
+      // Rasm URL ni to'g'ri formatlash - faqat relative path qaytarish
+      // Frontend o'zi to'g'ri base URL qo'shadi
+      console.log('📸 Service:', service.name, '| Image path:', service.image);
+      
+      return {
+        _id: service._id,
+        name: service.name,
+        description: service.description,
+        imageUrl: service.image, // Faqat relative path: /uploads/services/...
+      };
+    });
+
+    console.log('✅ Sending services with image paths:', servicesWithUrls);
 
     res.json({
       success: true,

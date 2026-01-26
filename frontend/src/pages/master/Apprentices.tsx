@@ -8,6 +8,7 @@ import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, Ch
 import { User } from '@/types';
 import { t } from '@/lib/transliteration';
 
+
 const Apprentices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

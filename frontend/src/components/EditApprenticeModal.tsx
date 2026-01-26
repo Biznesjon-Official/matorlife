@@ -5,6 +5,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { t } from '@/lib/transliteration';
 import api from '@/lib/api';
 
+
 interface EditApprenticeModalProps {
   isOpen: boolean;
   onClose: () => void;

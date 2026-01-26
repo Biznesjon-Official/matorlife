@@ -25,6 +25,7 @@ import GoogleMap from '@/components/GoogleMap';
 import { t } from '@/lib/transliteration';
 import api from '@/lib/api';
 import { User } from '@/types';
+import { getServerBaseUrl } from '@/config/api.config';
 
 export default function Landing() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -81,6 +82,8 @@ export default function Landing() {
         const response = await api.get('/services/public');
         const backendServices = response.data.services || [];
         
+        console.log('🔍 Backend Services:', backendServices);
+        
         // Default images for services
         const defaultImages = [
           'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop',
@@ -95,6 +98,9 @@ export default function Landing() {
           let imageUrl = defaultImages[index % defaultImages.length];
           if (service.imageUrl) {
             imageUrl = service.imageUrl;
+            console.log('✅ Service image URL:', service.name, '→', imageUrl);
+          } else {
+            console.log('⚠️ No image for service:', service.name, '- using default');
           }
           
           return {
@@ -108,6 +114,7 @@ export default function Landing() {
           };
         });
 
+        console.log('📦 Mapped Services:', mappedServices);
         setServices(mappedServices);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -501,7 +508,7 @@ export default function Landing() {
                     <div className="relative z-10">
                       <div className="w-full h-48 mb-4 rounded-xl overflow-hidden shadow-lg">
                         <img 
-                          src={service.image.startsWith('http') ? service.image : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${service.image}`}
+                          src={service.image.startsWith('http') ? service.image : `${getServerBaseUrl()}${service.image}`}
                           alt={service.title}
                           className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-all duration-500"
                           onError={(e) => {
@@ -543,7 +550,7 @@ export default function Landing() {
           <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="relative">
               <img 
-                src={selectedService.image.startsWith('http') ? selectedService.image : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${selectedService.image}`}
+                src={selectedService.image.startsWith('http') ? selectedService.image : `${getServerBaseUrl()}${selectedService.image}`}
                 alt={selectedService.title}
                 className="w-full h-48 sm:h-56 md:h-64 object-cover rounded-t-2xl sm:rounded-t-3xl"
               />
