@@ -20,6 +20,9 @@ interface TaskItem {
   dueDate: string;
   estimatedHours: number;
   payment: number;
+  apprenticePercentage: number;
+  apprenticeEarning: number;
+  masterEarning: number;
 }
 
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) => {
@@ -66,7 +69,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
       priority: 'medium',
       dueDate: '',
       estimatedHours: 1,
-      payment: 0
+      payment: 0,
+      apprenticePercentage: 30,
+      apprenticeEarning: 0,
+      masterEarning: 0
     };
     setTasks([...tasks, newTask]);
   };
@@ -89,6 +95,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
             updatedTask.payment = selectedService.price;
             updatedTask.title = selectedService.name;
           }
+        }
+        
+        // Agar payment yoki percentage o'zgarsa, daromadlarni qayta hisoblash
+        if (field === 'payment' || field === 'apprenticePercentage') {
+          const totalPayment = field === 'payment' ? value : updatedTask.payment;
+          const percentage = field === 'apprenticePercentage' ? value : updatedTask.apprenticePercentage;
+          
+          updatedTask.apprenticeEarning = Math.round((totalPayment * percentage) / 100);
+          updatedTask.masterEarning = totalPayment - updatedTask.apprenticeEarning;
         }
         
         return updatedTask;
@@ -130,7 +145,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
           priority: task.priority,
           dueDate: task.dueDate,
           estimatedHours: task.estimatedHours,
-          payment: task.payment
+          payment: task.payment,
+          apprenticePercentage: task.apprenticePercentage
         };
         
         await createTaskMutation.mutateAsync(taskData);
@@ -372,6 +388,47 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                           className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                           placeholder="Avto"
                         />
+                      </div>
+                    </div>
+
+                    {/* Foiz va Daromadlar */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 sm:p-3 space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-blue-700 mb-1">
+                            📊 Shogird foizi (%)
+                          </label>
+                          <input
+                            type="number"
+                            value={task.apprenticePercentage}
+                            onChange={(e) => updateTask(task.id, 'apprenticePercentage', Number(e.target.value))}
+                            min="0"
+                            max="100"
+                            className="w-full px-2 py-1.5 text-xs border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white font-semibold"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-semibold text-green-700 mb-1">
+                            💵 Shogird oladi
+                          </label>
+                          <div className="px-2 py-1.5 text-xs bg-green-100 border-2 border-green-300 rounded-lg font-bold text-green-800">
+                            {task.apprenticeEarning.toLocaleString()} so'm
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-semibold text-purple-700 mb-1">
+                            💎 Master oladi
+                          </label>
+                          <div className="px-2 py-1.5 text-xs bg-purple-100 border-2 border-purple-300 rounded-lg font-bold text-purple-800">
+                            {task.masterEarning.toLocaleString()} so'm
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+                        💡 Umumiy: {task.payment.toLocaleString()} so'm = Shogird ({task.apprenticePercentage}%) + Master ({100 - task.apprenticePercentage}%)
                       </div>
                     </div>
                   </div>

@@ -76,6 +76,9 @@ export interface Task {
   estimatedHours: number;
   actualHours?: number;
   payment?: number;
+  apprenticePercentage?: number; // Shogird foizi (%)
+  apprenticeEarning?: number; // Shogird daromadi
+  masterEarning?: number; // Master daromadi
   createdAt: string;
   updatedAt: string;
 }

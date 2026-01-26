@@ -468,6 +468,61 @@ const ApprenticeTasks: React.FC = () => {
                       </span>
                     </div>
 
+                    {/* Foiz va Daromad Ma'lumotlari */}
+                    {task.payment && task.payment > 0 && task.apprenticePercentage > 0 && (
+                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-3 sm:p-4 rounded-xl border-2 border-emerald-200">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-lg">💵</span>
+                          <h5 className="text-sm font-bold text-emerald-900">{t('Sizning ulushingiz', language)}</h5>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          {/* Shogird Foizi */}
+                          <div className="bg-white p-2 sm:p-3 rounded-lg border border-emerald-200">
+                            <p className="text-xs text-gray-600 mb-1">{t('Foiz', language)}</p>
+                            <p className="text-base sm:text-lg font-bold text-emerald-700">
+                              {task.apprenticePercentage}%
+                            </p>
+                          </div>
+                          
+                          {/* Shogird Daromadi */}
+                          <div className="bg-gradient-to-br from-green-100 to-emerald-100 p-2 sm:p-3 rounded-lg border-2 border-green-300">
+                            <p className="text-xs text-green-700 mb-1 font-semibold">{t('Siz olasiz', language)}</p>
+                            <p className="text-base sm:text-lg font-bold text-green-800">
+                              {(task.apprenticeEarning || 0).toLocaleString()}
+                              <span className="text-xs ml-1">{t('so\'m', language)}</span>
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Status Message */}
+                        <div className="mt-2 sm:mt-3">
+                          {task.status === 'approved' ? (
+                            <div className="flex items-center gap-2 p-2 bg-green-100 border border-green-300 rounded-lg">
+                              <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                              <p className="text-xs text-green-800 font-semibold">
+                                {t('✅ Pul hisobingizga qo\'shildi!', language)}
+                              </p>
+                            </div>
+                          ) : task.status === 'completed' ? (
+                            <div className="flex items-center gap-2 p-2 bg-orange-100 border border-orange-300 rounded-lg">
+                              <Clock className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                              <p className="text-xs text-orange-800 font-semibold">
+                                {t('⏳ Ustoz tasdiqini kutmoqda', language)}
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 p-2 bg-blue-100 border border-blue-300 rounded-lg">
+                              <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                              <p className="text-xs text-blue-800">
+                                {t('💡 Vazifa tasdiqlangandan keyin pul qo\'shiladi', language)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Car Info */}
                     {task.car && (
                       <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white/80 rounded-xl border border-gray-200">

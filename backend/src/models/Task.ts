@@ -17,6 +17,9 @@ export interface ITask extends Document {
   estimatedHours: number;
   actualHours?: number;
   payment?: number;
+  apprenticePercentage?: number; // Shogird foizi (%)
+  apprenticeEarning?: number; // Shogird daromadi (avtomatik hisoblanadi)
+  masterEarning?: number; // Master daromadi (avtomatik hisoblanadi)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,6 +93,22 @@ const taskSchema = new Schema<ITask>({
     min: 0
   },
   payment: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  apprenticePercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0
+  },
+  apprenticeEarning: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  masterEarning: {
     type: Number,
     min: 0,
     default: 0

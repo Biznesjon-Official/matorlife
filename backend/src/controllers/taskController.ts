@@ -4,7 +4,13 @@ import { AuthRequest } from '../middleware/auth';
 
 export const createTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment } = req.body;
+    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment, apprenticePercentage } = req.body;
+
+    // Foiz asosida daromadlarni hisoblash
+    const totalPayment = payment || 0;
+    const percentage = apprenticePercentage || 0;
+    const apprenticeEarning = Math.round((totalPayment * percentage) / 100);
+    const masterEarning = totalPayment - apprenticeEarning;
 
     const task = new Task({
       title,
@@ -16,7 +22,10 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       priority,
       dueDate,
       estimatedHours,
-      payment: payment || 0
+      payment: totalPayment,
+      apprenticePercentage: percentage,
+      apprenticeEarning,
+      masterEarning
     });
 
     await task.save();
@@ -82,7 +91,7 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
 
 export const updateTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment } = req.body;
+    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment, apprenticePercentage } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -103,7 +112,17 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     if (priority) task.priority = priority;
     if (dueDate) task.dueDate = dueDate;
     if (estimatedHours) task.estimatedHours = estimatedHours;
-    if (payment !== undefined) task.payment = payment;
+    
+    // Agar payment yoki percentage o'zgarsa, qayta hisoblash
+    if (payment !== undefined || apprenticePercentage !== undefined) {
+      const totalPayment = payment !== undefined ? payment : task.payment || 0;
+      const percentage = apprenticePercentage !== undefined ? apprenticePercentage : task.apprenticePercentage || 0;
+      
+      task.payment = totalPayment;
+      task.apprenticePercentage = percentage;
+      task.apprenticeEarning = Math.round((totalPayment * percentage) / 100);
+      task.masterEarning = totalPayment - task.apprenticeEarning;
+    }
 
     await task.save();
     await task.populate(['assignedTo', 'assignedBy', 'car', 'service']);
@@ -189,12 +208,12 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     if (approved) {
       task.approvedAt = new Date();
       
-      // Shogirdning earnings iga pul qo'shish
-      if (task.payment && task.payment > 0) {
+      // Shogirdning earnings iga FOIZ asosida hisoblangan pul qo'shish
+      if (task.apprenticeEarning && task.apprenticeEarning > 0) {
         const User = require('../models/User').default;
         await User.findByIdAndUpdate(
           task.assignedTo,
-          { $inc: { earnings: task.payment } }
+          { $inc: { earnings: task.apprenticeEarning } }
         );
       }
     } else {
