@@ -41,6 +41,7 @@ export default function Landing() {
   const [services, setServices] = useState<any[]>([]);
   const [isLoadingServices, setIsLoadingServices] = useState(true);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const servicesCarouselRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     localStorage.setItem('language', language);
@@ -89,15 +90,23 @@ export default function Landing() {
         ];
         
         // Map backend services to frontend format
-        const mappedServices = backendServices.map((service: any, index: number) => ({
-          id: service._id,
-          title: service.name,
-          icon: Settings,
-          image: service.imageUrl || defaultImages[index % defaultImages.length],
-          shortDesc: service.description.length > 100 ? service.description.substring(0, 100) + '...' : service.description,
-          fullDesc: service.description,
-          features: []
-        }));
+        const mappedServices = backendServices.map((service: any, index: number) => {
+          // Rasm URL ni to'g'ri formatlash
+          let imageUrl = defaultImages[index % defaultImages.length];
+          if (service.imageUrl) {
+            imageUrl = service.imageUrl;
+          }
+          
+          return {
+            id: service._id,
+            title: service.name,
+            icon: Settings,
+            image: imageUrl,
+            shortDesc: service.description.length > 100 ? service.description.substring(0, 100) + '...' : service.description,
+            fullDesc: service.description,
+            features: []
+          };
+        });
 
         setServices(mappedServices);
       } catch (error) {
@@ -125,6 +134,25 @@ export default function Landing() {
       const scrollAmount = cardWidth + gap;
       
       carouselRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollServicesCarousel = (direction: 'left' | 'right') => {
+    if (servicesCarouselRef.current) {
+      const isMobile = window.innerWidth < 640;
+      
+      // Get first card width
+      const firstCard = servicesCarouselRef.current.querySelector('div') as HTMLElement;
+      if (!firstCard) return;
+      
+      const cardWidth = firstCard.offsetWidth;
+      const gap = isMobile ? 16 : 24;
+      const scrollAmount = cardWidth + gap;
+      
+      servicesCarouselRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
@@ -326,31 +354,6 @@ export default function Landing() {
                   {t("Xizmatlar", language)}
                 </a>
               </div>
-              
-              {/* Stats - Clean Style */}
-              <div className="flex flex-wrap items-stretch justify-center lg:justify-start gap-3 sm:gap-4 pt-3 sm:pt-4">
-                {/* Yillik Tajriba */}
-                <div className="flex-shrink-0 text-center px-6 py-4 rounded-2xl bg-white">
-                  <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1">15+</div>
-                  <div className="text-sm text-gray-700 font-semibold">{t('Yillik Tajriba', language)}</div>
-                </div>
-                
-                {/* Mijozlar */}
-                <div className="flex-shrink-0 text-center px-6 py-4 rounded-2xl bg-white">
-                  <div className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">500+</div>
-                  <div className="text-sm text-gray-700 font-semibold">{t('Mijozlar', language)}</div>
-                </div>
-                
-                {/* Reyting */}
-                <div className="flex-shrink-0 flex flex-col items-center justify-center px-6 py-4 rounded-2xl bg-white">
-                  <div className="flex items-center space-x-1 mb-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <div className="text-xl font-black text-gray-900">4.9 {t('Reyting', language)}</div>
-                </div>
-              </div>
             </div>
             
             {/* Right Content - Logo Enhanced */}
@@ -384,7 +387,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Services Section - Enhanced */}
+      {/* Services Section - Carousel */}
       <section id="services" className="py-12 sm:py-16 md:py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background Decoration */}
         <div className="absolute top-0 left-0 w-full h-full">
@@ -410,10 +413,10 @@ export default function Landing() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {isLoadingServices ? (
-              // Loading skeleton
-              Array.from({ length: 4 }).map((_, index) => (
+          {isLoadingServices ? (
+            // Loading skeleton
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, index) => (
                 <div 
                   key={index}
                   className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white overflow-hidden animate-pulse"
@@ -424,65 +427,113 @@ export default function Landing() {
                   <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
                   <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                 </div>
-              ))
-            ) : services.length === 0 ? (
-              // Empty state
-              <div className="col-span-full text-center py-12">
-                <Wrench className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  {t("Hozircha xizmatlar yo'q", language)}
-                </h3>
-                <p className="text-gray-600">
-                  {t("Tez orada yangi xizmatlar qo'shiladi", language)}
-                </p>
-              </div>
-            ) : (
-              // Services list
-              services.map((service, index) => (
-                <div 
-                  key={service.id}
-                  onClick={() => setSelectedService(service)}
-                  className="group relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  
-                  <div className="relative z-10">
-                    <div className="w-full h-48 mb-4 rounded-xl overflow-hidden shadow-lg">
-                      <img 
-                        src={service.image} 
-                        alt={service.title}
-                        className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-all duration-500"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              ))}
+            </div>
+          ) : services.length === 0 ? (
+            // Empty state
+            <div className="text-center py-12">
+              <Wrench className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {t("Hozircha xizmatlar yo'q", language)}
+              </h3>
+              <p className="text-gray-600">
+                {t("Tez orada yangi xizmatlar qo'shiladi", language)}
+              </p>
+            </div>
+          ) : (
+            // Services Carousel
+            <div className="relative">
+              {/* Navigation Buttons - Desktop */}
+              {services.length > 4 && (
+                <>
+                  <button
+                    onClick={() => scrollServicesCarousel('left')}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all border-2 border-blue-100 hidden lg:block"
+                  >
+                    <ChevronLeft className="h-6 w-6 text-blue-600" />
+                  </button>
+                  <button
+                    onClick={() => scrollServicesCarousel('right')}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-20 bg-white/95 backdrop-blur-sm p-3 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all border-2 border-blue-100 hidden lg:block"
+                  >
+                    <ChevronRight className="h-6 w-6 text-blue-600" />
+                  </button>
+                </>
+              )}
+
+              {/* Navigation Buttons - Mobile & Tablet */}
+              {services.length > 1 && (
+                <>
+                  <button
+                    onClick={() => scrollServicesCarousel('left')}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/95 backdrop-blur-sm p-2 sm:p-2.5 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all border-2 border-blue-100 lg:hidden"
+                  >
+                    <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                  </button>
+                  <button
+                    onClick={() => scrollServicesCarousel('right')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/95 backdrop-blur-sm p-2 sm:p-2.5 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all border-2 border-blue-100 lg:hidden"
+                  >
+                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                  </button>
+                </>
+              )}
+
+              {/* Carousel Container */}
+              <div 
+                ref={servicesCarouselRef}
+                className="flex gap-4 sm:gap-6 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-4"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                {services.map((service, index) => (
+                  <div 
+                    key={service.id}
+                    onClick={() => setSelectedService(service)}
+                    className="group relative bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border-2 border-white hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer overflow-hidden flex-shrink-0 snap-start w-[85%] sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    
+                    <div className="relative z-10">
+                      <div className="w-full h-48 mb-4 rounded-xl overflow-hidden shadow-lg">
+                        <img 
+                          src={service.image.startsWith('http') ? service.image : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${service.image}`}
+                          alt={service.title}
+                          className="w-full h-full object-cover group-hover:scale-110 group-hover:rotate-1 transition-all duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&h=600&fit=crop';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
+                      
+                      <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 shadow-lg mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all">
+                        <service.icon className="h-6 w-6 text-white" />
+                      </div>
+                      
+                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        {service.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                        {service.shortDesc}
+                      </p>
+                      
+                      <button className="inline-flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform">
+                        {t('Batafsil', language)}
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
                     </div>
                     
-                    <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 shadow-lg mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all">
-                      <service.icon className="h-6 w-6 text-white" />
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                      {service.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                      {service.shortDesc}
-                    </p>
-                    
-                    <button className="inline-flex items-center text-blue-600 font-semibold group-hover:translate-x-2 transition-transform">
-                      {t('Batafsil', language)}
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   </div>
-                  
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </div>
-              ))
-            )}
-          </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -492,7 +543,7 @@ export default function Landing() {
           <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="relative">
               <img 
-                src={selectedService.image} 
+                src={selectedService.image.startsWith('http') ? selectedService.image : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${selectedService.image}`}
                 alt={selectedService.title}
                 className="w-full h-48 sm:h-56 md:h-64 object-cover rounded-t-2xl sm:rounded-t-3xl"
               />
