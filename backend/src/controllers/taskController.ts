@@ -93,11 +93,19 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
     const filter: any = {};
 
     if (status) filter.status = status;
-    if (assignedTo) filter.assignedTo = assignedTo;
 
-    // If user is apprentice, only show their tasks
+    // If user is apprentice, show tasks where they are assigned
     if (req.user!.role === 'apprentice') {
-      filter.assignedTo = req.user!._id;
+      filter.$or = [
+        { assignedTo: req.user!._id }, // Eski tizim
+        { 'assignments.apprentice': req.user!._id } // Yangi tizim
+      ];
+    } else if (assignedTo) {
+      // Master filter qilganda
+      filter.$or = [
+        { assignedTo: assignedTo },
+        { 'assignments.apprentice': assignedTo }
+      ];
     }
 
     const tasks = await Task.find(filter)
@@ -106,6 +114,7 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
       .populate('assignedBy', 'name email')
       .populate('car', 'make carModel licensePlate ownerName')
       .populate('service', 'name price')
+      .populate('assignments.apprentice', 'name email') // Assignments'dagi shogirdlarni ham populate qilish
       .sort({ createdAt: -1 });
 
     res.json({ tasks });
@@ -120,15 +129,21 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
       .populate('assignedTo', 'name email')
       .populate('assignedBy', 'name email')
       .populate('car')
-      .populate('service', 'name price');
+      .populate('service', 'name price')
+      .populate('assignments.apprentice', 'name email'); // Assignments'dagi shogirdlarni ham populate qilish
 
     if (!task) {
       return res.status(404).json({ message: 'Task not found' });
     }
 
     // Check if apprentice is trying to access someone else's task
-    if (req.user!.role === 'apprentice' && task.assignedTo._id.toString() !== req.user!._id.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+    if (req.user!.role === 'apprentice') {
+      const isAssigned = task.assignedTo?._id.toString() === req.user!._id.toString() ||
+                        task.assignments?.some(a => a.apprentice._id.toString() === req.user!._id.toString());
+      
+      if (!isAssigned) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     }
 
     res.json({ task });
@@ -246,12 +261,23 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     if (approved) {
       task.approvedAt = new Date();
       
-      // Shogirdning earnings iga pul qo'shish
-      if (task.payment && task.payment > 0) {
-        const User = require('../models/User').default;
+      const User = require('../models/User').default;
+      
+      // Yangi tizim: Ko'p shogirdlar
+      if (task.assignments && task.assignments.length > 0) {
+        // Har bir shogirdga o'z ulushini qo'shish
+        for (const assignment of task.assignments) {
+          await User.findByIdAndUpdate(
+            assignment.apprentice,
+            { $inc: { earnings: assignment.earning } }
+          );
+        }
+      } 
+      // Eski tizim: Bitta shogird
+      else if (task.assignedTo && task.apprenticeEarning) {
         await User.findByIdAndUpdate(
           task.assignedTo,
-          { $inc: { earnings: task.payment } }
+          { $inc: { earnings: task.apprenticeEarning } }
         );
       }
     } else {
@@ -259,7 +285,7 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     }
 
     await task.save();
-    await task.populate(['assignedTo', 'assignedBy', 'car', 'service']);
+    await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
 
     res.json({
       message: `Task ${approved ? 'approved' : 'rejected'} successfully`,
