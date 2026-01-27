@@ -79,13 +79,6 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
       newErrors.name = t("Nom kamida 2 ta belgidan iborat bo'lishi kerak", language);
     }
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (formData.name.length < 2) {
-      newErrors.name = t("Nom kamida 2 ta belgidan iborat bo'lishi kerak", language);
-    }
-
     // Kamida bitta narx kiritilishi kerak
     if ((!formData.costPrice || Number(formData.costPrice) <= 0) && 
         (!formData.sellingPrice || Number(formData.sellingPrice) <= 0)) {
@@ -99,18 +92,6 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
         Number(formData.sellingPrice) < Number(formData.costPrice)) {
       newErrors.sellingPrice = t("Sotish narxi o'zini narxidan kichik bo'lmasligi kerak", language);
     }
-
-    if (!formData.quantity || Number(formData.quantity) < 0) {
-      newErrors.quantity = t("Miqdor majburiy va 0 dan kichik bo'lmasligi kerak", language);
-    }
-
-    if (formData.supplier.length < 2) {
-      newErrors.supplier = t("Kimdan olingani kamida 2 ta belgidan iborat bo'lishi kerak", language);
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
     if (!formData.quantity || Number(formData.quantity) < 0) {
       newErrors.quantity = t("Miqdor majburiy va 0 dan kichik bo'lmasligi kerak", language);
