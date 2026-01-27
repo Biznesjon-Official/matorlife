@@ -348,16 +348,19 @@ export const getCarServices = async (req: AuthRequest, res: Response) => {
     const assignedTasks = await Task.find({ 
       car: carId,
       status: { $in: ['assigned', 'in-progress', 'completed', 'approved'] }
-    }).select('service');
+    }).select('serviceItemId');
     
     // Berilgan xizmatlar ID larini olish
     const assignedServiceIds = assignedTasks
-      .filter(task => task.service)
-      .map(task => task.service!.toString());
+      .filter(task => task.serviceItemId)
+      .map(task => task.serviceItemId!.toString());
 
     // Mashina serviceItems dan faqat berilmagan ishlarni olish
+    // Faqat 'labor' kategoriyasidagi xizmatlarni olish (ehtiyot qismlar emas)
     const availableServices = car.serviceItems.filter(item => 
-      item._id && !assignedServiceIds.includes(item._id.toString())
+      item._id && 
+      !assignedServiceIds.includes(item._id.toString()) &&
+      item.category === 'labor'
     );
 
     const services = availableServices.map(item => ({

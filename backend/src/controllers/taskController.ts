@@ -6,11 +6,10 @@ export const createTask = async (req: AuthRequest, res: Response) => {
   try {
     const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment, apprenticePercentage } = req.body;
 
-    // Foiz asosida daromadlarni hisoblash
-    const totalPayment = payment || 0;
-    const percentage = apprenticePercentage || 0;
-    const apprenticeEarning = Math.round((totalPayment * percentage) / 100);
-    const masterEarning = totalPayment - apprenticeEarning;
+    // Foizni hisoblash
+    const percentage = apprenticePercentage || 50; // Default 50%
+    const apprenticeEarning = (payment * percentage) / 100;
+    const masterEarning = payment - apprenticeEarning;
 
     const task = new Task({
       title,
@@ -19,10 +18,11 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       assignedBy: req.user!._id,
       car,
       service,
+      serviceItemId: service, // service ID ni serviceItemId sifatida ham saqlash
       priority,
       dueDate,
       estimatedHours,
-      payment: totalPayment,
+      payment: payment || 0,
       apprenticePercentage: percentage,
       apprenticeEarning,
       masterEarning
@@ -54,6 +54,7 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
     }
 
     const tasks = await Task.find(filter)
+      .select('+apprenticePercentage +apprenticeEarning +masterEarning') // Foiz va daromad maydonlarini qo'shish
       .populate('assignedTo', 'name email')
       .populate('assignedBy', 'name email')
       .populate('car', 'make carModel licensePlate ownerName')
@@ -91,7 +92,7 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
 
 export const updateTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment, apprenticePercentage } = req.body;
+    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -112,17 +113,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     if (priority) task.priority = priority;
     if (dueDate) task.dueDate = dueDate;
     if (estimatedHours) task.estimatedHours = estimatedHours;
-    
-    // Agar payment yoki percentage o'zgarsa, qayta hisoblash
-    if (payment !== undefined || apprenticePercentage !== undefined) {
-      const totalPayment = payment !== undefined ? payment : task.payment || 0;
-      const percentage = apprenticePercentage !== undefined ? apprenticePercentage : task.apprenticePercentage || 0;
-      
-      task.payment = totalPayment;
-      task.apprenticePercentage = percentage;
-      task.apprenticeEarning = Math.round((totalPayment * percentage) / 100);
-      task.masterEarning = totalPayment - task.apprenticeEarning;
-    }
+    if (payment !== undefined) task.payment = payment;
 
     await task.save();
     await task.populate(['assignedTo', 'assignedBy', 'car', 'service']);
@@ -208,12 +199,12 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     if (approved) {
       task.approvedAt = new Date();
       
-      // Shogirdning earnings iga FOIZ asosida hisoblangan pul qo'shish
-      if (task.apprenticeEarning && task.apprenticeEarning > 0) {
+      // Shogirdning earnings iga pul qo'shish
+      if (task.payment && task.payment > 0) {
         const User = require('../models/User').default;
         await User.findByIdAndUpdate(
           task.assignedTo,
-          { $inc: { earnings: task.apprenticeEarning } }
+          { $inc: { earnings: task.payment } }
         );
       }
     } else {

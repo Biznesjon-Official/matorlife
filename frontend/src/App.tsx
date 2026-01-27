@@ -4,7 +4,8 @@ import Layout from '@/components/Layout';
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
-import Dashboard from '@/pages/Dashboard';
+import MasterDashboard from '@/pages/master/Dashboard';
+import ApprenticeDashboard from '@/pages/apprentice/Dashboard';
 import Tasks from '@/pages/Tasks';
 import Cars from '@/pages/Cars';
 import Debts from '@/pages/Debts';
@@ -17,6 +18,7 @@ import MasterTasks from '@/pages/master/Tasks';
 import MasterApprentices from '@/pages/master/Apprentices';
 import MasterKnowledgeBase from '@/pages/master/KnowledgeBase';
 import MasterSpareParts from '@/pages/master/SpareParts';
+import MasterCashier from '@/pages/master/Cashier';
 
 // Apprentice pages
 import ApprenticeTasks from '@/pages/apprentice/Tasks';
@@ -98,6 +100,25 @@ function LandingRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function DashboardRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Master uchun Cashier, Apprentice uchun Dashboard
+  if (user.role === 'master') {
+    return <Navigate to="/app/master/cashier" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -134,9 +155,23 @@ function AppRoutes() {
         }
       >
         <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="dashboard" element={
+          <DashboardRoute>
+            <ApprenticeDashboard />
+          </DashboardRoute>
+        } />
         
         {/* Master routes */}
+        <Route path="master/dashboard" element={
+          <MasterRoute>
+            <MasterDashboard />
+          </MasterRoute>
+        } />
+        <Route path="master/cashier" element={
+          <MasterRoute>
+            <MasterCashier />
+          </MasterRoute>
+        } />
         <Route path="master/tasks" element={
           <MasterRoute>
             <MasterTasks />

@@ -154,65 +154,6 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ isOpen, onClose, task }) 
             </div>
           </div>
 
-          {/* Payment Information - Foiz tizimi */}
-          {task.payment && task.payment > 0 && (
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 sm:p-6 rounded-xl border-2 border-emerald-200">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-emerald-500 rounded-lg">
-                  <span className="text-xl">💰</span>
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-emerald-900">To'lov Ma'lumotlari</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                {/* Total Payment */}
-                <div className="bg-white p-3 sm:p-4 rounded-lg border border-emerald-200">
-                  <p className="text-xs font-semibold text-gray-600 mb-1">Umumiy to'lov</p>
-                  <p className="text-lg sm:text-xl font-bold text-gray-900">
-                    {task.payment.toLocaleString()} so'm
-                  </p>
-                </div>
-
-                {/* Apprentice Share */}
-                <div className="bg-gradient-to-br from-green-100 to-emerald-100 p-3 sm:p-4 rounded-lg border-2 border-green-300">
-                  <p className="text-xs font-semibold text-green-700 mb-1 flex items-center gap-1">
-                    <span>👤</span> Shogird ulushi ({task.apprenticePercentage || 0}%)
-                  </p>
-                  <p className="text-lg sm:text-xl font-bold text-green-800">
-                    {(task.apprenticeEarning || 0).toLocaleString()} so'm
-                  </p>
-                  {task.status === 'approved' && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <span>✅</span> Qo'shildi
-                    </p>
-                  )}
-                  {task.status === 'completed' && (
-                    <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                      <span>⏳</span> Tasdiq kutilmoqda
-                    </p>
-                  )}
-                </div>
-
-                {/* Master Share */}
-                <div className="bg-gradient-to-br from-purple-100 to-indigo-100 p-3 sm:p-4 rounded-lg border-2 border-purple-300">
-                  <p className="text-xs font-semibold text-purple-700 mb-1 flex items-center gap-1">
-                    <span>👨‍🏫</span> Master ulushi ({100 - (task.apprenticePercentage || 0)}%)
-                  </p>
-                  <p className="text-lg sm:text-xl font-bold text-purple-800">
-                    {(task.masterEarning || 0).toLocaleString()} so'm
-                  </p>
-                </div>
-              </div>
-
-              {/* Info Message */}
-              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-blue-800">
-                  💡 <strong>Eslatma:</strong> Vazifa tasdiqlangandan so'ng shogird ulushi avtomatik ravishda hisobga qo'shiladi.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Notes */}
           {task.notes && (
             <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-yellow-200">

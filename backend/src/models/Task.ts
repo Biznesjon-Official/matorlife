@@ -6,7 +6,8 @@ export interface ITask extends Document {
   assignedTo: mongoose.Types.ObjectId;
   assignedBy: mongoose.Types.ObjectId;
   car: mongoose.Types.ObjectId;
-  service?: mongoose.Types.ObjectId; // Tanlangan xizmat
+  service?: mongoose.Types.ObjectId; // Tanlangan xizmat (Service model)
+  serviceItemId?: string; // Car.serviceItems ichidagi xizmat ID si
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'assigned' | 'in-progress' | 'completed' | 'approved' | 'rejected';
   dueDate: Date;
@@ -55,6 +56,10 @@ const taskSchema = new Schema<ITask>({
     ref: 'Service',
     required: false
   },
+  serviceItemId: {
+    type: String,
+    required: false
+  },
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'urgent'],
@@ -101,7 +106,7 @@ const taskSchema = new Schema<ITask>({
     type: Number,
     min: 0,
     max: 100,
-    default: 0
+    default: 50
   },
   apprenticeEarning: {
     type: Number,
