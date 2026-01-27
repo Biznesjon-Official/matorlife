@@ -4,39 +4,86 @@ import { AuthRequest } from '../middleware/auth';
 
 export const createTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment, apprenticePercentage } = req.body;
+    const { 
+      title, 
+      description, 
+      assignedTo, // Bitta shogird (eski tizim)
+      assignments, // Ko'p shogirdlar (yangi tizim)
+      car, 
+      service, 
+      priority, 
+      dueDate, 
+      estimatedHours, 
+      payment, 
+      apprenticePercentage 
+    } = req.body;
 
-    // Foizni hisoblash
-    const percentage = apprenticePercentage || 50; // Default 50%
-    const apprenticeEarning = (payment * percentage) / 100;
-    const masterEarning = payment - apprenticeEarning;
-
-    const task = new Task({
+    const taskData: any = {
       title,
       description,
-      assignedTo,
       assignedBy: req.user!._id,
       car,
       service,
-      serviceItemId: service, // service ID ni serviceItemId sifatida ham saqlash
+      serviceItemId: service,
       priority,
       dueDate,
       estimatedHours,
-      payment: payment || 0,
-      apprenticePercentage: percentage,
-      apprenticeEarning,
-      masterEarning
-    });
+      payment: payment || 0
+    };
 
+    // Yangi tizim: Ko'p shogirdlar
+    if (assignments && Array.isArray(assignments) && assignments.length > 0) {
+      const totalPayment = payment || 0;
+      const apprenticeCount = assignments.length;
+      const allocatedAmount = totalPayment / apprenticeCount; // Har biriga teng bo'lish
+
+      // Har bir shogird uchun hisoblash
+      taskData.assignments = assignments.map((assignment: any) => {
+        const percentage = assignment.percentage || 50;
+        const earning = (allocatedAmount * percentage) / 100;
+        const masterShare = allocatedAmount - earning;
+
+        return {
+          apprentice: assignment.apprenticeId,
+          percentage,
+          allocatedAmount,
+          earning,
+          masterShare
+        };
+      });
+
+      // Birinchi shogirdni assignedTo ga ham qo'yish (backward compatibility)
+      taskData.assignedTo = assignments[0].apprenticeId;
+    } 
+    // Eski tizim: Bitta shogird
+    else if (assignedTo) {
+      const percentage = apprenticePercentage || 50;
+      const apprenticeEarning = (payment * percentage) / 100;
+      const masterEarning = payment - apprenticeEarning;
+
+      taskData.assignedTo = assignedTo;
+      taskData.apprenticePercentage = percentage;
+      taskData.apprenticeEarning = apprenticeEarning;
+      taskData.masterEarning = masterEarning;
+    } else {
+      return res.status(400).json({ message: 'Kamida bitta shogird tanlang' });
+    }
+
+    const task = new Task(taskData);
     await task.save();
-    await task.populate(['assignedTo', 'assignedBy', 'car', 'service']);
+    await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
 
     res.status(201).json({
       message: 'Task created successfully',
       task
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('❌ Task yaratishda xatolik:', error);
+    res.status(500).json({ 
+      message: 'Vazifalarni yaratishda xatolik yuz berdi', 
+      error: error.message,
+      details: error.stack 
+    });
   }
 };
 

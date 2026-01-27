@@ -1,13 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Har bir shogird uchun tayinlash ma'lumotlari
+export interface ITaskAssignment {
+  apprentice: mongoose.Types.ObjectId;
+  percentage: number; // Shogird foizi (0-100)
+  allocatedAmount: number; // Ajratilgan pul (umumiy pul / ishchilar soni)
+  earning: number; // Shogird daromadi (allocatedAmount * percentage / 100)
+  masterShare: number; // Ustoz ulushi (allocatedAmount - earning)
+}
+
 export interface ITask extends Document {
   title: string;
   description: string;
-  assignedTo: mongoose.Types.ObjectId;
+  assignedTo: mongoose.Types.ObjectId; // Bitta shogird (eski vazifalar uchun)
+  assignments: ITaskAssignment[]; // Ko'p shogirdlar (yangi tizim)
   assignedBy: mongoose.Types.ObjectId;
   car: mongoose.Types.ObjectId;
-  service?: mongoose.Types.ObjectId; // Tanlangan xizmat (Service model)
-  serviceItemId?: string; // Car.serviceItems ichidagi xizmat ID si
+  service?: mongoose.Types.ObjectId;
+  serviceItemId?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'assigned' | 'in-progress' | 'completed' | 'approved' | 'rejected';
   dueDate: Date;
@@ -18,12 +28,42 @@ export interface ITask extends Document {
   estimatedHours: number;
   actualHours?: number;
   payment?: number;
-  apprenticePercentage?: number; // Shogird foizi (%)
-  apprenticeEarning?: number; // Shogird daromadi (avtomatik hisoblanadi)
-  masterEarning?: number; // Master daromadi (avtomatik hisoblanadi)
+  apprenticePercentage?: number; // Eski tizim
+  apprenticeEarning?: number; // Eski tizim
+  masterEarning?: number; // Eski tizim
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Shogird tayinlash schemasi
+const taskAssignmentSchema = new Schema<ITaskAssignment>({
+  apprentice: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  percentage: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
+  },
+  allocatedAmount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  earning: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  masterShare: {
+    type: Number,
+    required: true,
+    min: 0
+  }
+}, { _id: false });
 
 const taskSchema = new Schema<ITask>({
   title: {
@@ -39,7 +79,11 @@ const taskSchema = new Schema<ITask>({
   assignedTo: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false // Yangi tizimda majburiy emas
+  },
+  assignments: {
+    type: [taskAssignmentSchema],
+    default: []
   },
   assignedBy: {
     type: Schema.Types.ObjectId,

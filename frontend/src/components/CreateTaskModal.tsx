@@ -10,17 +10,22 @@ interface CreateTaskModalProps {
   onClose: () => void;
 }
 
+interface ApprenticeAssignment {
+  id: string;
+  apprenticeId: string;
+  percentage: number;
+}
+
 interface TaskItem {
   id: string;
   service: string;
-  assignedTo: string;
+  assignments: ApprenticeAssignment[]; // Ko'p shogirdlar
   title: string;
   description: string;
   priority: string;
   dueDate: string;
   estimatedHours: number;
   payment: number;
-  apprenticePercentage: number;
 }
 
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) => {
@@ -61,16 +66,66 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
     const newTask: TaskItem = {
       id: Date.now().toString(),
       service: '',
-      assignedTo: '',
+      assignments: [], // Bo'sh array
       title: '',
       description: '',
       priority: 'medium',
       dueDate: '',
       estimatedHours: 1,
-      payment: 0,
-      apprenticePercentage: 50 // Default 50%
+      payment: 0
     };
     setTasks([...tasks, newTask]);
+  };
+
+  // Shogird qo'shish
+  const addApprentice = (taskId: string) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          assignments: [
+            ...task.assignments,
+            {
+              id: Date.now().toString(),
+              apprenticeId: '',
+              percentage: 50
+            }
+          ]
+        };
+      }
+      return task;
+    }));
+  };
+
+  // Shogirdni o'chirish
+  const removeApprentice = (taskId: string, assignmentId: string) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          assignments: task.assignments.filter(a => a.id !== assignmentId)
+        };
+      }
+      return task;
+    }));
+  };
+
+  // Shogird ma'lumotlarini yangilash
+  const updateApprentice = (taskId: string, assignmentId: string, field: 'apprenticeId' | 'percentage', value: any) => {
+    setTasks(tasks.map(task => {
+      if (task.id === taskId) {
+        return {
+          ...task,
+          assignments: task.assignments.map(assignment => {
+            if (assignment.id === assignmentId) {
+              return { ...assignment, [field]: value };
+            }
+            return assignment;
+          })
+        };
+      }
+      return task;
+    }));
   };
 
   // Vazifani o'chirish
@@ -114,9 +169,19 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
     
     // Har bir vazifani tekshirish
     for (const task of tasks) {
-      if (!task.service || !task.assignedTo || !task.title || !task.dueDate) {
+      if (!task.service || !task.title || !task.dueDate) {
         alert('Barcha vazifalar uchun majburiy maydonlarni to\'ldiring');
         return;
+      }
+      if (task.assignments.length === 0) {
+        alert('Har bir vazifa uchun kamida bitta shogird tanlang');
+        return;
+      }
+      for (const assignment of task.assignments) {
+        if (!assignment.apprenticeId) {
+          alert('Barcha shogirdlarni tanlang');
+          return;
+        }
       }
     }
     
@@ -126,14 +191,13 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
         const taskData = {
           title: task.title,
           description: task.description || task.title,
-          assignedTo: task.assignedTo,
+          assignments: task.assignments,
           car: selectedCar,
           service: task.service,
           priority: task.priority,
           dueDate: task.dueDate,
           estimatedHours: task.estimatedHours,
-          payment: task.payment,
-          apprenticePercentage: task.apprenticePercentage
+          payment: task.payment
         };
         
         await createTaskMutation.mutateAsync(taskData);
@@ -145,7 +209,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
       setCarServices([]);
       onClose();
     } catch (error: any) {
-      alert('Vazifalarni yaratishda xatolik yuz berdi');
+      console.error('❌ Frontend xatolik:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Vazifalarni yaratishda xatolik yuz berdi';
+      const errorDetails = error.response?.data?.error || '';
+      alert(`${errorMessage}\n\n${errorDetails}`);
     }
   };
 
@@ -259,8 +326,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                       </button>
                     </div>
 
-                    {/* Mobile-First Service and Apprentice */}
-                    <div className="grid grid-cols-1 gap-2 sm:gap-3 sm:grid-cols-2">
+                    {/* Mobile-First Service Selection */}
+                    <div className="grid grid-cols-1 gap-2 sm:gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           <Wrench className="h-3 w-3 inline mr-1" />
@@ -280,26 +347,133 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                           ))}
                         </select>
                       </div>
+                    </div>
 
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {/* Shogirdlar ro'yxati */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-gray-600">
                           <User className="h-3 w-3 inline mr-1" />
-                          Shogird *
+                          Shogirdlar *
                         </label>
-                        <select
-                          value={task.assignedTo}
-                          onChange={(e) => updateTask(task.id, 'assignedTo', e.target.value)}
-                          className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                          required
+                        <button
+                          type="button"
+                          onClick={() => addApprentice(task.id)}
+                          className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1"
                         >
-                          <option value="">Shogirdni tanlang</option>
-                          {apprenticesData?.users?.map((apprentice: any) => (
-                            <option key={apprentice._id} value={apprentice._id}>
-                              {apprentice.name}
-                            </option>
-                          ))}
-                        </select>
+                          <Plus className="h-3 w-3" />
+                          Shogird qo'shish
+                        </button>
                       </div>
+
+                      {task.assignments.length === 0 ? (
+                        <div className="text-center py-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                          <p className="text-xs text-gray-500">Shogird qo'shing</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {task.assignments.map((assignment, idx) => {
+                            const allocatedAmount = task.payment / task.assignments.length;
+                            const earning = (allocatedAmount * assignment.percentage) / 100;
+                            const masterShare = allocatedAmount - earning;
+
+                            return (
+                              <div key={assignment.id} className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-semibold text-blue-700">Shogird #{idx + 1}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeApprentice(task.id, assignment.id)}
+                                    className="text-red-600 hover:text-red-800 p-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <select
+                                      value={assignment.apprenticeId}
+                                      onChange={(e) => updateApprentice(task.id, assignment.id, 'apprenticeId', e.target.value)}
+                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
+                                      required
+                                    >
+                                      <option value="">Tanlang</option>
+                                      {apprenticesData?.users?.map((apprentice: any) => (
+                                        <option key={apprentice._id} value={apprentice._id}>
+                                          {apprentice.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+
+                                  <div>
+                                    <input
+                                      type="number"
+                                      value={assignment.percentage}
+                                      onChange={(e) => updateApprentice(task.id, assignment.id, 'percentage', Number(e.target.value))}
+                                      min="0"
+                                      max="100"
+                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      placeholder="Foiz %"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Hisoblash ko'rsatkichi */}
+                                {task.payment > 0 && assignment.percentage > 0 && (
+                                  <div className="mt-2 p-2 bg-white rounded text-xs space-y-1">
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Ajratilgan:</span>
+                                      <span className="font-bold">{allocatedAmount.toLocaleString()} so'm</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-green-600">Shogird ({assignment.percentage}%):</span>
+                                      <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-blue-600">Ustoz:</span>
+                                      <span className="font-bold text-blue-700">{masterShare.toLocaleString()} so'm</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {/* Jami hisob */}
+                          {task.payment > 0 && task.assignments.length > 0 && (
+                            <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
+                              <div className="text-xs font-bold text-gray-700 mb-2">📊 Jami hisob:</div>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex justify-between">
+                                  <span>Umumiy pul:</span>
+                                  <span className="font-bold">{task.payment.toLocaleString()} so'm</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Shogirdlar ({task.assignments.length} ta):</span>
+                                  <span className="font-bold text-green-700">
+                                    {task.assignments.reduce((sum, a) => {
+                                      const allocated = task.payment / task.assignments.length;
+                                      return sum + (allocated * a.percentage / 100);
+                                    }, 0).toLocaleString()} so'm
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Ustoz ulushi:</span>
+                                  <span className="font-bold text-blue-700">
+                                    {task.assignments.reduce((sum, a) => {
+                                      const allocated = task.payment / task.assignments.length;
+                                      const earning = allocated * a.percentage / 100;
+                                      return sum + (allocated - earning);
+                                    }, 0).toLocaleString()} so'm
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Title */}
@@ -315,8 +489,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                       />
                     </div>
 
-                    {/* Mobile-Optimized Priority, Due Date, Hours, Payment, Percentage */}
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {/* Mobile-Optimized Priority, Due Date, Hours, Payment */}
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                       <div>
                         <label className="block text-xs font-semibold text-gray-600 mb-1">
                           <AlertTriangle className="h-3 w-3 inline mr-1" />
@@ -376,38 +550,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                           placeholder="Avto"
                         />
                       </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">📊 Foiz %</label>
-                        <input
-                          type="number"
-                          value={task.apprenticePercentage}
-                          onChange={(e) => updateTask(task.id, 'apprenticePercentage', Number(e.target.value))}
-                          min="0"
-                          max="100"
-                          className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                          placeholder="50"
-                        />
-                      </div>
                     </div>
-
-                    {/* Daromad hisoblash ko'rsatkichi */}
-                    {task.payment > 0 && task.apprenticePercentage > 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs">
-                        <div className="flex justify-between items-center">
-                          <span className="text-blue-700 font-semibold">Shogird daromadi:</span>
-                          <span className="text-blue-900 font-bold">
-                            {((task.payment * task.apprenticePercentage) / 100).toLocaleString()} so'm
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center mt-1">
-                          <span className="text-green-700 font-semibold">Ustoz daromadi:</span>
-                          <span className="text-green-900 font-bold">
-                            {((task.payment * (100 - task.apprenticePercentage)) / 100).toLocaleString()} so'm
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
