@@ -72,18 +72,23 @@ export const getDebtById = async (req: AuthRequest, res: Response) => {
 };
 export const addPayment = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, notes } = req.body;
+    const { amount, notes, paymentMethod } = req.body;
     const debt = await Debt.findById(req.params.id);
+    
     if (!debt) {
       return res.status(404).json({ message: 'Debt record not found' });
     }
+    
     debt.paymentHistory.push({
       amount,
       date: new Date(),
+      paymentMethod: paymentMethod || 'cash',
       notes
     });
+    
     await debt.save();
     await debt.populate('car', 'make carModel licensePlate');
+    
     // To'lov qo'shilganda Telegram xabar yuborish
     try {
       const paymentData = {
@@ -94,14 +99,19 @@ export const addPayment = async (req: AuthRequest, res: Response) => {
         paidAmount: debt.paidAmount,
         remainingAmount: debt.amount - debt.paidAmount,
         notes: notes,
-        type: debt.type
+        type: debt.type,
+        paymentMethod: paymentMethod || 'cash'
       };
+      
       const result = await telegramService.sendPaymentNotification(paymentData);
       if (!result.success) {
-        }
+        console.log('Telegram notification failed:', result.message);
+      }
     } catch (telegramError) {
       // Don't fail the request if telegram fails
+      console.error('Telegram error:', telegramError);
     }
+    
     res.json({
       message: 'Payment added successfully',
       debt

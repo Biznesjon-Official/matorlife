@@ -22,14 +22,17 @@ import {
 import { formatCurrency } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
 import CreateDebtModal from '@/components/CreateDebtModal';
+import AddPaymentModal from '@/components/AddPaymentModal';
 import { format } from 'date-fns';
 
 const MasterCashier: React.FC = memo(() => {
   const [timePeriod, setTimePeriod] = useState<'today' | 'week' | 'month' | 'year' | 'all'>('all');
   const { data: debtSummary, isLoading: summaryLoading } = useDebtSummary();
-  const { data: debtsData, isLoading: debtsLoading } = useDebts();
+  const { data: debtsData, isLoading: debtsLoading, refetch: refetchDebts } = useDebts();
   const { data: earningsData, isLoading: earningsLoading } = useEarnings({ period: timePeriod });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<any>(null);
   const [filterType, setFilterType] = useState<'all' | 'receivable' | 'payable'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'partial' | 'paid'>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'services' | 'debts' | 'transactions'>('overview');
@@ -601,6 +604,12 @@ const MasterCashier: React.FC = memo(() => {
                       <div 
                         key={debt._id} 
                         className="card p-4 hover:shadow-lg transition-all duration-300 group cursor-pointer"
+                        onClick={() => {
+                          if (debt.status !== 'paid') {
+                            setSelectedDebt(debt);
+                            setIsPaymentModalOpen(true);
+                          }
+                        }}
                       >
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                           <div className="flex-1 space-y-2">
@@ -769,6 +778,19 @@ const MasterCashier: React.FC = memo(() => {
       <CreateDebtModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      {/* Add Payment Modal */}
+      <AddPaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+          setIsPaymentModalOpen(false);
+          setSelectedDebt(null);
+        }}
+        debt={selectedDebt}
+        onSuccess={() => {
+          refetchDebts();
+        }}
       />
     </div>
   );

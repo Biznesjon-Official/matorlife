@@ -13,6 +13,7 @@ export interface IDebt extends Document {
   paymentHistory: {
     amount: number;
     date: Date;
+    paymentMethod?: 'cash' | 'click' | 'card';
     notes?: string;
   }[];
   createdBy: mongoose.Types.ObjectId;
@@ -29,6 +30,11 @@ const paymentHistorySchema = new Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['cash', 'click', 'card'],
+    default: 'cash'
   },
   notes: {
     type: String,
