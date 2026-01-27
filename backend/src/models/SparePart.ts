@@ -2,13 +2,16 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface ISparePart extends Document {
   name: string;
-  price: number;
+  costPrice: number; // O'zini narxi (sotib olingan narx)
+  sellingPrice: number; // Sotish narxi
+  price: number; // Deprecated - eski tizim uchun
   quantity: number;
   supplier: string;
   usageCount: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  profit?: number; // Virtual field - foyda (sellingPrice - costPrice)
 }
 
 const sparePartSchema = new Schema<ISparePart>({
@@ -18,10 +21,22 @@ const sparePartSchema = new Schema<ISparePart>({
     trim: true,
     index: true
   },
-  price: {
+  costPrice: {
     type: Number,
     required: true,
     min: 0
+  },
+  sellingPrice: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  price: {
+    type: Number,
+    min: 0,
+    default: function() {
+      return this.sellingPrice || 0; // Backward compatibility
+    }
   },
   quantity: {
     type: Number,
@@ -43,7 +58,14 @@ const sparePartSchema = new Schema<ISparePart>({
     default: true
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual field - foyda hisoblash
+sparePartSchema.virtual('profit').get(function() {
+  return this.sellingPrice - this.costPrice;
 });
 
 // Text search index

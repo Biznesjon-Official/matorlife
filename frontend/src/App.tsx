@@ -111,11 +111,12 @@ function DashboardRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Master uchun Cashier, Apprentice uchun Dashboard
+  // Agar master bo'lsa, master dashboard ga yo'naltirish
   if (user.role === 'master') {
-    return <Navigate to="/app/master/cashier" replace />;
+    return <Navigate to="/app/master/dashboard" replace />;
   }
 
+  // Agar apprentice bo'lsa, dashboard ko'rsatish
   return <>{children}</>;
 }
 

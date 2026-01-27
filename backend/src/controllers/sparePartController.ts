@@ -80,7 +80,7 @@ export const getSparePartById = async (req: AuthRequest, res: Response) => {
 
 export const createSparePart = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, price, quantity = 1, supplier = 'Noma\'lum' } = req.body;
+    const { name, costPrice, sellingPrice, price, quantity = 1, supplier = 'Noma\'lum' } = req.body;
 
     // Check if spare part with same name already exists
     const existingSparePart = await SparePart.findOne({ 
@@ -97,7 +97,9 @@ export const createSparePart = async (req: AuthRequest, res: Response) => {
 
     const sparePart = new SparePart({
       name: name.trim(),
-      price,
+      costPrice: costPrice || price, // Backward compatibility
+      sellingPrice: sellingPrice || price, // Backward compatibility
+      price: sellingPrice || price, // Deprecated field
       quantity,
       supplier: supplier.trim()
     });
@@ -116,7 +118,7 @@ export const createSparePart = async (req: AuthRequest, res: Response) => {
 
 export const updateSparePart = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, price, quantity, supplier } = req.body;
+    const { name, costPrice, sellingPrice, price, quantity, supplier } = req.body;
     
     const sparePart = await SparePart.findById(req.params.id);
     
@@ -141,7 +143,16 @@ export const updateSparePart = async (req: AuthRequest, res: Response) => {
 
     // Update fields
     if (name) sparePart.name = name.trim();
-    if (price !== undefined) sparePart.price = price;
+    if (costPrice !== undefined) sparePart.costPrice = costPrice;
+    if (sellingPrice !== undefined) sparePart.sellingPrice = sellingPrice;
+    if (price !== undefined) {
+      // Backward compatibility - if only price is provided
+      if (costPrice === undefined && sellingPrice === undefined) {
+        sparePart.costPrice = price;
+        sparePart.sellingPrice = price;
+      }
+      sparePart.price = sellingPrice || price;
+    }
     if (quantity !== undefined) sparePart.quantity = quantity;
     if (supplier) sparePart.supplier = supplier.trim();
 
@@ -193,4 +204,3 @@ export const incrementUsage = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-

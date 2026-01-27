@@ -6,6 +6,9 @@ interface SparePart {
   _id: string;
   name: string;
   price: number;
+  costPrice?: number; // O'zini narxi
+  sellingPrice?: number; // Sotish narxi
+  profit?: number; // Foyda (virtual field)
   quantity: number;
   supplier: string;
   usageCount: number;
@@ -78,7 +81,7 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-100">
               <div className="flex items-center gap-3 mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500">
@@ -88,18 +91,6 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
               </div>
               <p className="text-2xl font-bold text-blue-900">
                 {sparePart.quantity} {t('dona', language)}
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500">
-                  <DollarSign className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-green-600 uppercase">{t('Narx', language)}</span>
-              </div>
-              <p className="text-2xl font-bold text-green-900">
-                {sparePart.price.toLocaleString()} {t("so'm", language)}
               </p>
             </div>
 
@@ -116,12 +107,61 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
             </div>
           </div>
 
+          {/* Narxlar Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500">
+                  <DollarSign className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-orange-600 uppercase">{t("O'zini narxi", language)}</span>
+              </div>
+              <p className="text-2xl font-bold text-orange-900">
+                {(sparePart.costPrice || sparePart.price).toLocaleString()} {t("so'm", language)}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500">
+                  <DollarSign className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-green-600 uppercase">{t('Sotish narxi', language)}</span>
+              </div>
+              <p className="text-2xl font-bold text-green-900">
+                {(sparePart.sellingPrice || sparePart.price).toLocaleString()} {t("so'm", language)}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500">
+                  <TrendingUp className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-emerald-600 uppercase">{t('Foyda', language)}</span>
+              </div>
+              <p className="text-2xl font-bold text-emerald-900">
+                {(sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))).toLocaleString()} {t("so'm", language)}
+              </p>
+            </div>
+          </div>
+
           {/* Total Value */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-indigo-600 uppercase">{t('Jami qiymat', language)}</span>
+              <span className="text-sm font-semibold text-indigo-600 uppercase">{t('Jami qiymat (sotish)', language)}</span>
               <span className="text-2xl font-bold text-indigo-900">
-                {(sparePart.price * sparePart.quantity).toLocaleString()} {t("so'm", language)}
+                {((sparePart.sellingPrice || sparePart.price) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
+              </span>
+            </div>
+          </div>
+
+          {/* Total Profit */}
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-emerald-600 uppercase">{t('Jami foyda', language)}</span>
+              <span className="text-2xl font-bold text-emerald-900">
+                {((sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
               </span>
             </div>
           </div>

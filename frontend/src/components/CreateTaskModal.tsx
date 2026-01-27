@@ -210,8 +210,14 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
       onClose();
     } catch (error: any) {
       console.error('❌ Frontend xatolik:', error);
+      console.error('❌ Response data:', error.response?.data);
+      console.error('❌ Request data:', error.config?.data);
+      
       const errorMessage = error.response?.data?.message || error.message || 'Vazifalarni yaratishda xatolik yuz berdi';
-      const errorDetails = error.response?.data?.error || '';
+      const errorDetails = error.response?.data?.errors 
+        ? JSON.stringify(error.response.data.errors, null, 2)
+        : error.response?.data?.error || '';
+      
       alert(`${errorMessage}\n\n${errorDetails}`);
     }
   };

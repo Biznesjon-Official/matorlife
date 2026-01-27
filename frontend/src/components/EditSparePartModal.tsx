@@ -34,6 +34,10 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
+    costPrice: '',
+    costPriceDisplay: '',
+    sellingPrice: '',
+    sellingPriceDisplay: '',
     price: '',
     priceDisplay: '', // Formatli ko'rsatish uchun
     quantity: '',
@@ -45,8 +49,19 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
   useEffect(() => {
     if (sparePart) {
       const priceFormatted = formatNumber(sparePart.price.toString());
+      // @ts-ignore - costPrice va sellingPrice yangi maydonlar
+      const costPriceFormatted = formatNumber((sparePart.costPrice || sparePart.price).toString());
+      // @ts-ignore
+      const sellingPriceFormatted = formatNumber((sparePart.sellingPrice || sparePart.price).toString());
+      
       setFormData({
         name: sparePart.name,
+        // @ts-ignore
+        costPrice: (sparePart.costPrice || sparePart.price).toString(),
+        costPriceDisplay: costPriceFormatted,
+        // @ts-ignore
+        sellingPrice: (sparePart.sellingPrice || sparePart.price).toString(),
+        sellingPriceDisplay: sellingPriceFormatted,
         price: sparePart.price.toString(),
         priceDisplay: priceFormatted,
         quantity: sparePart.quantity.toString(),
@@ -64,9 +79,38 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
       newErrors.name = t("Nom kamida 2 ta belgidan iborat bo'lishi kerak", language);
     }
 
-    if (!formData.price || Number(formData.price) <= 0) {
-      newErrors.price = t("Narx majburiy va 0 dan katta bo'lishi kerak", language);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (formData.name.length < 2) {
+      newErrors.name = t("Nom kamida 2 ta belgidan iborat bo'lishi kerak", language);
     }
+
+    // Kamida bitta narx kiritilishi kerak
+    if ((!formData.costPrice || Number(formData.costPrice) <= 0) && 
+        (!formData.sellingPrice || Number(formData.sellingPrice) <= 0)) {
+      newErrors.costPrice = t("Kamida bitta narx kiritilishi kerak", language);
+      newErrors.sellingPrice = t("Kamida bitta narx kiritilishi kerak", language);
+    }
+
+    // Agar ikkala narx ham kiritilgan bo'lsa, sotish narxi o'zini narxidan kichik bo'lmasligi kerak
+    if (formData.costPrice && formData.sellingPrice && 
+        Number(formData.costPrice) > 0 && Number(formData.sellingPrice) > 0 &&
+        Number(formData.sellingPrice) < Number(formData.costPrice)) {
+      newErrors.sellingPrice = t("Sotish narxi o'zini narxidan kichik bo'lmasligi kerak", language);
+    }
+
+    if (!formData.quantity || Number(formData.quantity) < 0) {
+      newErrors.quantity = t("Miqdor majburiy va 0 dan kichik bo'lmasligi kerak", language);
+    }
+
+    if (formData.supplier.length < 2) {
+      newErrors.supplier = t("Kimdan olingani kamida 2 ta belgidan iborat bo'lishi kerak", language);
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
     if (!formData.quantity || Number(formData.quantity) < 0) {
       newErrors.quantity = t("Miqdor majburiy va 0 dan kichik bo'lmasligi kerak", language);
@@ -90,9 +134,15 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
     setLoading(true);
 
     try {
+      // Agar faqat bitta narx kiritilgan bo'lsa, ikkinchisini avtomatik to'ldirish
+      const costPrice = Number(formData.costPrice) || Number(formData.sellingPrice);
+      const sellingPrice = Number(formData.sellingPrice) || Number(formData.costPrice);
+
       await api.put(`/spare-parts/${sparePart._id}`, {
         name: formData.name,
-        price: Number(formData.price),
+        costPrice: costPrice,
+        sellingPrice: sellingPrice,
+        price: sellingPrice, // Backward compatibility
         quantity: Number(formData.quantity),
         supplier: formData.supplier
       });
@@ -111,8 +161,28 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    if (name === 'price') {
-      // Pul formatini boshqarish
+    if (name === 'costPrice') {
+      // O'zini narxi formatini boshqarish
+      const formatted = formatNumber(value);
+      const numericValue = parseFormattedNumber(formatted);
+      
+      setFormData(prev => ({
+        ...prev,
+        costPrice: numericValue.toString(),
+        costPriceDisplay: formatted
+      }));
+    } else if (name === 'sellingPrice') {
+      // Sotish narxi formatini boshqarish
+      const formatted = formatNumber(value);
+      const numericValue = parseFormattedNumber(formatted);
+      
+      setFormData(prev => ({
+        ...prev,
+        sellingPrice: numericValue.toString(),
+        sellingPriceDisplay: formatted
+      }));
+    } else if (name === 'price') {
+      // Pul formatini boshqarish (deprecated)
       const formatted = formatNumber(value);
       const numericValue = parseFormattedNumber(formatted);
       
@@ -184,30 +254,72 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('Narx', language)} ({t("so'm", language)}) *
-            </label>
-            <input
-              type="text"
-              name="price"
-              required
-              value={formData.priceDisplay}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
-                errors.price 
-                  ? 'border-red-300 focus:border-red-500' 
-                  : 'border-gray-200 focus:border-purple-500'
-              }`}
-              placeholder="1,000,000"
-            />
-            {errors.price && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {errors.price}
-              </p>
-            )}
+          {/* O'zini narxi va Sotish narxi */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            {/* O'zini narxi */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("O'zini narxi", language)} ({t("so'm", language)})
+              </label>
+              <input
+                type="text"
+                name="costPrice"
+                value={formData.costPriceDisplay}
+                onChange={handleChange}
+                autoComplete="off"
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                  errors.costPrice 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-purple-500'
+                }`}
+                placeholder="800,000"
+              />
+              {errors.costPrice && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.costPrice}
+                </p>
+              )}
+            </div>
+
+            {/* Sotish narxi */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t('Sotish narxi', language)} ({t("so'm", language)})
+              </label>
+              <input
+                type="text"
+                name="sellingPrice"
+                value={formData.sellingPriceDisplay}
+                onChange={handleChange}
+                autoComplete="off"
+                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                  errors.sellingPrice 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-purple-500'
+                }`}
+                placeholder="1,000,000"
+              />
+              {errors.sellingPrice && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.sellingPrice}
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* Foyda ko'rsatish */}
+          {formData.costPrice && formData.sellingPrice && Number(formData.sellingPrice) >= Number(formData.costPrice) && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-green-800">{t('Foyda', language)}:</span>
+                <span className="text-lg font-bold text-green-600">
+                  {formatNumber((Number(formData.sellingPrice) - Number(formData.costPrice)).toString())} {t("so'm", language)}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

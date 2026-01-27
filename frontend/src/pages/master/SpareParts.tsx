@@ -10,6 +10,9 @@ interface SparePart {
   _id: string;
   name: string;
   price: number;
+  costPrice?: number; // O'zini narxi
+  sellingPrice?: number; // Sotish narxi
+  profit?: number; // Foyda
   quantity: number;
   supplier: string;
   usageCount: number;
@@ -115,7 +118,8 @@ const SpareParts: React.FC = () => {
   };
 
   const lowStockCount = spareParts.filter(p => p.quantity <= 3).length;
-  const totalValue = spareParts.reduce((sum, p) => sum + (p.price * p.quantity), 0);
+  const totalValue = spareParts.reduce((sum, p) => sum + ((p.sellingPrice || p.price) * p.quantity), 0);
+  const totalProfit = spareParts.reduce((sum, p) => sum + ((p.profit || ((p.sellingPrice || p.price) - (p.costPrice || p.price))) * p.quantity), 0);
   const totalQuantity = spareParts.reduce((sum, p) => sum + p.quantity, 0);
 
   // Rang kodlash tizimi
@@ -209,7 +213,7 @@ const SpareParts: React.FC = () => {
         </div>
 
         {/* Mobile-Optimized Stats Cards */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-6 lg:grid-cols-5">
           <div className="relative overflow-hidden rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-6 border border-blue-200 hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
             <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
               <div className="mb-2 sm:mb-0">
@@ -255,6 +259,20 @@ const SpareParts: React.FC = () => {
                 </p>
               </div>
               <div className="flex h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 items-center justify-center rounded-lg sm:rounded-xl bg-green-500 shadow-lg">
+                <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-50 to-teal-100 p-3 sm:p-6 border border-emerald-200 hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
+            <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+              <div className="mb-2 sm:mb-0">
+                <p className="text-xs font-medium text-emerald-600 mb-1">{t('Foyda', language)}</p>
+                <p className="text-sm sm:text-lg lg:text-xl font-bold text-emerald-900">
+                  {totalProfit.toLocaleString()}
+                </p>
+              </div>
+              <div className="flex h-8 w-8 sm:h-12 sm:w-12 lg:h-14 lg:w-14 items-center justify-center rounded-lg sm:rounded-xl bg-emerald-500 shadow-lg">
                 <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-white" />
               </div>
             </div>
@@ -318,7 +336,11 @@ const SpareParts: React.FC = () => {
           <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {filteredParts.map((part) => {
               const stockStatus = getStockStatus(part.quantity);
-              const totalValue = part.price * part.quantity;
+              const costPrice = part.costPrice || part.price;
+              const sellingPrice = part.sellingPrice || part.price;
+              const profit = part.profit || (sellingPrice - costPrice);
+              const totalValue = sellingPrice * part.quantity;
+              const totalProfit = profit * part.quantity;
               const StatusIcon = stockStatus.icon;
               
               return (
@@ -368,13 +390,37 @@ const SpareParts: React.FC = () => {
                         <p className="text-xs text-gray-500 sm:hidden">{t('dona', language)}</p>
                       </div>
                       
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-orange-100">
+                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                          <span className="text-xs font-semibold text-orange-600 uppercase hidden sm:inline">{t("O'zini", language)}</span>
+                        </div>
+                        <p className="text-sm sm:text-lg font-bold text-orange-900 truncate">
+                          {costPrice.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-green-100">
                         <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
                           <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                          <span className="text-xs font-semibold text-green-600 uppercase hidden sm:inline">{t('Narx', language)}</span>
+                          <span className="text-xs font-semibold text-green-600 uppercase hidden sm:inline">{t('Sotish', language)}</span>
                         </div>
                         <p className="text-sm sm:text-lg font-bold text-green-900 truncate">
-                          {part.price.toLocaleString()}
+                          {sellingPrice.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-emerald-100">
+                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
+                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
+                          <span className="text-xs font-semibold text-emerald-600 uppercase hidden sm:inline">{t('Foyda', language)}</span>
+                        </div>
+                        <p className="text-sm sm:text-lg font-bold text-emerald-900 truncate">
+                          {profit.toLocaleString()}
                         </p>
                         <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
                       </div>
@@ -386,6 +432,16 @@ const SpareParts: React.FC = () => {
                         <span className="text-xs font-semibold text-purple-600 uppercase">{t('Jami qiymat', language)}</span>
                         <span className="text-sm sm:text-lg font-bold text-purple-900">
                           {totalValue.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Total Profit */}
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-emerald-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-emerald-600 uppercase">{t('Jami foyda', language)}</span>
+                        <span className="text-sm sm:text-lg font-bold text-emerald-900">
+                          {totalProfit.toLocaleString()}
                         </span>
                       </div>
                     </div>

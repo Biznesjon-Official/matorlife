@@ -5,8 +5,10 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map(err => `${err.msg}`).join(', ');
+    
     return res.status(400).json({
-      message: 'Validation failed',
+      message: `Validation failed: ${errorMessages}`,
       errors: errors.array(),
       receivedData: req.body
     });
