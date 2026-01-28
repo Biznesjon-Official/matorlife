@@ -94,9 +94,11 @@ const debtSchema = new Schema<IDebt>({
 });
 
 debtSchema.pre('save', function(next) {
+  // paymentHistory dan totalPaid ni hisoblash
   const totalPaid = this.paymentHistory.reduce((sum, payment) => sum + payment.amount, 0);
   this.paidAmount = totalPaid;
   
+  // Status ni avtomatik yangilash
   if (this.paidAmount >= this.amount) {
     this.status = 'paid';
   } else if (this.paidAmount > 0) {
@@ -104,6 +106,8 @@ debtSchema.pre('save', function(next) {
   } else {
     this.status = 'pending';
   }
+  
+  console.log(`💾 Qarz saqlanmoqda: ${this.creditorName} - Jami: ${this.amount}, To'langan: ${this.paidAmount}, Status: ${this.status}`);
   
   next();
 });

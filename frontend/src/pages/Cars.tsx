@@ -4,7 +4,9 @@ import CreateCarModal from '@/components/CreateCarModal';
 import ViewCarModal from '@/components/ViewCarModal';
 import EditCarStepModal from '@/components/EditCarStepModal';
 import DeleteCarModal from '@/components/DeleteCarModal';
-import { Plus, Search, Car as CarIcon, Eye, Edit, Trash2, Phone, Calendar, Package2, DollarSign, Filter } from 'lucide-react';
+import CarPaymentModal from '@/components/CarPaymentModal';
+import RestoreCarModal from '@/components/RestoreCarModal';
+import { Plus, Search, Car as CarIcon, Eye, Edit, Trash2, Phone, Package2, DollarSign, Filter, CheckCircle, RotateCcw } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Car } from '@/types';
 import { t } from '@/lib/transliteration';
@@ -12,11 +14,14 @@ import { t } from '@/lib/transliteration';
 const Cars: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [activeTab, setActiveTab] = useState<'active' | 'archive'>('active');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -30,6 +35,15 @@ const Cars: React.FC = () => {
   });
 
   const cars = (carsData as any)?.cars || [];
+  
+  // Mashinalarni faol va arxiv bo'yicha filtrlash
+  // Faol: o'chirilmagan va to'lanmagan
+  // Arxiv: o'chirilgan yoki to'liq to'langan
+  const activeCars = cars.filter((car: Car) => !car.isDeleted && car.paymentStatus !== 'paid');
+  const archivedCars = cars.filter((car: Car) => car.isDeleted || car.paymentStatus === 'paid');
+  
+  // Hozirgi tab bo'yicha mashinalarni ko'rsatish
+  const displayedCars = activeTab === 'active' ? activeCars : archivedCars;
 
   const handleViewCar = (car: Car) => {
     setSelectedCar(car);
@@ -46,6 +60,11 @@ const Cars: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
+  const handlePayment = (car: Car) => {
+    setSelectedCar(car);
+    setIsPaymentModalOpen(true);
+  };
+
   const handleEditFromView = () => {
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -55,11 +74,18 @@ const Cars: React.FC = () => {
     setIsViewModalOpen(false);
     setIsDeleteModalOpen(true);
   };
+  
+  const handleRestoreCar = (car: Car) => {
+    setSelectedCar(car);
+    setIsRestoreModalOpen(true);
+  };
 
   const closeAllModals = () => {
     setIsViewModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
+    setIsPaymentModalOpen(false);
+    setIsRestoreModalOpen(false);
     setSelectedCar(null);
   };
 
@@ -130,7 +156,7 @@ const Cars: React.FC = () => {
               <div className="text-center sm:text-left">
                 <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 tracking-tight">{t("Avtomobillar", language)}</h1>
                 <p className="text-blue-100 text-xs sm:text-base lg:text-lg">
-                  {cars.length} ta avtomobil
+                  {activeTab === 'active' ? activeCars.length : archivedCars.length} ta avtomobil
                 </p>
               </div>
             </div>
@@ -182,6 +208,48 @@ const Cars: React.FC = () => {
           </div>
         </div>
 
+        {/* Tabs - Faol va Arxiv - Compact Right */}
+        <div className="flex justify-end">
+          <div className="inline-flex bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-gray-200/50 p-0.5">
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                activeTab === 'active'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <CarIcon className="h-3.5 w-3.5" />
+                <span>{t('Faol', language)}</span>
+                <span className={`px-1 py-0.5 rounded text-[10px] font-bold ${
+                  activeTab === 'active' ? 'bg-white/20' : 'bg-blue-50 text-blue-600'
+                }`}>
+                  {activeCars.length}
+                </span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('archive')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                activeTab === 'archive'
+                  ? 'bg-green-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Package2 className="h-3.5 w-3.5" />
+                <span>{t('Arxiv', language)}</span>
+                <span className={`px-1 py-0.5 rounded text-[10px] font-bold ${
+                  activeTab === 'archive' ? 'bg-white/20' : 'bg-green-50 text-green-600'
+                }`}>
+                  {archivedCars.length}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Cars Grid */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 sm:py-20">
@@ -191,28 +259,160 @@ const Cars: React.FC = () => {
             </div>
             <p className="mt-4 sm:mt-6 text-gray-600 font-medium text-sm sm:text-base">{t("Mashinalar yuklanmoqda...", language)}</p>
           </div>
-        ) : cars.length === 0 ? (
+        ) : displayedCars.length === 0 ? (
           <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
             <div className="max-w-md mx-auto">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <CarIcon className="h-8 w-8 sm:h-12 sm:w-12 text-blue-600" />
               </div>
-              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t("Mashinalar topilmadi", language)}</h3>
+              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">
+                {activeTab === 'active' ? t("Faol mashinalar topilmadi", language) : t("Arxivda mashinalar yo'q", language)}
+              </h3>
               <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base px-4 sm:px-0">
-                {t("Tizimga birinchi mashinani qo'shishdan boshlang va ta'mirlash jarayonini boshqaring.", language)}
+                {activeTab === 'active' 
+                  ? t("Tizimga birinchi mashinani qo'shishdan boshlang va ta'mirlash jarayonini boshqaring.", language)
+                  : t("To'liq to'langan mashinalar avtomatik arxivga o'tkaziladi.", language)
+                }
               </p>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
-              >
-                <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                {t("Birinchi mashinani qo'shish", language)}
-              </button>
+              {activeTab === 'active' && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+                >
+                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  {t("Birinchi mashinani qo'shish", language)}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : activeTab === 'archive' ? (
+          // Arxiv - Ro'yxat ko'rinishi
+          <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-green-50 to-emerald-50 border-b-2 border-green-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Egasi", language)}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Mashina", language)}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Raqam", language)}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Telefon", language)}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Narx", language)}
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-green-700 uppercase tracking-wider">
+                      {t("Amallar", language)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {displayedCars.map((car: Car) => {
+                    const partsTotal = (car.parts || []).reduce((sum, part) => sum + (part.quantity * part.price), 0);
+                    const serviceItemsTotal = ((car as any).serviceItems || []).reduce((sum: number, item: any) => sum + (item.quantity * item.price), 0);
+                    const calculatedTotal = partsTotal + serviceItemsTotal;
+                    const displayTotal = car.totalEstimate || calculatedTotal;
+                    
+                    return (
+                      <tr key={car._id} className={`hover:bg-green-50 transition-colors ${car.isDeleted ? 'bg-red-50/30' : ''}`}>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center">
+                            <div className={`flex-shrink-0 h-10 w-10 ${car.isDeleted ? 'bg-gradient-to-br from-red-100 to-pink-100' : 'bg-gradient-to-br from-green-100 to-emerald-100'} rounded-full flex items-center justify-center`}>
+                              <span className={`${car.isDeleted ? 'text-red-700' : 'text-green-700'} font-bold text-sm`}>
+                                {car.ownerName.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-semibold text-gray-900">{car.ownerName}</p>
+                              {car.isDeleted && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                  {t("O'chirilgan", language)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center">
+                            <CarIcon className="h-5 w-5 text-gray-400 mr-2" />
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {car.make} {car.carModel}
+                              </p>
+                              <p className="text-xs text-gray-500">{car.year}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                            {car.licensePlate}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="h-4 w-4 mr-1.5 text-gray-400" />
+                            {car.ownerPhone}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-sm font-bold text-green-600">
+                            {formatCurrency(displayTotal)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => handleViewCar(car)}
+                              className="inline-flex items-center px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 font-medium group"
+                              title={t("Ko'rish", language)}
+                            >
+                              <Eye className="h-4 w-4 mr-1.5 group-hover:scale-110 transition-transform" />
+                              <span className="text-sm">{t("Ko'rish", language)}</span>
+                            </button>
+                            {car.isDeleted && (
+                              <button
+                                onClick={() => handleRestoreCar(car)}
+                                className="inline-flex items-center px-3 py-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-all duration-200 font-medium group"
+                                title={t("Qaytarish", language)}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-1.5 group-hover:rotate-180 transition-transform duration-500" />
+                                <span className="text-sm">{t("Qaytarish", language)}</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Arxiv statistikasi */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-t border-green-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-semibold text-green-700">
+                    {t("Jami arxivlangan", language)}: {displayedCars.length} ta
+                  </span>
+                </div>
+                <div className="text-sm text-green-600">
+                  {t("To'liq to'langan mashinalar", language)}
+                </div>
+              </div>
             </div>
           </div>
         ) : (
+          // Faol mashinalar - Karta ko'rinishi
           <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {cars.map((car: Car) => {
+            {displayedCars.map((car: Car) => {
               const statusConfig = getStatusConfig(car.status);
               
               // Narxni hisoblash (fallback sifatida)
@@ -228,34 +428,28 @@ const Cars: React.FC = () => {
                   key={car._id}
                   className="group relative bg-white rounded-lg sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1"
                 >
-                  {/* Status Badge - Top Right */}
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
-                    <div className={`${statusConfig.bg} ${statusConfig.border} border px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1 sm:space-x-2 shadow-sm`}>
-                      <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${statusConfig.dot} animate-pulse`}></div>
-                      <span className={`text-xs font-semibold ${statusConfig.text} hidden sm:inline`}>
-                        {getStatusText(car.status)}
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Card Header */}
                   <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 p-3 sm:p-6 pb-4 sm:pb-8">
-                    <div className="flex items-start space-x-2 sm:space-x-4">
-                      <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg">
-                        <CarIcon className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-xl font-bold text-white mb-1 truncate">
-                          {car.make} {car.carModel}
-                        </h3>
-                        <div className="flex items-center space-x-2 text-blue-100">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="text-xs sm:text-sm font-medium">{car.year}</span>
-                          </div>
-                          <span className="text-blue-300 text-xs">•</span>
-                          <span className="text-xs sm:text-sm font-bold tracking-wider truncate">{car.licensePlate}</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-2 sm:space-x-4 flex-1 min-w-0">
+                        <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg flex-shrink-0">
+                          <CarIcon className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-xl font-bold text-white mb-1 break-words">
+                            {car.make} {car.carModel} {car.year}
+                          </h3>
+                          <div className="flex items-center text-blue-100">
+                            <span className="text-xs sm:text-sm font-bold tracking-wider">{car.licensePlate}</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Status Badge - Extra Compact */}
+                      <div className={`${statusConfig.bg} ${statusConfig.border} border px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md flex items-center space-x-1 shadow-sm flex-shrink-0 self-start`}>
+                        <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${statusConfig.dot} animate-pulse`}></div>
+                        <span className={`text-[9px] sm:text-[10px] font-bold ${statusConfig.text} uppercase tracking-wide whitespace-nowrap`}>
+                          {getStatusText(car.status)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -267,10 +461,10 @@ const Cars: React.FC = () => {
                       <div className="flex items-center justify-between mb-1 sm:mb-2">
                         <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("Egasi", language)}</span>
                       </div>
-                      <p className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2 truncate">{car.ownerName}</p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900 mb-1 sm:mb-2">{car.ownerName}</p>
                       <div className="flex items-center space-x-2 text-gray-600">
                         <Phone className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                        <span className="text-xs sm:text-sm font-medium truncate">{car.ownerPhone}</span>
+                        <span className="text-xs sm:text-sm font-medium">{car.ownerPhone}</span>
                       </div>
                     </div>
 
@@ -307,6 +501,16 @@ const Cars: React.FC = () => {
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                         <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
                       </button>
+                      {displayTotal > 0 && car.status !== 'delivered' && (
+                        <button 
+                          onClick={() => handlePayment(car)}
+                          className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
+                          title={t("To'lov", language)}
+                        >
+                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs sm:text-sm">{t("To'lov", language)}</span>
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleEditCar(car)}
                         className="p-2 sm:p-2.5 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
@@ -354,6 +558,22 @@ const Cars: React.FC = () => {
           
           <DeleteCarModal
             isOpen={isDeleteModalOpen}
+            onClose={closeAllModals}
+            car={selectedCar}
+          />
+          
+          <CarPaymentModal
+            isOpen={isPaymentModalOpen}
+            onClose={closeAllModals}
+            car={selectedCar}
+            onSuccess={() => {
+              // Refresh cars data
+              window.location.reload();
+            }}
+          />
+          
+          <RestoreCarModal
+            isOpen={isRestoreModalOpen}
             onClose={closeAllModals}
             car={selectedCar}
           />

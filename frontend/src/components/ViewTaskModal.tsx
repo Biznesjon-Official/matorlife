@@ -95,21 +95,55 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ isOpen, onClose, task }) 
 
           {/* Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* Assigned To */}
+            {/* Assigned To - Ko'p shogirdlar uchun */}
             <div className="bg-blue-50 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-blue-100">
               <div className="flex items-center gap-2 mb-2">
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
-                <span className="text-xs sm:text-sm font-semibold text-blue-900">Shogird</span>
+                <span className="text-xs sm:text-sm font-semibold text-blue-900">
+                  {task.assignments && task.assignments.length > 0 ? 'Shogirdlar' : 'Shogird'}
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm">
-                  {task.assignedTo.name.charAt(0).toUpperCase()}
+              {task.assignments && task.assignments.length > 0 ? (
+                <div className="space-y-2">
+                  {task.assignments.map((assignment: any, idx: number) => (
+                    <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-lg">
+                      <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0">
+                        {assignment.apprentice?.name?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 text-sm truncate">{assignment.apprentice?.name || 'Noma\'lum'}</p>
+                        {assignment.earning > 0 && (
+                          <p className="text-xs text-green-600 font-semibold">
+                            💰 {assignment.earning.toLocaleString()} so'm ({assignment.percentage}%)
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {/* Umumiy pul */}
+                  <div className="bg-green-100 p-2 rounded-lg border-2 border-green-300">
+                    <p className="text-xs font-semibold text-green-800">Jami shogirdlar ulushi:</p>
+                    <p className="text-lg font-bold text-green-900">
+                      💰 {task.assignments.reduce((sum: number, a: any) => sum + (a.earning || 0), 0).toLocaleString()} so'm
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{task.assignedTo.name}</p>
-                  <p className="text-xs text-gray-600 truncate">@{task.assignedTo.username}</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm">
+                    {task.assignedTo?.name?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{task.assignedTo?.name || 'Noma\'lum'}</p>
+                    <p className="text-xs text-gray-600 truncate">@{task.assignedTo?.username || 'username'}</p>
+                    {task.apprenticeEarning && task.apprenticeEarning > 0 && (
+                      <p className="text-xs text-green-600 font-semibold mt-1">
+                        💰 {task.apprenticeEarning.toLocaleString()} so'm
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Car */}

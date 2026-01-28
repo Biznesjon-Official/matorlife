@@ -12,7 +12,8 @@ import {
   restartService,
   addServiceItem,
   updateServiceItem,
-  removeServiceItem
+  removeServiceItem,
+  addCarServicePayment
 } from '../controllers/carServiceController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -58,6 +59,13 @@ router.patch('/:id/reject', authenticate, authorize('master'), [
 
 // Restart service (apprentice can restart rejected service)
 router.patch('/:id/restart', authenticate, restartService);
+
+// Add payment to service (master only)
+router.post('/:id/payment', authenticate, authorize('master'), [
+  body('amount').isFloat({ min: 0.01 }).withMessage('Payment amount must be greater than 0'),
+  body('paymentMethod').optional().isIn(['cash', 'card', 'click']).withMessage('Invalid payment method'),
+  handleValidationErrors
+], addCarServicePayment);
 
 // Service items routes
 router.post('/:serviceId/items', authenticate, authorize('master'), [

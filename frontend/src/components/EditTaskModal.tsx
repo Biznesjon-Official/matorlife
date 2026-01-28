@@ -25,6 +25,12 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
     payment: 0
   });
 
+  const [assignments, setAssignments] = useState<Array<{
+    apprenticeId: string;
+    percentage: number;
+    earning: number;
+  }>>([]);
+
   const [carServices, setCarServices] = useState<any[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
 
@@ -46,6 +52,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
         estimatedHours: task.estimatedHours || 1,
         payment: task.payment || 0
       });
+
+      // Assignments'ni yuklash
+      if (task.assignments && task.assignments.length > 0) {
+        setAssignments(task.assignments.map((a: any) => ({
+          apprenticeId: typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice,
+          percentage: a.percentage || 50,
+          earning: a.earning || 0
+        })));
+      } else {
+        setAssignments([]);
+      }
     }
   }, [task, isOpen]);
 
@@ -82,6 +99,49 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
     }
   }, [formData.service, carServices]);
 
+  // Payment o'zgarganda shogirdlar ulushini qayta hisoblash
+  useEffect(() => {
+    if (assignments.length > 0 && formData.payment > 0) {
+      const totalPayment = formData.payment;
+      const apprenticeCount = assignments.length;
+      const allocatedAmount = totalPayment / apprenticeCount;
+
+      setAssignments(prev => prev.map(a => ({
+        ...a,
+        earning: (allocatedAmount * a.percentage) / 100
+      })));
+    }
+  }, [formData.payment]);
+
+  const handleAddApprentice = () => {
+    setAssignments(prev => [...prev, {
+      apprenticeId: '',
+      percentage: 50,
+      earning: 0
+    }]);
+  };
+
+  const handleRemoveApprentice = (index: number) => {
+    setAssignments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleApprenticeChange = (index: number, field: 'apprenticeId' | 'percentage', value: string | number) => {
+    setAssignments(prev => {
+      const updated = [...prev];
+      if (field === 'percentage') {
+        updated[index].percentage = Number(value);
+        // Foiz o'zgarganda pulni qayta hisoblash
+        const totalPayment = formData.payment;
+        const apprenticeCount = assignments.length;
+        const allocatedAmount = totalPayment / apprenticeCount;
+        updated[index].earning = (allocatedAmount * Number(value)) / 100;
+      } else {
+        updated[index].apprenticeId = value as string;
+      }
+      return updated;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,15 +150,35 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       return;
     }
     
-    if (!formData.assignedTo || !formData.car || !formData.dueDate) {
+    if (!formData.car || !formData.dueDate) {
       alert('Barcha majburiy maydonlarni to\'ldiring');
+      return;
+    }
+
+    // Agar assignments bo'lsa, validatsiya
+    if (assignments.length > 0) {
+      const hasEmptyApprentice = assignments.some(a => !a.apprenticeId);
+      if (hasEmptyApprentice) {
+        alert('Barcha shogirdlarni tanlang yoki bo\'sh qatorlarni o\'chiring');
+        return;
+      }
+    } else if (!formData.assignedTo) {
+      alert('Kamida bitta shogird tanlang');
       return;
     }
     
     try {
+      const submitData: any = { ...formData };
+      
+      // Agar assignments bo'lsa, uni qo'shish
+      if (assignments.length > 0) {
+        submitData.assignments = assignments;
+        delete submitData.assignedTo; // Eski tizimni o'chirish
+      }
+
       await updateTaskMutation.mutateAsync({
         id: task!._id,
-        data: formData
+        data: submitData
       });
       onClose();
     } catch (error: any) {
@@ -138,6 +218,104 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
           </div>
 
           <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+            {/* Shogirdlar - Ko'p shogirdli tizim */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border-2 border-blue-200">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-xs sm:text-sm font-semibold text-blue-900">
+                  <User className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                  Shogirdlar *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddApprentice}
+                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                >
+                  + Qo'shish
+                </button>
+              </div>
+
+              {assignments.length > 0 ? (
+                <div className="space-y-2">
+                  {assignments.map((assignment, index) => (
+                    <div key={index} className="bg-white p-2 rounded-lg border border-blue-200">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        <div className="col-span-6">
+                          <select
+                            value={assignment.apprenticeId}
+                            onChange={(e) => handleApprenticeChange(index, 'apprenticeId', e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            required
+                          >
+                            <option value="">Tanlang</option>
+                            {(apprenticesData as any)?.users?.map((apprentice: any) => (
+                              <option key={apprentice._id} value={apprentice._id}>
+                                {apprentice.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-3">
+                          <input
+                            type="number"
+                            value={assignment.percentage}
+                            onChange={(e) => handleApprenticeChange(index, 'percentage', e.target.value)}
+                            min="0"
+                            max="100"
+                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            placeholder="%"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveApprentice(index)}
+                            className="w-full px-2 py-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                      {assignment.earning > 0 && (
+                        <p className="text-xs text-green-600 font-semibold mt-1 text-center">
+                          💰 {assignment.earning.toLocaleString()} so'm
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {/* Umumiy pul */}
+                  {formData.payment > 0 && (
+                    <div className="bg-green-100 p-2 rounded-lg border-2 border-green-300">
+                      <p className="text-xs font-semibold text-green-800">Jami shogirdlar ulushi:</p>
+                      <p className="text-base font-bold text-green-900">
+                        💰 {assignments.reduce((sum, a) => sum + a.earning, 0).toLocaleString()} so'm
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <select
+                    name="assignedTo"
+                    value={formData.assignedTo}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    required
+                  >
+                    <option value="">Bitta shogird tanlang</option>
+                    {(apprenticesData as any)?.users?.map((apprentice: any) => (
+                      <option key={apprentice._id} value={apprentice._id}>
+                        {apprentice.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-blue-700 mt-2">
+                    💡 Ko'p shogird qo'shish uchun "+ Qo'shish" tugmasini bosing
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Title */}
             <div>
               <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
@@ -171,28 +349,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
             </div>
 
             {/* Apprentice and Car */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <User className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
-                  Shogird *
-                </label>
-                <select
-                  name="assignedTo"
-                  value={formData.assignedTo}
-                  onChange={handleChange}
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  required
-                >
-                  <option value="">Tanlang</option>
-                  {(apprenticesData as any)?.users?.map((apprentice: any) => (
-                    <option key={apprentice._id} value={apprentice._id}>
-                      {apprentice.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 sm:gap-3">
               <div>
                 <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
                   <Car className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />

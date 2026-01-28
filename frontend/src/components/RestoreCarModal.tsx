@@ -1,18 +1,18 @@
 import React from 'react';
-import { X, AlertTriangle, Car as CarIcon } from 'lucide-react';
+import { X, RotateCcw, Car as CarIcon } from 'lucide-react';
 import { Car } from '@/types';
-import { useDeleteCar } from '@/hooks/useCars';
+import { useRestoreCar } from '@/hooks/useCars';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { t } from '@/lib/transliteration';
 
-interface DeleteCarModalProps {
+interface RestoreCarModalProps {
   isOpen: boolean;
   onClose: () => void;
   car: Car;
 }
 
-const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car }) => {
-  const deleteCarMutation = useDeleteCar();
+const RestoreCarModal: React.FC<RestoreCarModalProps> = ({ isOpen, onClose, car }) => {
+  const restoreCarMutation = useRestoreCar();
   
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -23,12 +23,12 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
   // Modal ochilganda body scroll ni bloklash
   useBodyScrollLock(isOpen);
 
-  const handleDelete = async () => {
+  const handleRestore = async () => {
     try {
-      await deleteCarMutation.mutateAsync(car._id);
+      await restoreCarMutation.mutateAsync(car._id);
       onClose();
     } catch (error) {
-      console.error('Error deleting car:', error);
+      console.error('Error restoring car:', error);
     }
   };
 
@@ -38,12 +38,12 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="bg-orange-600 px-6 py-5 flex items-center justify-between rounded-t-xl">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 flex items-center justify-between rounded-t-xl">
           <div className="flex items-center space-x-3">
             <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-white" />
+              <RotateCcw className="h-6 w-6 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white">{t("Arxivga o'tkazish", language)}</h2>
+            <h2 className="text-xl font-bold text-white">{t("Mashinani qaytarish", language)}</h2>
           </div>
           <button
             onClick={onClose}
@@ -57,8 +57,8 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
         <div className="p-6">
           <div className="flex items-start space-x-4 mb-6">
             <div className="flex-shrink-0">
-              <div className="bg-orange-100 rounded-full p-3">
-                <CarIcon className="h-6 w-6 text-orange-600" />
+              <div className="bg-green-100 rounded-full p-3">
+                <CarIcon className="h-6 w-6 text-green-600" />
               </div>
             </div>
             <div className="flex-1">
@@ -74,15 +74,15 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
+              <RotateCcw className="h-5 w-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-blue-900 mb-1">
-                  {t("Mashina arxivga o'tkaziladi", language)}
+                <p className="text-sm font-semibold text-green-900 mb-1">
+                  {t("Mashina faol mashinalarga qaytariladi", language)}
                 </p>
-                <p className="text-sm text-blue-800">
-                  {t("Mashina arxivda saqlanadi va kerak bo'lganda ko'rishingiz mumkin. Barcha ma'lumotlar saqlanib qoladi.", language)}
+                <p className="text-sm text-green-800">
+                  {t("Mashina arxivdan chiqariladi va faol mashinalar ro'yxatida ko'rinadi. Barcha ma'lumotlar saqlanib qoladi.", language)}
                 </p>
               </div>
             </div>
@@ -90,7 +90,7 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
 
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-700">
-              {t("Mashinani arxivga o'tkazmoqchimisiz?", language)}
+              {t("Mashinani faol mashinalarga qaytarishni xohlaysizmi?", language)}
             </p>
           </div>
         </div>
@@ -99,17 +99,17 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end space-x-3 rounded-b-xl">
           <button
             onClick={onClose}
-            disabled={deleteCarMutation.isPending}
+            disabled={restoreCarMutation.isPending}
             className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
           >
             {t('Bekor qilish', language)}
           </button>
           <button
-            onClick={handleDelete}
-            disabled={deleteCarMutation.isPending}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={handleRestore}
+            disabled={restoreCarMutation.isPending}
+            className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {deleteCarMutation.isPending ? t("Arxivga o'tkazilmoqda...", language) : t("Ha, arxivga o'tkazish", language)}
+            {restoreCarMutation.isPending ? t("Qaytarilmoqda...", language) : t("Ha, qaytarish", language)}
           </button>
         </div>
       </div>
@@ -117,4 +117,4 @@ const DeleteCarModal: React.FC<DeleteCarModalProps> = ({ isOpen, onClose, car })
   );
 };
 
-export default DeleteCarModal;
+export default RestoreCarModal;

@@ -204,3 +204,120 @@ export const incrementUsage = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Avtomobillarning "keltirish kerak" zapchastlarini olish
+export const getRequiredParts = async (req: AuthRequest, res: Response) => {
+  try {
+    const Car = require('../models/Car').default;
+    
+    // Barcha avtomobillarni olish va faqat "tobring" source'li qismlarni filter qilish
+    const cars = await Car.find({
+      'parts.source': 'tobring',
+      status: { $ne: 'delivered' } // Yetkazilgan avtomobillarni chiqarib tashlash
+    }).select('make carModel licensePlate ownerName ownerPhone parts status');
+
+    // Har bir avtomobilning "tobring" qismlarini ajratib olish
+    const requiredParts = cars.flatMap((car: any) => 
+      car.parts
+        .filter((part: any) => part.source === 'tobring')
+        .map((part: any) => ({
+          _id: part._id,
+          name: part.name,
+          price: part.price,
+          quantity: part.quantity,
+          status: part.status,
+          car: {
+            _id: car._id,
+            make: car.make,
+            carModel: car.carModel,
+            licensePlate: car.licensePlate,
+            ownerName: car.ownerName,
+            ownerPhone: car.ownerPhone,
+            status: car.status
+          }
+        }))
+    );
+
+    res.json({ requiredParts });
+  } catch (error: any) {
+    console.error('Error fetching required parts:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// "Keltirish kerak" qismni o'chirish
+export const removeRequiredPart = async (req: AuthRequest, res: Response) => {
+  try {
+    const { carId, partId } = req.params;
+    const Car = require('../models/Car').default;
+    
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    // Qismni o'chirish
+    car.parts = car.parts.filter((part: any) => part._id.toString() !== partId);
+    await car.save();
+
+    res.json({
+      message: 'Required part removed successfully',
+      car
+    });
+  } catch (error: any) {
+    console.error('Error removing required part:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// "Keltirish kerak" qismni ombordagi zapchastga qo'shish
+export const addRequiredPartToInventory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { carId, partId } = req.params;
+    const { supplier } = req.body;
+    const Car = require('../models/Car').default;
+    
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    // Qismni topish
+    const part = car.parts.find((p: any) => p._id.toString() === partId);
+    if (!part) {
+      return res.status(404).json({ message: 'Part not found' });
+    }
+
+    // Ombordagi zapchastlarni tekshirish - mavjud bo'lsa miqdorni oshirish
+    const existingSparePart = await SparePart.findOne({ name: part.name });
+    
+    if (existingSparePart) {
+      existingSparePart.quantity += part.quantity;
+      await existingSparePart.save();
+    } else {
+      // Yangi zapchast yaratish
+      const newSparePart = new SparePart({
+        name: part.name,
+        price: part.price,
+        costPrice: part.price,
+        sellingPrice: part.price,
+        quantity: part.quantity,
+        supplier: supplier || 'Client',
+        createdBy: req.user!._id
+      });
+      await newSparePart.save();
+    }
+
+    // Avtomobildan qismni o'chirish
+    car.parts = car.parts.filter((p: any) => p._id.toString() !== partId);
+    await car.save();
+
+    res.json({
+      message: 'Part added to inventory successfully',
+      car
+    });
+  } catch (error: any) {
+    console.error('Error adding part to inventory:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

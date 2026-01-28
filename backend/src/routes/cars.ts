@@ -9,7 +9,11 @@ import {
   updatePart,
   deletePart,
   deleteCar,
-  getCarServices
+  getCarServices,
+  getClientParts,
+  getArchivedCars,
+  restoreCar,
+  addCarPayment
 } from '../controllers/carController';
 import { authenticate } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -100,6 +104,12 @@ router.post('/', authenticate, [
 // Get cars
 router.get('/', authenticate, getCars);
 
+// Get archived cars
+router.get('/archived/list', authenticate, getArchivedCars);
+
+// Get client parts (keltirish kerak bo'lgan qismlar)
+router.get('/client-parts', authenticate, getClientParts);
+
 // Get car by ID
 router.get('/:id', authenticate, getCarById);
 
@@ -124,7 +134,17 @@ router.put('/:id/parts/:partId', authenticate, updatePart);
 // Delete part
 router.delete('/:id/parts/:partId', authenticate, deletePart);
 
+// Add payment to car
+router.post('/:id/payment', authenticate, [
+  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be greater than 0'),
+  body('paymentMethod').isIn(['cash', 'card', 'click']).withMessage('Invalid payment method'),
+  handleValidationErrors
+], addCarPayment);
+
 // Delete car
 router.delete('/:id', authenticate, deleteCar);
+
+// Restore car from archive
+router.post('/:id/restore', authenticate, restoreCar);
 
 export default router;

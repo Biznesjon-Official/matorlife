@@ -1,18 +1,40 @@
 @echo off
-echo Starting Mator Life Development Environment...
+echo ========================================
+echo   Mator Life - Development Server
+echo ========================================
 echo.
-echo Backend: http://localhost:4000
+
+REM Check if node_modules exists
+if not exist "node_modules\" (
+    echo Installing root dependencies...
+    call npm install
+)
+
+if not exist "backend\node_modules\" (
+    echo Installing backend dependencies...
+    cd backend
+    call npm install
+    cd ..
+)
+
+if not exist "frontend\node_modules\" (
+    echo Installing frontend dependencies...
+    cd frontend
+    call npm install
+    cd ..
+)
+
+echo.
+echo ========================================
+echo   Starting Development Servers...
+echo ========================================
+echo.
+echo Backend:  http://localhost:4000/api
 echo Frontend: http://localhost:5173
 echo.
-
-REM Start backend and frontend concurrently
-start "Backend Server" cmd /k "cd backend && npm run dev"
-timeout /t 3 /nobreak > nul
-start "Frontend Server" cmd /k "cd frontend && npm run dev"
-
+echo Press Ctrl+C to stop servers
+echo ========================================
 echo.
-echo Development servers are starting...
-echo Backend will be available at: http://localhost:4000/api
-echo Frontend will be available at: http://localhost:5173
-echo.
-pause
+
+REM Start both servers
+call npm run dev

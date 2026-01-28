@@ -18,11 +18,22 @@ export interface IUsedSparePart {
   totalPrice: number;
 }
 
+export interface IPayment {
+  _id?: mongoose.Types.ObjectId;
+  amount: number;
+  method: 'cash' | 'card' | 'click';
+  paidAt: Date;
+  paidBy?: mongoose.Types.ObjectId;
+}
+
 export interface ICarService extends Document {
   car: mongoose.Types.ObjectId;
   items: IServiceItem[];
   usedSpareParts: IUsedSparePart[];
   totalPrice: number;
+  paidAmount: number;
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  payments: IPayment[];
   status: 'pending' | 'in-progress' | 'ready-for-delivery' | 'rejected' | 'completed' | 'delivered';
   rejectionReason?: string;
   createdBy: mongoose.Types.ObjectId;
@@ -86,6 +97,27 @@ const serviceItemSchema = new Schema<IServiceItem>({
   }
 });
 
+const paymentSchema = new Schema<IPayment>({
+  amount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  method: {
+    type: String,
+    enum: ['cash', 'card', 'click'],
+    required: true
+  },
+  paidAt: {
+    type: Date,
+    default: Date.now
+  },
+  paidBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }
+});
+
 const carServiceSchema = new Schema<ICarService>({
   car: {
     type: Schema.Types.ObjectId,
@@ -99,6 +131,17 @@ const carServiceSchema = new Schema<ICarService>({
     default: 0,
     min: 0
   },
+  paidAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'partial', 'paid'],
+    default: 'pending'
+  },
+  payments: [paymentSchema],
   status: {
     type: String,
     enum: ['pending', 'in-progress', 'ready-for-delivery', 'rejected', 'completed', 'delivered'],

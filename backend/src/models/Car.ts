@@ -18,6 +18,15 @@ export interface IServiceItem {
   category: 'part' | 'material' | 'labor';
 }
 
+export interface IPayment {
+  _id?: mongoose.Types.ObjectId;
+  amount: number;
+  method: 'cash' | 'card' | 'click';
+  paidAt: Date;
+  paidBy?: mongoose.Types.ObjectId;
+  notes?: string;
+}
+
 export interface ICar extends Document {
   make: string;
   carModel: string;
@@ -28,7 +37,12 @@ export interface ICar extends Document {
   parts: IPart[];
   serviceItems: IServiceItem[];
   totalEstimate: number;
+  paidAmount: number;
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  payments: IPayment[];
   status: 'pending' | 'in-progress' | 'completed' | 'delivered';
+  isDeleted: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,6 +104,31 @@ const serviceItemSchema = new Schema<IServiceItem>({
   }
 });
 
+const paymentSchema = new Schema<IPayment>({
+  amount: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  method: {
+    type: String,
+    enum: ['cash', 'card', 'click'],
+    required: true
+  },
+  paidAt: {
+    type: Date,
+    default: Date.now
+  },
+  paidBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  notes: {
+    type: String,
+    trim: true
+  }
+});
+
 const carSchema = new Schema<ICar>({
   make: {
     type: String,
@@ -131,10 +170,28 @@ const carSchema = new Schema<ICar>({
     default: 0,
     min: 0
   },
+  paidAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'partial', 'paid'],
+    default: 'pending'
+  },
+  payments: [paymentSchema],
   status: {
     type: String,
     enum: ['pending', 'in-progress', 'completed', 'delivered'],
     default: 'pending'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date
   }
 }, {
   timestamps: true

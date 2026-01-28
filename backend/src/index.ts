@@ -169,7 +169,11 @@ const startServer = async () => {
     const HOST = process.env.HOST || '0.0.0.0';
     
     server = app.listen(PORT, HOST, () => {
-      // Server started successfully
+      console.log('🚀 Server ishga tushdi!');
+      console.log(`📡 Port: ${PORT}`);
+      console.log(`🌐 Host: ${HOST}`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`🔗 API: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api`);
     });
 
     // Handle server errors

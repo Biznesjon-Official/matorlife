@@ -3,7 +3,7 @@ import { X, Car, ArrowLeft, ArrowRight, Check, Plus, Trash2, Edit, Save, Search 
 import { Car as CarType } from '@/types';
 import { useUpdateCar } from '@/hooks/useCars';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { useSearchSpareParts, useCreateSparePart, useIncrementSparePartUsage } from '@/hooks/useSpareParts';
+import { useSearchSpareParts, useIncrementSparePartUsage } from '@/hooks/useSpareParts';
 import { t } from '@/lib/transliteration';
 
 interface EditCarStepModalProps {
@@ -63,7 +63,6 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
   // Autocomplete states for spare parts
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
-  const [isCreatingNewPart, setIsCreatingNewPart] = useState(false);
   const [selectedSparePartId, setSelectedSparePartId] = useState<string>('');
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null);
@@ -75,7 +74,6 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
   });
 
   const updateCarMutation = useUpdateCar();
-  const createSparePartMutation = useCreateSparePart();
   const incrementUsageMutation = useIncrementSparePartUsage();
   const { data: searchResults } = useSearchSpareParts(newPart.name, showSuggestions && newPart.name.length >= 2);
   const suggestions = searchResults?.spareParts || [];
@@ -141,7 +139,6 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
     setNewPart(prev => ({ ...prev, name: value }));
     setShowSuggestions(value.length >= 2);
     setSelectedSuggestionIndex(-1);
-    setIsCreatingNewPart(false);
   };
 
   const handlePartNameFocus = () => {
@@ -209,29 +206,6 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
         setShowSuggestions(false);
         setSelectedSuggestionIndex(-1);
         break;
-    }
-  };
-
-  const createNewSparePart = async () => {
-    if (!newPart.name || newPart.price <= 0) {
-      return;
-    }
-
-    setIsCreatingNewPart(true);
-    try {
-      const newSparePart = await createSparePartMutation.mutateAsync({
-        name: newPart.name,
-        price: newPart.price,
-        category: 'part'
-      });
-      
-      // Yangi yaratilgan zapchast ID sini o'rnatish
-      setSelectedSparePartId((newSparePart as any)?._id || '');
-      handleAddPart();
-    } catch (error) {
-      // Error handled by mutation
-    } finally {
-      setIsCreatingNewPart(false);
     }
   };
 
@@ -662,26 +636,6 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                               </div>
                             );
                           })}
-                          
-                          {/* Yangi qism yaratish opsiyasi */}
-                          <div
-                            className="px-3 py-2 cursor-pointer hover:bg-green-50 border-t-2 border-green-200 bg-green-25"
-                            onClick={createNewSparePart}
-                          >
-                            <div className="flex items-center gap-2 text-green-700">
-                              {isCreatingNewPart ? (
-                                <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
-                              ) : (
-                                <Plus className="h-4 w-4" />
-                              )}
-                              <span className="font-medium text-sm truncate">
-                                {isCreatingNewPart ? 'Yaratilmoqda...' : `"${newPart.name}" yangi qism sifatida qo'shish`}
-                              </span>
-                            </div>
-                            <div className="text-xs text-green-600 ml-6">
-                              Keyingi safar avtomatik chiqadi
-                            </div>
-                          </div>
                         </div>
                       )}
                       

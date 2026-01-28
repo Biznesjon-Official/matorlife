@@ -81,22 +81,69 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
         // 1. User modelidagi earnings (asosiy daromad)
         const savedEarnings = apprentice.earnings || 0;
 
-        // 2. Faqat tasdiqlangan (approved) vazifalarning apprenticeEarning qiymatlari
-        const taskFilter = {
+        // 2. Eski tizim: Faqat tasdiqlangan (approved) vazifalarning apprenticeEarning qiymatlari
+        const oldTaskFilter = {
           assignedTo: apprentice._id,
           status: 'approved',
           apprenticeEarning: { $exists: true, $gt: 0 },
           ...dateFilter
         };
 
-        const approvedTasks = await Task.find(taskFilter)
+        const oldApprovedTasks = await Task.find(oldTaskFilter)
           .select('apprenticeEarning title dueDate approvedAt payment apprenticePercentage');
 
-        // Vazifalardan olingan daromad (foiz asosida)
-        const taskEarnings = approvedTasks.reduce((sum, task) => sum + (task.apprenticeEarning || 0), 0);
+        // Eski tizimdan olingan daromad
+        const oldTaskEarnings = oldApprovedTasks.reduce((sum, task) => sum + (task.apprenticeEarning || 0), 0);
 
-        // Jami daromad = User earnings + Task apprenticeEarnings
+        // 3. Yangi tizim: assignments orqali tasdiqlangan vazifalar
+        const newTaskFilter = {
+          'assignments.apprentice': apprentice._id,
+          status: 'approved',
+          ...dateFilter
+        };
+
+        const newApprovedTasks = await Task.find(newTaskFilter)
+          .select('assignments title dueDate approvedAt payment');
+
+        // Yangi tizimdan olingan daromad
+        let newTaskEarnings = 0;
+        const newTaskDetails: any[] = [];
+        
+        newApprovedTasks.forEach(task => {
+          const assignment = task.assignments?.find(
+            (a: any) => a.apprentice.toString() === apprentice._id.toString()
+          );
+          if (assignment) {
+            newTaskEarnings += assignment.earning || 0;
+            newTaskDetails.push({
+              _id: task._id,
+              title: task.title,
+              payment: assignment.earning, // Shogirdning ulushi
+              totalPayment: task.payment, // Umumiy to'lov
+              percentage: assignment.percentage, // Foiz
+              approvedAt: task.approvedAt
+            });
+          }
+        });
+
+        // Jami vazifalardan daromad
+        const taskEarnings = oldTaskEarnings + newTaskEarnings;
+
+        // Jami daromad = User earnings + Task earnings
         const totalEarnings = savedEarnings + taskEarnings;
+
+        // Barcha vazifalarni birlashtirish
+        const allTasks = [
+          ...oldApprovedTasks.map(task => ({
+            _id: task._id,
+            title: task.title,
+            payment: task.apprenticeEarning, // Shogirdning ulushi
+            totalPayment: task.payment, // Umumiy to'lov
+            percentage: task.apprenticePercentage, // Foiz
+            approvedAt: task.approvedAt
+          })),
+          ...newTaskDetails
+        ];
 
         return {
           _id: apprentice._id,
@@ -104,15 +151,8 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
           earnings: totalEarnings,
           savedEarnings: savedEarnings, // User modelidagi
           taskEarnings: taskEarnings, // Vazifalardan (foiz asosida)
-          taskCount: approvedTasks.length,
-          tasks: approvedTasks.map(task => ({
-            _id: task._id,
-            title: task.title,
-            payment: task.apprenticeEarning, // Shogirdning ulushi
-            totalPayment: task.payment, // Umumiy to'lov
-            percentage: task.apprenticePercentage, // Foiz
-            approvedAt: task.approvedAt
-          }))
+          taskCount: allTasks.length,
+          tasks: allTasks
         };
       })
     );
@@ -124,16 +164,17 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
     );
 
     // Ustoz daromadi - faqat tasdiqlangan vazifalardan
-    const masterTaskFilter: any = {
+    // 1. Eski tizim: masterEarning
+    const oldMasterTaskFilter: any = {
       status: 'approved',
       masterEarning: { $exists: true, $gt: 0 }
     };
     if (dateFilter.createdAt) {
-      masterTaskFilter.approvedAt = dateFilter.createdAt;
+      oldMasterTaskFilter.approvedAt = dateFilter.createdAt;
     }
 
-    const masterTaskEarnings = await Task.aggregate([
-      { $match: masterTaskFilter },
+    const oldMasterTaskEarnings = await Task.aggregate([
+      { $match: oldMasterTaskFilter },
       {
         $group: {
           _id: null,
@@ -142,7 +183,28 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
       }
     ]);
 
-    const masterEarningsFromTasks = masterTaskEarnings[0]?.total || 0;
+    const oldMasterEarnings = oldMasterTaskEarnings[0]?.total || 0;
+
+    // 2. Yangi tizim: assignments.masterShare
+    const newMasterTaskFilter: any = {
+      status: 'approved',
+      'assignments.0': { $exists: true } // assignments mavjud
+    };
+    if (dateFilter.createdAt) {
+      newMasterTaskFilter.approvedAt = dateFilter.createdAt;
+    }
+
+    const newMasterTasks = await Task.find(newMasterTaskFilter).select('assignments');
+    
+    const newMasterEarnings = newMasterTasks.reduce((sum, task) => {
+      const taskMasterShare = task.assignments?.reduce((assignmentSum: number, assignment: any) => {
+        return assignmentSum + (assignment.masterShare || 0);
+      }, 0) || 0;
+      return sum + taskMasterShare;
+    }, 0);
+
+    // Jami ustoz daromadi vazifalardan
+    const masterEarningsFromTasks = oldMasterEarnings + newMasterEarnings;
 
     // Jami xizmatlar daromadi (CarService)
     const serviceFilter: any = {

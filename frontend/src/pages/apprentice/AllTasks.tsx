@@ -312,12 +312,42 @@ const ApprenticeAllTasks: React.FC = () => {
                     <Clock className="h-3 w-3" />
                     <span className="font-medium">{task.estimatedHours}{t('s', language)}</span>
                   </div>
-                  {task.payment && task.payment > 0 && (
-                    <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 sm:px-2.5 py-1 rounded-lg">
-                      <DollarSign className="h-3 w-3" />
-                      <span className="font-medium">{task.payment.toLocaleString()}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Yangi tizim: assignments orqali shogird ulushini topish
+                    if (task.assignments && task.assignments.length > 0) {
+                      const myAssignment = task.assignments.find((a: any) => {
+                        const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+                        return apprenticeId === (task.assignedTo?._id || task.assignedTo);
+                      });
+                      
+                      if (myAssignment && myAssignment.earning > 0) {
+                        return (
+                          <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 sm:px-2.5 py-1 rounded-lg">
+                            <DollarSign className="h-3 w-3" />
+                            <span className="font-medium">{myAssignment.earning.toLocaleString()}</span>
+                            {myAssignment.percentage && (
+                              <span className="text-xs">({myAssignment.percentage}%)</span>
+                            )}
+                          </div>
+                        );
+                      }
+                    }
+                    
+                    // Eski tizim: apprenticeEarning
+                    if (task.apprenticeEarning && task.apprenticeEarning > 0) {
+                      return (
+                        <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 sm:px-2.5 py-1 rounded-lg">
+                          <DollarSign className="h-3 w-3" />
+                          <span className="font-medium">{task.apprenticeEarning.toLocaleString()}</span>
+                          {task.apprenticePercentage && (
+                            <span className="text-xs">({task.apprenticePercentage}%)</span>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                   <div className="flex items-center gap-1 text-gray-600 bg-gray-50 px-2 sm:px-2.5 py-1 rounded-lg">
                     <Calendar className="h-3 w-3" />
                     <span className="font-medium hidden sm:inline">{new Date(task.createdAt).toLocaleDateString('uz-UZ')}</span>

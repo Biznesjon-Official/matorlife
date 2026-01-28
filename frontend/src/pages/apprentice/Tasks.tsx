@@ -63,9 +63,21 @@ const ApprenticeTasks: React.FC = () => {
   // Shogird uchun vazifalarni filtrlash
   const allTasks = tasks?.tasks || [];
   const myTasks = allTasks.filter((task: any) => {
-    // assignedTo object yoki string bo'lishi mumkin
+    // Eski tizim: assignedTo
     const assignedToId = typeof task.assignedTo === 'object' ? task.assignedTo._id : task.assignedTo;
-    return assignedToId === user?.id;
+    if (assignedToId === user?.id) return true;
+    
+    // Yangi tizim: assignments array ichida tekshirish
+    if (task.assignments && task.assignments.length > 0) {
+      return task.assignments.some((assignment: any) => {
+        const apprenticeId = typeof assignment.apprentice === 'object' 
+          ? assignment.apprentice._id 
+          : assignment.apprentice;
+        return apprenticeId === user?.id;
+      });
+    }
+    
+    return false;
   });
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -458,25 +470,48 @@ const ApprenticeTasks: React.FC = () => {
                       </span>
 
                       {/* Payment - Shogird ulushi ko'rsatish */}
-                      {task.apprenticeEarning && task.apprenticeEarning > 0 ? (
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
-                          💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(task.apprenticeEarning)}</span>
-                          <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
-                          {task.apprenticePercentage && (
-                            <span className="ml-1 text-green-600">({task.apprenticePercentage}%)</span>
-                          )}
-                        </span>
-                      ) : task.payment && task.payment > 0 ? (
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
-                          💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(task.payment)}</span>
-                          <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500">
-                          💰 <span className="ml-1">0</span>
-                          <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
-                        </span>
-                      )}
+                      {(() => {
+                        // Yangi tizim: assignments orqali shogird ulushini topish
+                        if (task.assignments && task.assignments.length > 0) {
+                          const myAssignment = task.assignments.find((a: any) => {
+                            const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+                            return apprenticeId === user?.id;
+                          });
+                          
+                          if (myAssignment && myAssignment.earning > 0) {
+                            return (
+                              <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
+                                💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(myAssignment.earning)}</span>
+                                <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
+                                {myAssignment.percentage && (
+                                  <span className="ml-1 text-green-600">({myAssignment.percentage}%)</span>
+                                )}
+                              </span>
+                            );
+                          }
+                        }
+                        
+                        // Eski tizim: apprenticeEarning
+                        if (task.apprenticeEarning && task.apprenticeEarning > 0) {
+                          return (
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
+                              💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(task.apprenticeEarning)}</span>
+                              <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
+                              {task.apprenticePercentage && (
+                                <span className="ml-1 text-green-600">({task.apprenticePercentage}%)</span>
+                              )}
+                            </span>
+                          );
+                        }
+                        
+                        // Hech narsa yo'q
+                        return (
+                          <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-gray-100 text-gray-500">
+                            💰 <span className="ml-1">0</span>
+                            <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* Car Info */}

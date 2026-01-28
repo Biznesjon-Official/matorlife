@@ -10,9 +10,9 @@ interface SparePart {
   _id: string;
   name: string;
   price: number;
-  costPrice?: number; // O'zini narxi
-  sellingPrice?: number; // Sotish narxi
-  profit?: number; // Foyda
+  costPrice?: number;
+  sellingPrice?: number;
+  profit?: number;
   quantity: number;
   supplier: string;
   usageCount: number;
@@ -27,6 +27,8 @@ const SpareParts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showLowStock, setShowLowStock] = useState(false);
+  const [viewMode, setViewMode] = useState<'warehouse' | 'client'>('warehouse');
+  const [clientParts, setClientParts] = useState<any[]>([]);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,7 +43,10 @@ const SpareParts: React.FC = () => {
 
   useEffect(() => {
     fetchSpareParts();
-  }, []);
+    if (viewMode === 'client') {
+      fetchClientParts();
+    }
+  }, [viewMode]);
 
   useEffect(() => {
     filterParts();
@@ -65,6 +70,46 @@ const SpareParts: React.FC = () => {
       setSpareParts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClientParts = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cars/client-parts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setClientParts(data.parts || []);
+    } catch (error) {
+      console.error('Error fetching client parts:', error);
+      setClientParts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveClientPart = async (carId: string, partId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/cars/${carId}/parts/${partId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      fetchClientParts();
+    } catch (error) {
+      console.error('Error removing client part:', error);
     }
   };
 
@@ -122,7 +167,6 @@ const SpareParts: React.FC = () => {
   const totalProfit = spareParts.reduce((sum, p) => sum + ((p.profit || ((p.sellingPrice || p.price) - (p.costPrice || p.price))) * p.quantity), 0);
   const totalQuantity = spareParts.reduce((sum, p) => sum + p.quantity, 0);
 
-  // Rang kodlash tizimi
   const getStockStatus = (quantity: number) => {
     if (quantity === 0) {
       return {
@@ -182,7 +226,6 @@ const SpareParts: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/20 p-2 sm:p-6 pb-20">
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-8">
-        {/* Mobile-First Header */}
         <div className="relative overflow-hidden bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-700 rounded-xl sm:rounded-3xl shadow-2xl p-3 sm:p-6 lg:p-8">
           <div className="absolute inset-0 bg-grid-white/10"></div>
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
@@ -212,7 +255,6 @@ const SpareParts: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile-Optimized Stats Cards */}
         <div className="grid grid-cols-2 gap-2 sm:gap-4 lg:gap-6 lg:grid-cols-5">
           <div className="relative overflow-hidden rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-3 sm:p-6 border border-blue-200 hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
             <div className="flex flex-col items-center text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
@@ -279,219 +321,288 @@ const SpareParts: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile-First Filters */}
         <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6">
           <div className="space-y-3 sm:space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={t('Qidirish...', language)}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium placeholder:text-gray-400"
-              />
+            <div className="flex items-center gap-2">
+              <select
+                value={viewMode}
+                onChange={(e) => setViewMode(e.target.value as 'warehouse' | 'client')}
+                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium"
+              >
+                <option value="warehouse">{t('Omborda bor', language)}</option>
+                <option value="client">{t('Clientlar keltirish kerak', language)}</option>
+              </select>
             </div>
-            
-            <div className="flex justify-center sm:justify-end">
-              <label className="flex items-center space-x-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-all">
-                <input
-                  type="checkbox"
-                  checked={showLowStock}
-                  onChange={(e) => setShowLowStock(e.target.checked)}
-                  className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
-                />
-                <span className="text-sm font-medium text-gray-700">{t('Faqat kam qolganlar', language)}</span>
-              </label>
-            </div>
+
+            {viewMode === 'warehouse' && (
+              <>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={t('Qidirish...', language)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <div className="flex justify-center sm:justify-end">
+                  <label className="flex items-center space-x-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-all">
+                    <input
+                      type="checkbox"
+                      checked={showLowStock}
+                      onChange={(e) => setShowLowStock(e.target.checked)}
+                      className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{t('Faqat kam qolganlar', language)}</span>
+                  </label>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Parts Grid */}
-        {filteredParts.length === 0 ? (
-          <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                <Package className="h-8 w-8 sm:h-12 sm:w-12 text-purple-600" />
+        {viewMode === 'warehouse' ? (
+          filteredParts.length === 0 ? (
+            <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <Package className="h-8 w-8 sm:h-12 sm:w-12 text-purple-600" />
+                </div>
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t('Zapchastlar topilmadi', language)}</h3>
+                <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base px-4 sm:px-0">
+                  {searchTerm || showLowStock
+                    ? t('Qidiruv so\'rovingizga mos zapchastlar topilmadi.', language)
+                    : t('Tizimga birinchi zapchastni qo\'shishdan boshlang.', language)
+                  }
+                </p>
+                {!searchTerm && !showLowStock && (
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
+                  >
+                    <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                    {t('Birinchi zapchastni qo\'shish', language)}
+                  </button>
+                )}
               </div>
-              <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t('Zapchastlar topilmadi', language)}</h3>
-              <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base px-4 sm:px-0">
-                {searchTerm || showLowStock
-                  ? t('Qidiruv so\'rovingizga mos zapchastlar topilmadi.', language)
-                  : t('Tizimga birinchi zapchastni qo\'shishdan boshlang.', language)
-                }
-              </p>
-              {!searchTerm && !showLowStock && (
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
-                >
-                  <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                  {t('Birinchi zapchastni qo\'shish', language)}
-                </button>
-              )}
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredParts.map((part) => {
+                const stockStatus = getStockStatus(part.quantity);
+                const costPrice = part.costPrice || part.price;
+                const sellingPrice = part.sellingPrice || part.price;
+                const profit = part.profit || (sellingPrice - costPrice);
+                const totalValue = sellingPrice * part.quantity;
+                const totalProfit = profit * part.quantity;
+                const StatusIcon = stockStatus.icon;
+                
+                return (
+                  <div
+                    key={part._id}
+                    className={`group relative bg-white rounded-lg sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border ${stockStatus.borderColor} hover:border-purple-200 hover:-translate-y-1 ${part.quantity === 0 ? 'opacity-75' : ''}`}
+                  >
+                    <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30">
+                      <div className={`bg-gradient-to-r ${stockStatus.bgColor} border ${stockStatus.borderColor} px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1 sm:space-x-2 shadow-sm`}>
+                        <StatusIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${stockStatus.textColor}`} />
+                        <span className={`text-xs font-semibold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-700')} hidden sm:inline`}>
+                          {stockStatus.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={`bg-gradient-to-br ${stockStatus.color} p-3 sm:p-6 pb-4 sm:pb-8`}>
+                      <div className="flex items-start space-x-2 sm:space-x-4">
+                        <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg">
+                          <Box className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-xl font-bold text-white mb-1 truncate">
+                            {part.name}
+                          </h3>
+                          <div className="flex items-center space-x-2 text-purple-100">
+                            <span className="text-xs sm:text-sm font-medium truncate">{part.supplier}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 sm:p-6 space-y-2 sm:space-y-4">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        <div className={`bg-gradient-to-br ${stockStatus.bgColor} rounded-lg sm:rounded-xl p-2.5 sm:p-4 border ${stockStatus.borderColor}`}>
+                          <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
+                            <StatusIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${stockStatus.textColor}`} />
+                            <span className={`text-xs font-semibold ${stockStatus.textColor} uppercase hidden sm:inline`}>{t('Miqdor', language)}</span>
+                          </div>
+                          <p className={`text-base sm:text-2xl font-bold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-900')}`}>
+                            {part.quantity}
+                          </p>
+                          <p className="text-xs text-gray-500 sm:hidden">{t('dona', language)}</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-orange-100">
+                          <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                            <span className="text-xs font-semibold text-orange-600 uppercase hidden sm:inline">{t("O'zini", language)}</span>
+                          </div>
+                          <p className="text-sm sm:text-lg font-bold text-orange-900 truncate">
+                            {costPrice.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-2 sm:p-2.5 border border-green-100">
+                          <div className="flex items-center space-x-1 mb-0.5">
+                            <DollarSign className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-green-600" />
+                            <span className="text-[10px] sm:text-xs font-semibold text-green-600 uppercase">{t('Sotish', language)}</span>
+                          </div>
+                          <p className="text-sm sm:text-base font-bold text-green-900 truncate">
+                            {sellingPrice.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-2 sm:p-2.5 border border-emerald-100">
+                          <div className="flex items-center space-x-1 mb-0.5">
+                            <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-emerald-600" />
+                            <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 uppercase">{t('Foyda', language)}</span>
+                          </div>
+                          <p className="text-sm sm:text-base font-bold text-emerald-900 truncate">
+                            {profit.toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-2 sm:p-2.5 border border-purple-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] sm:text-xs font-semibold text-purple-600 uppercase">{t('Jami qiymat', language)}</span>
+                          <span className="text-sm sm:text-base font-bold text-purple-900">
+                            {totalValue.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-2 sm:p-2.5 border border-emerald-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] sm:text-xs font-semibold text-emerald-600 uppercase">{t('Jami foyda', language)}</span>
+                          <span className="text-sm sm:text-base font-bold text-emerald-900">
+                            {totalProfit.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-2 sm:p-2.5 border border-blue-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] sm:text-xs font-semibold text-blue-600 uppercase">{t('Ishlatilgan', language)}</span>
+                          <span className="text-sm sm:text-base font-bold text-blue-900">
+                            {part.usageCount} {t('marta', language)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-2.5 sm:px-4 pb-2.5 sm:pb-4">
+                      <div className="flex items-stretch gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-100">
+                        <button 
+                          onClick={() => handleView(part)}
+                          className="flex-1 flex items-center justify-center space-x-1 px-2 py-1.5 sm:py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
+                          title={t("Ko'rish", language)}
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
+                        </button>
+                        <button 
+                          onClick={() => handleEdit(part)}
+                          className="p-1.5 sm:p-2 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
+                          title={t('Tahrirlash', language)}
+                        >
+                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(part)}
+                          className="p-1.5 sm:p-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
+                          title={t("O'chirish", language)}
+                        >
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredParts.map((part) => {
-              const stockStatus = getStockStatus(part.quantity);
-              const costPrice = part.costPrice || part.price;
-              const sellingPrice = part.sellingPrice || part.price;
-              const profit = part.profit || (sellingPrice - costPrice);
-              const totalValue = sellingPrice * part.quantity;
-              const totalProfit = profit * part.quantity;
-              const StatusIcon = stockStatus.icon;
-              
-              return (
-                <div
-                  key={part._id}
-                  className={`group relative bg-white rounded-lg sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border ${stockStatus.borderColor} hover:border-purple-200 hover:-translate-y-1 ${part.quantity === 0 ? 'opacity-75' : ''}`}
-                >
-                  {/* Status Badge - Top Right */}
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-30">
-                    <div className={`bg-gradient-to-r ${stockStatus.bgColor} border ${stockStatus.borderColor} px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1 sm:space-x-2 shadow-sm`}>
-                      <StatusIcon className={`w-3 h-3 sm:w-4 sm:h-4 ${stockStatus.textColor}`} />
-                      <span className={`text-xs font-semibold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-700')} hidden sm:inline`}>
-                        {stockStatus.label}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Header */}
-                  <div className={`bg-gradient-to-br ${stockStatus.color} p-3 sm:p-6 pb-4 sm:pb-8`}>
-                    <div className="flex items-start space-x-2 sm:space-x-4">
-                      <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg">
-                        <Box className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-xl font-bold text-white mb-1 truncate">
-                          {part.name}
-                        </h3>
-                        <div className="flex items-center space-x-2 text-purple-100">
-                          <span className="text-xs sm:text-sm font-medium truncate">{part.supplier}</span>
+          clientParts.length === 0 ? (
+            <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
+              <div className="max-w-md mx-auto">
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                  <AlertTriangle className="h-8 w-8 sm:h-12 sm:w-12 text-orange-600" />
+                </div>
+                <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t('Client keltirishi kerak bo\'lgan qismlar yo\'q', language)}</h3>
+                <p className="text-gray-600 text-sm sm:text-base px-4 sm:px-0">
+                  {t('Hozircha hech qanday avtomobil uchun client keltirishi kerak bo\'lgan ehtiyot qismlar yo\'q.', language)}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clientParts.map((item: any) => (
+                <div key={`${item.carId}-${item.part._id}`} className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-orange-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 sm:p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="bg-white/20 backdrop-blur-xl p-2 rounded-lg">
+                          <Package className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-white">
+                            {item.carInfo.make} {item.carInfo.model}
+                          </h3>
+                          <p className="text-xs text-orange-100">{item.carInfo.licensePlate}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-orange-100">{t('Egasi', language)}</p>
+                        <p className="text-sm font-semibold text-white">{item.carInfo.ownerName}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card Body */}
-                  <div className="p-3 sm:p-6 space-y-2 sm:space-y-4">
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                      <div className={`bg-gradient-to-br ${stockStatus.bgColor} rounded-lg sm:rounded-xl p-2.5 sm:p-4 border ${stockStatus.borderColor}`}>
-                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
-                          <StatusIcon className={`h-3 w-3 sm:h-4 sm:w-4 ${stockStatus.textColor}`} />
-                          <span className={`text-xs font-semibold ${stockStatus.textColor} uppercase hidden sm:inline`}>{t('Miqdor', language)}</span>
+                  <div className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{item.part.name}</h4>
+                        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                          <span className="flex items-center">
+                            <Box className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-orange-500" />
+                            {t('Miqdor', language)}: <strong className="ml-1">{item.part.quantity}</strong>
+                          </span>
+                          <span className="flex items-center">
+                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-green-500" />
+                            {t('Narx', language)}: <strong className="ml-1">{item.part.price.toLocaleString()}</strong>
+                          </span>
                         </div>
-                        <p className={`text-base sm:text-2xl font-bold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-900')}`}>
-                          {part.quantity}
-                        </p>
-                        <p className="text-xs text-gray-500 sm:hidden">{t('dona', language)}</p>
                       </div>
-                      
-                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-orange-100">
-                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
-                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
-                          <span className="text-xs font-semibold text-orange-600 uppercase hidden sm:inline">{t("O'zini", language)}</span>
-                        </div>
-                        <p className="text-sm sm:text-lg font-bold text-orange-900 truncate">
-                          {costPrice.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-green-100">
-                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
-                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                          <span className="text-xs font-semibold text-green-600 uppercase hidden sm:inline">{t('Sotish', language)}</span>
-                        </div>
-                        <p className="text-sm sm:text-lg font-bold text-green-900 truncate">
-                          {sellingPrice.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
-                      </div>
-
-                      <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-emerald-100">
-                        <div className="flex items-center space-x-1 sm:space-x-2 mb-1">
-                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-emerald-600" />
-                          <span className="text-xs font-semibold text-emerald-600 uppercase hidden sm:inline">{t('Foyda', language)}</span>
-                        </div>
-                        <p className="text-sm sm:text-lg font-bold text-emerald-900 truncate">
-                          {profit.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-gray-500 sm:hidden">{t("so'm", language)}</p>
-                      </div>
-                    </div>
-
-                    {/* Total Value */}
-                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-purple-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-purple-600 uppercase">{t('Jami qiymat', language)}</span>
-                        <span className="text-sm sm:text-lg font-bold text-purple-900">
-                          {totalValue.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Total Profit */}
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-emerald-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-emerald-600 uppercase">{t('Jami foyda', language)}</span>
-                        <span className="text-sm sm:text-lg font-bold text-emerald-900">
-                          {totalProfit.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Usage Count */}
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-blue-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-blue-600 uppercase">{t('Ishlatilgan', language)}</span>
-                        <span className="text-sm sm:text-lg font-bold text-blue-900">
-                          {part.usageCount} {t('marta', language)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Footer - Action Buttons */}
-                  <div className="px-3 sm:px-6 pb-3 sm:pb-6">
-                    <div className="flex items-center gap-2 pt-2 sm:pt-4 border-t border-gray-100">
-                      <button 
-                        onClick={() => handleView(part)}
-                        className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
-                        title={t("Ko'rish", language)}
-                      >
-                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
-                        <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(part)}
-                        className="p-2 sm:p-2.5 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
-                        title={t('Tahrirlash', language)}
-                      >
-                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(part)}
-                        className="p-2 sm:p-2.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
+                      <button
+                        onClick={() => handleRemoveClientPart(item.carId, item.part._id)}
+                        className="ml-3 p-2 sm:p-2.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
                         title={t("O'chirish", language)}
                       >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
                       </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 
-      {/* Modals */}
       <CreateSparePartModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

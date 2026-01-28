@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Car, Package, Plus, Trash2, ChevronRight, Wrench, Box, Briefcase, Search } from 'lucide-react';
 import { useCreateCar } from '@/hooks/useCars';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { useSearchSpareParts, useCreateSparePart, useIncrementSparePartUsage } from '@/hooks/useSpareParts';
+import { useSearchSpareParts, useIncrementSparePartUsage } from '@/hooks/useSpareParts';
 import { formatCurrency } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
 
@@ -60,13 +60,11 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
   // Autocomplete states
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
-  const [isCreatingNewPart, setIsCreatingNewPart] = useState(false);
   const [selectedSparePartId, setSelectedSparePartId] = useState<string>('');
   
   // Vazifalar - olib tashlandi
 
   const createCarMutation = useCreateCar();
-  const createSparePartMutation = useCreateSparePart();
   const incrementUsageMutation = useIncrementSparePartUsage();
   const { data: searchResults } = useSearchSpareParts(itemName, showSuggestions && itemName.length >= 2);
   const suggestions = searchResults?.spareParts || [];
@@ -104,7 +102,6 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
     setItemName(value);
     setShowSuggestions(value.length >= 2);
     setSelectedSuggestionIndex(-1);
-    setIsCreatingNewPart(false);
   };
 
   const handleItemNameFocus = () => {
@@ -171,29 +168,6 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         setShowSuggestions(false);
         setSelectedSuggestionIndex(-1);
         break;
-    }
-  };
-
-  const createNewSparePart = async () => {
-    if (!itemName || !itemPrice || parseFloat(itemPrice) <= 0) {
-      return;
-    }
-
-    setIsCreatingNewPart(true);
-    try {
-      const newSparePart = await createSparePartMutation.mutateAsync({
-        name: itemName,
-        price: parseFloat(itemPrice),
-        category: itemCategory
-      });
-      
-      // Yangi yaratilgan zapchast ID sini o'rnatish
-      setSelectedSparePartId((newSparePart as any)?._id || '');
-      addItem();
-    } catch (error) {
-      // Error handled by mutation
-    } finally {
-      setIsCreatingNewPart(false);
     }
   };
 
@@ -305,13 +279,14 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
           price: part.price,  // Backend 'price' kutadi
           source: part.source || 'available' // Manba: bizda bor yoki keltirish
         })),
-        serviceItems: items.map(item => ({
+        // Faqat ish haqini yuborish (zapchastlarni emas!)
+        serviceItems: laborItems.map(item => ({
           name: item.name,
-          description: item.category === 'labor' ? 'Ish haqi' : 'Xizmat',
+          description: 'Ish haqi',
           price: item.price,
-          quantity: item.quantity,
-          category: item.category,
-          source: item.source || 'available' // Manba
+          quantity: 1,
+          category: 'labor',
+          source: 'available'
         }))
       };
 
@@ -684,26 +659,6 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                             </div>
                           );
                         })}
-                        
-                        {/* Yangi qism yaratish opsiyasi */}
-                        <div
-                          className="px-3 py-2 cursor-pointer hover:bg-green-50 border-t-2 border-green-200 bg-green-25"
-                          onClick={createNewSparePart}
-                        >
-                          <div className="flex items-center gap-2 text-green-700">
-                            {isCreatingNewPart ? (
-                              <div className="animate-spin h-4 w-4 border-2 border-green-600 border-t-transparent rounded-full"></div>
-                            ) : (
-                              <Plus className="h-4 w-4" />
-                            )}
-                            <span className="font-medium">
-                              {isCreatingNewPart ? 'Yaratilmoqda...' : `"${itemName}" yangi qism sifatida qo'shish`}
-                            </span>
-                          </div>
-                          <div className="text-xs text-green-600 ml-6">
-                            Keyingi safar avtomatik chiqadi
-                          </div>
-                        </div>
                       </div>
                     )}
                     

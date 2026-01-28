@@ -117,7 +117,7 @@ const AddPaymentModal: React.FC<AddPaymentModalProps> = ({ isOpen, onClose, debt
     try {
       const paymentNotes = `${t('To\'lov usuli', language)}: ${paymentMethods.find(m => m.id === paymentMethod)?.name}${notes ? ` - ${notes}` : ''}`;
       
-      await api.post(`/debts/${debt._id}/payment`, {
+      await api.post(`/debts/${debt._id}/payments`, {
         amount: Number(amount),
         notes: paymentNotes,
         paymentMethod

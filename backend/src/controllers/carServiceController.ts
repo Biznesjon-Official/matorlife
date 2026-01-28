@@ -60,12 +60,19 @@ export const getCarServices = async (req: AuthRequest, res: Response) => {
     const filter: any = {};
     if (carId) filter.car = carId;
     if (status) filter.status = status;
+    
+    console.log('🔍 Xizmatlar qidirilmoqda:', filter);
+    
     const services = await CarService.find(filter)
       .populate('car')
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 });
+    
+    console.log(`📦 Topilgan xizmatlar soni: ${services.length}`);
+    
     res.json({ services });
   } catch (error: any) {
+    console.error('❌ Xizmatlarni yuklashda xatolik:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -308,6 +315,143 @@ export const removeServiceItem = async (req: AuthRequest, res: Response) => {
       service
     });
   } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+
+// Add payment to car service
+export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { amount, paymentMethod, notes } = req.body;
+    const serviceId = req.params.id;
+
+    console.log('💳 To\'lov qabul qilinmoqda:', {
+      serviceId,
+      amount,
+      amountType: typeof amount,
+      paymentMethod,
+      notes
+    });
+
+    if (!amount || amount <= 0) {
+      console.error('❌ Xato: Invalid payment amount', amount);
+      return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+
+    const service = await CarService.findById(serviceId);
+    if (!service) {
+      console.error('❌ Xato: Service not found', serviceId);
+      return res.status(404).json({ message: 'Service not found' });
+    }
+
+    console.log('📊 Xizmat ma\'lumotlari:', {
+      totalPrice: service.totalPrice,
+      paidAmount: service.paidAmount || 0,
+      remaining: service.totalPrice - (service.paidAmount || 0)
+    });
+
+    const remaining = service.totalPrice - (service.paidAmount || 0);
+    if (amount > remaining) {
+      console.error('❌ Xato: Payment exceeds remaining', { amount, remaining });
+      return res.status(400).json({ 
+        message: 'Payment amount exceeds remaining balance',
+        amount,
+        remaining
+      });
+    }
+
+    // Update paid amount
+    service.paidAmount = (service.paidAmount || 0) + amount;
+    
+    // Add payment to history
+    if (!service.payments) {
+      service.payments = [];
+    }
+    service.payments.push({
+      amount,
+      method: paymentMethod || 'cash',
+      paidAt: new Date(),
+      paidBy: req.user?.id
+    });
+
+    // Update payment status
+    if (service.paidAmount >= service.totalPrice) {
+      service.paymentStatus = 'paid';
+    } else if (service.paidAmount > 0) {
+      service.paymentStatus = 'partial';
+    }
+
+    await service.save();
+    await service.populate('car');
+    await service.populate('createdBy', 'name email');
+
+    const carData = service.car as any;
+    console.log(`✅ To'lov qo'shildi: ${amount} so'm - ${carData?.licensePlate || 'Noma\'lum'} - ${paymentMethod || 'cash'}`);
+
+    // ✨ YANGI: Qarz yaratish yoki yangilash va to'lovni qo'shish
+    const Debt = require('../models/Debt').default;
+    const Car = require('../models/Car').default;
+    
+    // Mashina ma'lumotlarini olish
+    const car = await Car.findById(service.car);
+    
+    if (car) {
+      // Avval bu mashina uchun qarz borligini tekshirish
+      let existingDebt = await Debt.findOne({
+        car: car._id,
+        type: 'receivable',
+        status: { $in: ['pending', 'partial'] }
+      });
+
+      if (existingDebt) {
+        // Mavjud qarzga to'lovni qo'shish
+        existingDebt.paymentHistory.push({
+          amount,
+          date: new Date(),
+          paymentMethod: paymentMethod || 'cash',
+          notes: notes || `Xizmat to'lovi - ${paymentMethod || 'naqd'}`
+        });
+        
+        // Jami summani yangilash (agar xizmat narxi o'zgargan bo'lsa)
+        existingDebt.amount = service.totalPrice;
+        existingDebt.description = `${car.make} ${car.carModel} (${car.licensePlate}) uchun xizmat to'lovi`;
+        
+        // Save qilganda pre('save') middleware avtomatik paidAmount va status ni yangilaydi
+        await existingDebt.save();
+        
+        const remainingAmount = service.totalPrice - service.paidAmount;
+        console.log(`📝 Qarz yangilandi: ${remainingAmount} so'm qoldi - ${car.ownerName}`);
+      } else {
+        // Yangi qarz yaratish
+        const newDebt = new Debt({
+          type: 'receivable',
+          amount: service.totalPrice,
+          description: `${car.make} ${car.carModel} (${car.licensePlate}) uchun xizmat to'lovi`,
+          creditorName: car.ownerName,
+          creditorPhone: car.ownerPhone,
+          car: car._id,
+          paymentHistory: [{
+            amount,
+            date: new Date(),
+            paymentMethod: paymentMethod || 'cash',
+            notes: notes || `Xizmat to'lovi - ${paymentMethod || 'naqd'}`
+          }],
+          createdBy: req.user?.id
+        });
+        
+        // Save qilganda pre('save') middleware avtomatik paidAmount va status ni o'rnatadi
+        await newDebt.save();
+        console.log(`📝 Qarz yaratildi: ${service.totalPrice} so'm, ${amount} so'm to'landi - ${car.ownerName}`);
+      }
+    }
+
+    res.json({
+      message: 'Payment added successfully',
+      service
+    });
+  } catch (error: any) {
+    console.error('❌ To\'lov qo\'shishda xatolik:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

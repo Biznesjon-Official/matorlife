@@ -162,8 +162,15 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     }
 
     // Master can update any task, apprentice can only update their own tasks
-    if (req.user!.role !== 'master' && task.assignedTo.toString() !== req.user!._id.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+    if (req.user!.role !== 'master') {
+      const isAssignedOldSystem = task.assignedTo?.toString() === req.user!._id.toString();
+      const isAssignedNewSystem = task.assignments?.some((a: any) => 
+        a.apprentice.toString() === req.user!._id.toString()
+      );
+      
+      if (!isAssignedOldSystem && !isAssignedNewSystem) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     }
 
     // Update task fields
@@ -198,9 +205,21 @@ export const updateTaskStatus = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Check permissions
-    if (req.user!.role === 'apprentice' && task.assignedTo.toString() !== req.user!._id.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+    // Check permissions - Yangi va eski tizim uchun
+    if (req.user!.role === 'apprentice') {
+      const isAssignedOldSystem = task.assignedTo?.toString() === req.user!._id.toString();
+      const isAssignedNewSystem = task.assignments?.some((a: any) => 
+        a.apprentice.toString() === req.user!._id.toString()
+      );
+      
+      if (!isAssignedOldSystem && !isAssignedNewSystem) {
+        console.log('❌ 403 Forbidden: Shogird bu vazifaga ruxsati yo\'q');
+        console.log('User ID:', req.user!._id);
+        console.log('Task assignedTo:', task.assignedTo);
+        console.log('Task assignments:', task.assignments);
+        return res.status(403).json({ message: 'Bu vazifaga ruxsatingiz yo\'q' });
+      }
+      console.log('✅ Ruxsat berildi: Shogird vazifani yangilashi mumkin');
     }
 
     task.status = status;
@@ -337,8 +356,15 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
     }
 
     // Master can delete any task, apprentice can only delete their own tasks
-    if (req.user!.role !== 'master' && task.assignedTo.toString() !== req.user!._id.toString()) {
-      return res.status(403).json({ message: 'Access denied' });
+    if (req.user!.role !== 'master') {
+      const isAssignedOldSystem = task.assignedTo?.toString() === req.user!._id.toString();
+      const isAssignedNewSystem = task.assignments?.some((a: any) => 
+        a.apprentice.toString() === req.user!._id.toString()
+      );
+      
+      if (!isAssignedOldSystem && !isAssignedNewSystem) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     }
 
     await Task.findByIdAndDelete(req.params.id);

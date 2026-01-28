@@ -732,36 +732,35 @@ const Debts: React.FC = () => {
                   key={debt._id}
                   className="group relative bg-white rounded-lg sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 hover:-translate-y-1"
                 >
-                  {/* Status Badge - Top Right */}
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10">
-                    <div className={`${statusConfig.bg} ${statusConfig.border} border px-2 py-1 sm:px-3 sm:py-1.5 rounded-full flex items-center space-x-1 sm:space-x-2 shadow-sm`}>
-                      <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${statusConfig.dot} animate-pulse`}></div>
-                      <span className={`text-xs font-semibold ${statusConfig.text} hidden sm:inline`}>
-                        {getStatusText(debt.status)}
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Card Header */}
                   <div className={`${isReceivable 
                     ? 'bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700' 
                     : 'bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700'
                   } p-3 sm:p-6 pb-4 sm:pb-8`}>
-                    <div className="flex items-start space-x-2 sm:space-x-4">
-                      <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg">
-                        {isReceivable ? (
-                          <TrendingUp className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 sm:h-7 sm:w-7 text-white" />
-                        )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-2 sm:space-x-4 flex-1 min-w-0">
+                        <div className="bg-white/20 backdrop-blur-xl p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg flex-shrink-0">
+                          {isReceivable ? (
+                            <TrendingUp className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                          ) : (
+                            <TrendingDown className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-xl font-bold text-white mb-1 break-words">
+                            {debt.creditorName}
+                          </h3>
+                          <p className={`text-xs sm:text-sm ${isReceivable ? 'text-blue-100' : 'text-indigo-100'}`}>
+                            {getTypeText(debt.type)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-xl font-bold text-white mb-1 truncate">
-                          {debt.creditorName}
-                        </h3>
-                        <p className={`text-xs sm:text-sm ${isReceivable ? 'text-blue-100' : 'text-indigo-100'}`}>
-                          {getTypeText(debt.type)}
-                        </p>
+                      {/* Status Badge - Extra Compact */}
+                      <div className={`${statusConfig.bg} ${statusConfig.border} border px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md flex items-center space-x-1 shadow-sm flex-shrink-0 self-start`}>
+                        <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${statusConfig.dot} animate-pulse`}></div>
+                        <span className={`text-[9px] sm:text-[10px] font-bold ${statusConfig.text} uppercase tracking-wide whitespace-nowrap`}>
+                          {getStatusText(debt.status)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -823,7 +822,7 @@ const Debts: React.FC = () => {
 
                   {/* Card Footer - Action Buttons */}
                   <div className="px-3 sm:px-6 pb-3 sm:pb-6">
-                    <div className="flex items-center gap-2 pt-2 sm:pt-4 border-t border-gray-100">
+                    <div className="flex items-stretch gap-2 pt-2 sm:pt-4 border-t border-gray-100">
                       <button 
                         onClick={() => setSelectedDebt(debt)}
                         className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
@@ -832,6 +831,19 @@ const Debts: React.FC = () => {
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                         <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
                       </button>
+                      {debt.status !== 'paid' && (
+                        <button
+                          onClick={() => {
+                            setSelectedDebt(debt);
+                            setIsPaymentModalOpen(true);
+                          }}
+                          className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group shadow-sm"
+                          title={t("To'lov qo'shish", language)}
+                        >
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
+                          <span className="text-xs sm:text-sm">{t("To'lov", language)}</span>
+                        </button>
+                      )}
                       <button 
                         onClick={() => {
                           setSelectedDebt(debt);
@@ -853,18 +865,6 @@ const Debts: React.FC = () => {
                         <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
-                    {debt.status !== 'paid' && (
-                      <button
-                        onClick={() => {
-                          setSelectedDebt(debt);
-                          setIsPaymentModalOpen(true);
-                        }}
-                        className="w-full mt-2 sm:mt-3 px-3 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-sm hover:shadow-md transition-all duration-200 text-xs sm:text-sm"
-                      >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1 sm:mr-1.5" />
-                        {t("To'lov qo'shish", language)}
-                      </button>
-                    )}
                   </div>
                 </div>
               );

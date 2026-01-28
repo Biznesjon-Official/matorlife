@@ -108,10 +108,10 @@ export const useDeleteCar = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cars'] });
-      toast.success('Mashina muvaffaqiyatli o\'chirildi');
+      toast.success('Mashina arxivga o\'tkazildi');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Mashinani o\'chirishda xatolik');
+      toast.error(error.response?.data?.message || 'Mashinani arxivga o\'tkazishda xatolik');
     },
   });
 };
@@ -169,6 +169,24 @@ export const useDeletePart = () => {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Qismni o\'chirishda xatolik');
+    },
+  });
+};
+
+export const useRestoreCar = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.post(`/cars/${id}/restore`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      toast.success('Mashina faol mashinalarga qaytarildi');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Mashinani qaytarishda xatolik');
     },
   });
 };

@@ -7,7 +7,10 @@ import {
   createSparePart,
   updateSparePart,
   deleteSparePart,
-  incrementUsage
+  incrementUsage,
+  getRequiredParts,
+  removeRequiredPart,
+  addRequiredPartToInventory
 } from '../controllers/sparePartController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -19,6 +22,9 @@ router.get('/search', authenticate, searchSpareParts);
 
 // Get all spare parts
 router.get('/', authenticate, getSpareParts);
+
+// Get required parts (client keltirish kerak)
+router.get('/required/list', authenticate, getRequiredParts);
 
 // Get spare part by ID
 router.get('/:id', authenticate, getSparePartById);
@@ -44,5 +50,11 @@ router.delete('/:id', authenticate, authorize('master'), deleteSparePart);
 
 // Increment usage count (internal use)
 router.patch('/:id/increment-usage', authenticate, incrementUsage);
+
+// Remove required part from car
+router.delete('/required/:carId/:partId', authenticate, authorize('master'), removeRequiredPart);
+
+// Add required part to inventory
+router.post('/required/:carId/:partId/add-to-inventory', authenticate, authorize('master'), addRequiredPartToInventory);
 
 export default router;

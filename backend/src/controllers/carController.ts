@@ -83,7 +83,8 @@ export const createCar = async (req: AuthRequest, res: Response) => {
 export const getCars = async (req: AuthRequest, res: Response) => {
   try {
     const { status, search } = req.query;
-    const filter: any = {};
+    const filter: any = {}; // Barcha mashinalarni olish (o'chirilganlar ham)
+    
     if (status) filter.status = status;
     if (search) {
       filter.$or = [
@@ -320,12 +321,24 @@ export const deletePart = async (req: AuthRequest, res: Response) => {
 };
 export const deleteCar = async (req: AuthRequest, res: Response) => {
   try {
-    const car = await Car.findByIdAndDelete(req.params.id);
+    // Soft delete - mashinani o'chirish o'rniga isDeleted = true qilish
+    const car = await Car.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isDeleted: true,
+        deletedAt: new Date()
+      },
+      { new: true }
+    );
+    
     if (!car) {
       return res.status(404).json({ message: 'Mashina topilmadi' });
     }
+    
+    console.log(`🗑️ Mashina arxivga o'tkazildi: ${car.licensePlate} - ${car.ownerName}`);
+    
     res.json({
-      message: 'Mashina muvaffaqiyatli o\'chirildi',
+      message: 'Mashina arxivga o\'tkazildi',
       car
     });
   } catch (error: any) {
@@ -375,5 +388,219 @@ export const getCarServices = async (req: AuthRequest, res: Response) => {
     res.json({ services });
   } catch (error: any) {
     res.status(500).json({ message: 'Server xatoligi', error: error.message });
+  }
+};
+
+// Client keltirishi kerak bo'lgan qismlarni olish
+export const getClientParts = async (req: AuthRequest, res: Response) => {
+  try {
+    // Barcha avtomobillarni olish
+    const cars = await Car.find({});
+    
+    // Client keltirishi kerak bo'lgan qismlarni filtrlash
+    const clientParts: any[] = [];
+    
+    cars.forEach(car => {
+      // Faqat 'tobring' source ga ega bo'lgan qismlarni olish
+      const tobringParts = car.parts.filter(part => part.source === 'tobring');
+      
+      tobringParts.forEach(part => {
+        clientParts.push({
+          carId: car._id,
+          carInfo: {
+            make: car.make,
+            model: car.carModel,
+            licensePlate: car.licensePlate,
+            ownerName: car.ownerName,
+            ownerPhone: car.ownerPhone
+          },
+          part: {
+            _id: part._id,
+            name: part.name,
+            price: part.price,
+            quantity: part.quantity,
+            status: part.status
+          }
+        });
+      });
+    });
+
+    res.json({ parts: clientParts });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server xatoligi', error: error.message });
+  }
+};
+
+// Arxivlangan mashinalarni olish
+export const getArchivedCars = async (req: AuthRequest, res: Response) => {
+  try {
+    const { search } = req.query;
+    const filter: any = { 
+      $or: [
+        { isDeleted: true },
+        { paymentStatus: 'paid' }
+      ]
+    };
+    
+    if (search) {
+      filter.$and = [
+        { $or: filter.$or },
+        {
+          $or: [
+            { make: { $regex: search, $options: 'i' } },
+            { carModel: { $regex: search, $options: 'i' } },
+            { licensePlate: { $regex: search, $options: 'i' } },
+            { ownerName: { $regex: search, $options: 'i' } }
+          ]
+        }
+      ];
+      delete filter.$or;
+    }
+    
+    const cars = await Car.find(filter).sort({ updatedAt: -1 });
+    
+    console.log(`📦 Arxivlangan mashinalar: ${cars.length} ta`);
+    
+    res.json({ cars });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server xatoligi', error: error.message });
+  }
+};
+
+// Mashinani arxivdan qaytarish (restore)
+export const restoreCar = async (req: AuthRequest, res: Response) => {
+  try {
+    const car = await Car.findByIdAndUpdate(
+      req.params.id,
+      { 
+        isDeleted: false,
+        $unset: { deletedAt: 1 }
+      },
+      { new: true }
+    );
+    
+    if (!car) {
+      return res.status(404).json({ message: 'Mashina topilmadi' });
+    }
+    
+    console.log(`♻️ Mashina qaytarildi: ${car.licensePlate} - ${car.ownerName}`);
+    
+    res.json({
+      message: 'Mashina muvaffaqiyatli qaytarildi',
+      car
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server xatoligi', error: error.message });
+  }
+};
+
+
+// Add payment to car
+export const addCarPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { amount, paymentMethod, notes } = req.body;
+    const carId = req.params.id;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Invalid payment amount' });
+    }
+
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+
+    const remaining = car.totalEstimate - (car.paidAmount || 0);
+    if (amount > remaining) {
+      return res.status(400).json({ message: 'Payment amount exceeds remaining balance' });
+    }
+
+    // Update paid amount
+    car.paidAmount = (car.paidAmount || 0) + amount;
+    
+    // Add payment to history
+    if (!car.payments) {
+      car.payments = [];
+    }
+    car.payments.push({
+      amount,
+      method: paymentMethod || 'cash',
+      paidAt: new Date(),
+      paidBy: req.user?.id,
+      notes: notes || ''
+    });
+
+    // Update payment status
+    if (car.paidAmount >= car.totalEstimate) {
+      car.paymentStatus = 'paid';
+    } else if (car.paidAmount > 0) {
+      car.paymentStatus = 'partial';
+    }
+
+    await car.save();
+
+    console.log(`✅ To'lov qo'shildi: ${amount} so'm - ${car.licensePlate} - ${paymentMethod || 'cash'}`);
+
+    // ✨ YANGI: Agar to'liq to'lanmagan bo'lsa, qarz yaratish yoki yangilash
+    if (car.paidAmount < car.totalEstimate) {
+      const remainingAmount = car.totalEstimate - car.paidAmount;
+      
+      const Debt = require('../models/Debt').default;
+      
+      // Avval bu mashina uchun qarz borligini tekshirish
+      let existingDebt = await Debt.findOne({
+        car: car._id,
+        type: 'receivable',
+        status: { $in: ['pending', 'partial'] }
+      });
+
+      if (existingDebt) {
+        // Mavjud qarzni yangilash
+        existingDebt.amount = remainingAmount;
+        existingDebt.description = `${car.make} ${car.carModel} (${car.licensePlate}) uchun qolgan to'lov`;
+        await existingDebt.save();
+        console.log(`📝 Qarz yangilandi: ${remainingAmount} so'm - ${car.ownerName}`);
+      } else {
+        // Yangi qarz yaratish
+        const newDebt = new Debt({
+          type: 'receivable',
+          amount: remainingAmount,
+          description: `${car.make} ${car.carModel} (${car.licensePlate}) uchun qolgan to'lov`,
+          creditorName: car.ownerName,
+          creditorPhone: car.ownerPhone,
+          car: car._id,
+          status: 'pending',
+          paidAmount: 0,
+          paymentHistory: [],
+          createdBy: req.user?.id
+        });
+        
+        await newDebt.save();
+        console.log(`📝 Qarz yaratildi: ${remainingAmount} so'm - ${car.ownerName}`);
+      }
+    } else {
+      // Agar to'liq to'langan bo'lsa, qarzni to'langan deb belgilash
+      const Debt = require('../models/Debt').default;
+      await Debt.updateMany(
+        {
+          car: car._id,
+          type: 'receivable',
+          status: { $in: ['pending', 'partial'] }
+        },
+        {
+          status: 'paid',
+          paidAmount: { $set: '$amount' }
+        }
+      );
+      console.log(`✅ Qarz to'liq to'landi - ${car.licensePlate}`);
+    }
+
+    res.json({
+      message: 'Payment added successfully',
+      car
+    });
+  } catch (error: any) {
+    console.error('❌ To\'lov qo\'shishda xatolik:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

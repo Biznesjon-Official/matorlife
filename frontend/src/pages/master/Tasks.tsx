@@ -315,16 +315,39 @@ const MasterTasks: React.FC = () => {
                 <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
-                    <div className="h-5 w-5 sm:h-6 sm:w-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
-                      {task.assignedTo.name.charAt(0).toUpperCase()}
+                  {/* Shogirdlar ro'yxati */}
+                  {task.assignments && task.assignments.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {task.assignments.map((assignment: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
+                          <div className="h-5 w-5 sm:h-6 sm:w-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            {assignment.apprentice?.name?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          <span className="font-semibold text-gray-900 text-sm truncate flex-1">
+                            {assignment.apprentice?.name || 'Noma\'lum'}
+                          </span>
+                          {assignment.earning > 0 && (
+                            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded">
+                              {assignment.earning.toLocaleString()} so'm
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <span className="font-semibold text-gray-900 text-sm truncate">{task.assignedTo.name}</span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
+                      <div className="h-5 w-5 sm:h-6 sm:w-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                        {task.assignedTo?.name?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                      <span className="font-semibold text-gray-900 text-sm truncate">{task.assignedTo?.name || 'Noma\'lum'}</span>
+                    </div>
+                  )}
                   
                   <div className="flex items-center gap-2 bg-purple-50 px-2.5 py-1.5 rounded-lg">
                     <Car className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                    <span className="font-semibold text-gray-900 text-sm truncate">{task.car.make} {task.car.model}</span>
+                    <span className="font-semibold text-gray-900 text-sm truncate">
+                      {task.car ? `${task.car.make} ${task.car.model}` : 'Mashina tanlanmagan'}
+                    </span>
                   </div>
                 </div>
 
@@ -337,12 +360,26 @@ const MasterTasks: React.FC = () => {
                     <Clock className="h-3 w-3" />
                     <span className="font-medium">{task.estimatedHours}s</span>
                   </div>
-                  {task.payment && task.payment > 0 && (
-                    <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 sm:px-2.5 py-1 rounded-lg">
-                      <DollarSign className="h-3 w-3" />
-                      <span className="font-medium">{task.payment.toLocaleString()}</span>
-                    </div>
-                  )}
+                  {(() => {
+                    // Umumiy shogirdlar pulini hisoblash
+                    let totalApprenticeEarning = 0;
+                    
+                    if (task.assignments && task.assignments.length > 0) {
+                      totalApprenticeEarning = task.assignments.reduce((sum: number, a: any) => sum + (a.earning || 0), 0);
+                    } else if (task.apprenticeEarning) {
+                      totalApprenticeEarning = task.apprenticeEarning;
+                    }
+                    
+                    if (totalApprenticeEarning > 0) {
+                      return (
+                        <div className="flex items-center gap-1 text-green-600 bg-green-50 px-2 sm:px-2.5 py-1 rounded-lg">
+                          <DollarSign className="h-3 w-3" />
+                          <span className="font-medium">{totalApprenticeEarning.toLocaleString()}</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                   <div className="flex items-center gap-1 text-gray-600 bg-gray-50 px-2 sm:px-2.5 py-1 rounded-lg">
                     <Calendar className="h-3 w-3" />
                     <span className="font-medium hidden sm:inline">{new Date(task.createdAt).toLocaleDateString('uz-UZ')}</span>

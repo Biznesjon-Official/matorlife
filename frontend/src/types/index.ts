@@ -45,7 +45,11 @@ export interface Car {
   parts: Part[];
   serviceItems: ServiceItem[];
   totalEstimate: number;
+  paidAmount?: number;
+  paymentStatus?: 'pending' | 'partial' | 'paid';
   status: 'pending' | 'in-progress' | 'completed' | 'delivered';
+  isDeleted?: boolean;
+  deletedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,6 +80,11 @@ export interface Task {
   estimatedHours: number;
   actualHours?: number;
   payment?: number;
+  apprenticeEarning?: number;
+  assignments?: Array<{
+    apprentice: User;
+    earning: number;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
