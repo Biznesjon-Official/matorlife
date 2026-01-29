@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { X, DollarSign, FileText, CreditCard, ArrowLeft, User, CheckCircle, Car, Search } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDebts, useAddPayment } from '@/hooks/useDebts';
 import { useCars } from '@/hooks/useCars';
-import api from '@/lib/api';
+import { useCreateTransaction } from '@/hooks/useTransactionsOptimized';
 import toast from 'react-hot-toast';
 import { t } from '@/lib/transliteration';
 import { formatNumber, parseFormattedNumber, formatCurrency } from '@/lib/utils';
@@ -26,7 +26,7 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     amount: 0,
     description: '',
-    paymentMethod: 'cash' as 'cash' | 'card'
+    paymentMethod: 'cash' as 'cash' | 'card' | 'click'
   });
   const [amountDisplay, setAmountDisplay] = useState('');
 
@@ -48,23 +48,42 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
   const { data: carsResponse } = useCars();
   const allCars = Array.isArray(carsResponse?.cars) ? carsResponse.cars : [];
   
-  // Faqat faol va qarzi bor avtomobillarni filtrlash
-  // Faol: o'chirilmagan va tugatilmagan mashinalar
-  const carsWithDebt = allCars.filter((car: any) => {
-    // Arxivdagi mashinalarni chiqarib tashlash (tugatilgan yoki o'chirilgan)
+  // Qarzi bor mashina ID larini ajratib olish
+  const carsWithDebtIds = new Set(
+    debts
+      .filter((debt: any) => debt.car && debt.car._id)
+      .map((debt: any) => debt.car._id)
+  );
+  
+  // 1. Avtomobil to'lovi uchun: FAQAT FAOL mashinalar (qarzi bo'lmagan)
+  const activeCarsForPayment = allCars.filter((car: any) => {
+    // Arxivdagi mashinalarni chiqarib tashlash
     if (car.isDeleted || car.status === 'completed' || car.status === 'delivered') {
       return false;
     }
     
-    // Qarzi bor mashinalarni filtrlash
+    // Qarzi bor mashinalarni chiqarib tashlash (ular qarzlar sahifasida)
+    if (carsWithDebtIds.has(car._id)) {
+      return false;
+    }
+    
+    // Qarzi bor mashinalarni filtrlash (hali to'lanmagan)
     const totalPrice = car.totalEstimate || 0;
     const paidAmount = car.paidAmount || 0;
     const remaining = totalPrice - paidAmount;
     return remaining > 0; // Faqat qarzi bor mashinalar
   });
   
+  // 2. Qarz to'lovi uchun: FAQAT qarzlar sahifasida mavjud mashinalar
+  const carsWithDebtForPayment = allCars.filter((car: any) => {
+    return carsWithDebtIds.has(car._id);
+  });
+  
+  // Qaysi ro'yxatni ishlatishni aniqlash
+  const carsToShow = selectedType === 'car' ? activeCarsForPayment : carsWithDebtForPayment;
+  
   // Avtomobillarni qidirish
-  const filteredCars = carsWithDebt.filter((car: any) => {
+  const filteredCars = carsToShow.filter((car: any) => {
     if (!carSearchQuery) return true;
     
     // Qidiruv so'zini tozalash (bo'shliqlar, kichik harflar, maxsus belgilar)
@@ -91,22 +110,7 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
 
   // Qarz to'lovi uchun mutation
   const addPaymentMutation = useAddPayment();
-
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await api.post('/transactions', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
-      toast.success(t('Kirim muvaffaqiyatli qo\'shildi', language));
-      handleClose();
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || t('Kirim qo\'shishda xatolik', language));
-    }
-  });
+  const createTransactionMutation = useCreateTransaction();
 
   const handleClose = () => {
     setStep('select');
@@ -142,7 +146,8 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
   const handleCarPaymentSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['cars'] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
+    queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
     toast.success(t('To\'lov muvaffaqiyatli amalga oshirildi', language));
     handleClose();
   };
@@ -180,8 +185,14 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Form validation
     if (formData.amount <= 0) {
       toast.error(t('Summa 0 dan katta bo\'lishi kerak', language));
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      toast.error(t('Izoh majburiy', language));
       return;
     }
 
@@ -201,7 +212,7 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
           notes: `${t('To\'lov usuli', language)}: ${formData.paymentMethod === 'cash' ? t('Naqd', language) : formData.paymentMethod === 'card' ? t('Karta', language) : 'Click'}${formData.description ? ` - ${formData.description}` : ''}`
         });
 
-        await createMutation.mutateAsync({
+        await createTransactionMutation.mutateAsync({
           type: 'income',
           category: t('Qarz to\'lovi', language),
           amount: formData.amount,
@@ -212,6 +223,8 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
             id: selectedDebt._id
           }
         });
+
+        handleClose();
       } catch (error) {
         // Error handled by mutations
       }
@@ -223,17 +236,23 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
         other: t('Boshqa kirim', language)
       };
 
-      createMutation.mutate({
-        type: 'income',
-        category: categoryMap[selectedType],
-        amount: formData.amount,
-        description: formData.description,
-        paymentMethod: formData.paymentMethod,
-        relatedTo: {
-          type: selectedType,
-          id: null
-        }
-      });
+      try {
+        await createTransactionMutation.mutateAsync({
+          type: 'income',
+          category: categoryMap[selectedType],
+          amount: formData.amount,
+          description: formData.description,
+          paymentMethod: formData.paymentMethod,
+          relatedTo: {
+            type: selectedType,
+            id: null
+          }
+        });
+
+        handleClose();
+      } catch (error) {
+        // Error handled by mutation
+      }
     }
   };
 
@@ -437,11 +456,16 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
                       <p className="text-gray-500">
                         {carSearchQuery 
                           ? t('Avtomobil topilmadi', language)
-                          : t('Qarzi bor avtomobillar yo\'q', language)
+                          : selectedType === 'car' 
+                            ? t('Faol avtomobillar yo\'q', language)
+                            : t('Qarzi bor avtomobillar yo\'q', language)
                         }
                       </p>
                       <p className="text-xs text-gray-400 mt-2">
-                        {t('Barcha mashinalar to\'liq to\'langan', language)}
+                        {selectedType === 'car' 
+                          ? t('Barcha mashinalar arxivda yoki to\'liq to\'langan', language)
+                          : t('Barcha mashinalar to\'liq to\'langan', language)
+                        }
                       </p>
                     </div>
                   ) : (
@@ -620,11 +644,12 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
                   </label>
                   <select
                     value={formData.paymentMethod}
-                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as any }))}
+                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as 'cash' | 'card' | 'click' }))}
                     className="input"
                   >
                     <option value="cash">{t('Naqd', language)}</option>
                     <option value="card">{t('Karta', language)}</option>
+                    <option value="click">Click</option>
                   </select>
                 </div>
 
@@ -669,10 +694,10 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
                   </button>
                   <button
                     type="submit"
-                    disabled={createMutation.isPending || addPaymentMutation.isPending}
+                    disabled={createTransactionMutation.isPending || addPaymentMutation.isPending}
                     className="btn-primary disabled:opacity-50"
                   >
-                    {(createMutation.isPending || addPaymentMutation.isPending) ? t('Saqlanmoqda...', language) : t('Saqlash', language)}
+                    {(createTransactionMutation.isPending || addPaymentMutation.isPending) ? t('Saqlanmoqda...', language) : t('Saqlash', language)}
                   </button>
                 </div>
               </form>

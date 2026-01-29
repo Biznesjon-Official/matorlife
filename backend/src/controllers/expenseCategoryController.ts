@@ -154,38 +154,74 @@ export const initializeDefaultCategories = async (req: AuthRequest, res: Respons
 
     const defaultCategories = [
       {
-        name: 'Purchase',
+        name: 'Tovar sotib olish',
         nameUz: 'Tovar sotib olish',
-        description: 'Ehtiyot qismlar, materiallar va asboblar',
+        description: 'Ehtiyot qismlar, materiallar va asboblar sotib olish',
         icon: 'ShoppingCart',
         color: 'blue',
         isDefault: true,
         createdBy: userId
       },
       {
-        name: 'Rent',
-        nameUz: 'Ijara',
-        description: 'Bino, yer va jihozlar ijarasi',
+        name: 'Ijara to\'lovi',
+        nameUz: 'Ijara to\'lovi',
+        description: 'Bino, yer va jihozlar ijarasi to\'lovi',
         icon: 'Home',
         color: 'green',
         isDefault: true,
         createdBy: userId
       },
       {
-        name: 'Utilities',
+        name: 'Kommunal to\'lovlar',
         nameUz: 'Kommunal to\'lovlar',
-        description: 'Elektr, gaz, suv va internet',
+        description: 'Elektr, gaz, suv va internet to\'lovlari',
         icon: 'Zap',
         color: 'yellow',
         isDefault: true,
         createdBy: userId
       },
       {
-        name: 'Salaries',
-        nameUz: 'Oyliklar',
-        description: 'Xodimlar maoshi va bonuslar',
+        name: 'Oylik maoshlar',
+        nameUz: 'Oylik maoshlar',
+        description: 'Xodimlar maoshi va bonuslar to\'lovi',
         icon: 'Users',
         color: 'purple',
+        isDefault: true,
+        createdBy: userId
+      },
+      {
+        name: 'Transport xarajatlari',
+        nameUz: 'Transport xarajatlari',
+        description: 'Yoqilg\'i, ta\'mirlash va transport to\'lovlari',
+        icon: 'Truck',
+        color: 'indigo',
+        isDefault: true,
+        createdBy: userId
+      },
+      {
+        name: 'Reklama va marketing',
+        nameUz: 'Reklama va marketing',
+        description: 'Reklama, marketing va tarqatish xarajatlari',
+        icon: 'Megaphone',
+        color: 'pink',
+        isDefault: true,
+        createdBy: userId
+      },
+      {
+        name: 'Ofis jihozlari',
+        nameUz: 'Ofis jihozlari',
+        description: 'Ofis uchun jihozlar va materiallar',
+        icon: 'Monitor',
+        color: 'gray',
+        isDefault: true,
+        createdBy: userId
+      },
+      {
+        name: 'Soliq to\'lovlari',
+        nameUz: 'Soliq to\'lovlari',
+        description: 'Davlat soliqlari va yig\'imlar to\'lovi',
+        icon: 'FileText',
+        color: 'red',
         isDefault: true,
         createdBy: userId
       }

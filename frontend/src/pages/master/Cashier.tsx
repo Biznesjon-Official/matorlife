@@ -17,6 +17,7 @@ import {
 import { t } from '@/lib/transliteration';
 import { formatCurrency } from '@/lib/utils';
 import { useTransactions, useTransactionSummary } from '@/hooks/useTransactions';
+import { TransactionResponse } from '@/types';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import IncomeModal from '@/components/IncomeModal';
@@ -68,7 +69,7 @@ const MasterCashier: React.FC = memo(() => {
   });
   const { data: summaryData, isLoading: summaryLoading } = useTransactionSummary();
 
-  const transactions = transactionsData?.transactions || [];
+  const transactions = (transactionsData as TransactionResponse)?.transactions || [];
   const summary = summaryData?.summary || {
     totalIncome: 0,
     totalExpense: 0,

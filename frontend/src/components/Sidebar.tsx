@@ -1,0 +1,244 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  LayoutDashboard, 
+  CheckSquare, 
+  Car, 
+  CreditCard, 
+  LogOut,
+  User,
+  Users,
+  Award,
+  Globe,
+  ListTodo,
+  Package,
+  BookOpen,
+  X,
+} from 'lucide-react';
+import { t } from '@/lib/transliteration';
+
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  // localStorage'dan tilni o'qish va o'zgartirish
+  const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
+    const savedLanguage = localStorage.getItem('language');
+    return (savedLanguage as 'latin' | 'cyrillic') || 'latin';
+  });
+
+  // Tilni almashtirish funksiyasi
+  const toggleLanguage = () => {
+    const newLanguage = language === 'latin' ? 'cyrillic' : 'latin';
+    setLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+    // Sahifani yangilash
+    window.location.reload();
+  };
+
+  // Rol asosida navigatsiya menyusini aniqlash
+  const getMasterNavigation = () => [
+    { name: t('Kassa', language), href: '/app/master/cashier', icon: CreditCard },
+    { name: t('Xarajatlar', language), href: '/app/master/expenses', icon: BookOpen },
+    { name: t('Avtomobillar', language), href: '/app/cars', icon: Car },
+    { name: t('Shogirdlar', language), href: '/app/master/apprentices', icon: Users },
+    { name: t('Vazifalar', language), href: '/app/master/tasks', icon: CheckSquare },
+    { name: t('Zapchastlar', language), href: '/app/master/spare-parts', icon: Package },
+    { name: t('Qarz daftarchasi', language), href: '/app/debts', icon: BookOpen },
+  ];
+
+  const getApprenticeNavigation = () => [
+    { name: t('Shogird paneli', language), href: '/app/dashboard', icon: LayoutDashboard },
+    { name: t('Mening vazifalarim', language), href: '/app/apprentice/tasks', icon: CheckSquare },
+    { name: t('Vazifalar', language), href: '/app/apprentice/all-tasks', icon: ListTodo },
+    { name: t('Zapchastlar', language), href: '/app/master/spare-parts', icon: Package },
+    { name: t('Avtomobillar', language), href: '/app/apprentice/cars', icon: Car },
+    { name: t('Mening daromadim', language), href: '/app/apprentice/achievements', icon: Award },
+  ];
+
+  const navigation = user?.role === 'master' ? getMasterNavigation() : getApprenticeNavigation();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const getRoleGradient = () => {
+    return user?.role === 'master' 
+      ? 'from-blue-600 to-indigo-600' 
+      : 'from-green-600 to-emerald-600';
+  };
+
+  const getActiveGradient = () => {
+    return user?.role === 'master'
+      ? 'from-blue-500 to-indigo-600'
+      : 'from-green-500 to-emerald-600';
+  };
+
+  // Escape key ni eshitish
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
+  // Body scroll ni bloklash
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+
+      {/* Sidebar */}
+      <div 
+        className={`fixed inset-y-0 left-0 z-[101] w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-out lg:hidden ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className={`relative flex h-20 items-center px-4 bg-gradient-to-r ${getRoleGradient()}`}>
+            <div className="absolute inset-0 bg-black opacity-5"></div>
+            
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors z-10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {/* Logo and Title */}
+            <div className="relative z-10 flex items-center flex-1">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm flex-shrink-0 overflow-hidden">
+                <img 
+                  src="/logo.jpg" 
+                  alt="Mator Life Logo" 
+                  className="h-10 w-10 object-cover rounded-lg"
+                />
+              </div>
+              <div className="ml-3">
+                <span className="block text-lg font-bold text-white">
+                  Mator Life
+                </span>
+                <span className="block text-xs text-white/80">
+                  Ta'mirlash
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* User Info */}
+          <div className="border-b border-gray-100 p-4">
+            <div className="flex items-center">
+              <div className={`relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${getRoleGradient()} shadow-lg flex-shrink-0`}>
+                <div className="absolute inset-0 bg-white opacity-10 rounded-xl"></div>
+                {user?.role === 'master' ? (
+                  <Users className="h-6 w-6 text-white relative z-10" />
+                ) : (
+                  <User className="h-6 w-6 text-white relative z-10" />
+                )}
+                <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white"></div>
+              </div>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{user?.name}</p>
+                <p className={`text-xs font-semibold bg-gradient-to-r ${getRoleGradient()} bg-clip-text text-transparent`}>
+                  {user?.role === 'master' ? t('Ustoz', language) : t('Shogird', language)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  onClick={onClose}
+                  className={`relative flex items-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                    active
+                      ? `bg-gradient-to-r ${getActiveGradient()} text-white shadow-lg`
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {active && (
+                    <div className="absolute inset-0 bg-white opacity-10 rounded-xl"></div>
+                  )}
+                  <Icon
+                    className={`h-5 w-5 flex-shrink-0 relative z-10 mr-3 ${
+                      active
+                        ? 'text-white'
+                        : 'text-gray-400'
+                    }`}
+                  />
+                  <span className="relative z-10 truncate">{item.name}</span>
+                  {active && (
+                    <div className="ml-auto relative z-10">
+                      <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Footer Actions */}
+          <div className="border-t border-gray-100 p-4 space-y-2">
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600"
+            >
+              <Globe className="h-5 w-5 text-gray-400 mr-3" />
+              <span>{language === 'latin' ? 'Кириллица' : 'Lotin'}</span>
+            </button>
+
+            {/* Logout */}
+            <button
+              onClick={() => {
+                logout();
+                onClose();
+              }}
+              className="flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut className="h-5 w-5 text-gray-400 mr-3" />
+              <span>{t("Chiqish", language)}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Sidebar;

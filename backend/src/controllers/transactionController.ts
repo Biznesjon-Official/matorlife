@@ -42,24 +42,94 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
 
 export const getTransactions = async (req: AuthRequest, res: Response) => {
   try {
-    const { type, startDate, endDate } = req.query;
+    const { 
+      type, 
+      category,
+      startDate, 
+      endDate, 
+      page = 1, 
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'desc'
+    } = req.query;
+    
+    // Validate and sanitize inputs
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(100, Math.max(1, Number(limit))); // Max 100 items per page
+    const skip = (pageNum - 1) * limitNum;
+    
     const filter: any = {};
 
-    if (type) filter.type = type;
+    // Type filter
+    if (type && (type === 'income' || type === 'expense')) {
+      filter.type = type;
+    }
     
+    // Category filter
+    if (category && typeof category === 'string') {
+      filter.category = { $regex: category.trim(), $options: 'i' };
+    }
+    
+    // Date range filter
     if (startDate || endDate) {
       filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate as string);
-      if (endDate) filter.createdAt.$lte = new Date(endDate as string);
+      if (startDate) {
+        const start = new Date(startDate as string);
+        if (!isNaN(start.getTime())) {
+          filter.createdAt.$gte = start;
+        }
+      }
+      if (endDate) {
+        const end = new Date(endDate as string);
+        if (!isNaN(end.getTime())) {
+          filter.createdAt.$lte = end;
+        }
+      }
     }
 
-    const transactions = await Transaction.find(filter)
-      .populate('createdBy', 'name')
-      .sort({ createdAt: -1 });
+    // Build sort object
+    const sortObj: any = {};
+    const validSortFields = ['createdAt', 'amount', 'type', 'category'];
+    const sortField = validSortFields.includes(sortBy as string) ? sortBy : 'createdAt';
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    sortObj[sortField as string] = sortDirection;
 
-    res.json({ transactions });
+    // Execute queries in parallel for better performance
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .populate('createdBy', 'name')
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(), // Use lean() for better performance
+      Transaction.countDocuments(filter)
+    ]);
+
+    res.json({
+      transactions,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+        hasNext: pageNum < Math.ceil(total / limitNum),
+        hasPrev: pageNum > 1
+      },
+      filters: {
+        type: type || null,
+        category: category || null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        sortBy: sortField,
+        sortOrder: sortOrder
+      }
+    });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ 
+      message: 'Transaksiyalarni yuklashda xatolik yuz berdi', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

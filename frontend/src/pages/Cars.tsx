@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCars } from '@/hooks/useCars';
+import { useDebts } from '@/hooks/useDebts';
 import CreateCarModal from '@/components/CreateCarModal';
 import ViewCarModal from '@/components/ViewCarModal';
 import EditCarStepModal from '@/components/EditCarStepModal';
@@ -34,21 +35,42 @@ const Cars: React.FC = () => {
     status: statusFilter 
   });
 
+  // Qarzlar ro'yxatini olish (qarzi bor mashinalarni aniqlash uchun)
+  const { data: debtsData } = useDebts({ type: 'receivable' });
+  const allDebts = ((debtsData as any)?.debts || []);
+  
+  // Faqat to'lanmagan va qisman to'langan qarzlarni filtrlash
+  const activeDebts = allDebts.filter((debt: any) => {
+    const remaining = debt.amount - (debt.paidAmount || 0);
+    return remaining > 0; // Faqat qarzi qolgan mashinalar
+  });
+  
+  // Haqiqatan ham qarzi bor mashina ID larini ajratib olish
+  const carsWithActiveDebtIds = new Set(
+    activeDebts
+      .filter((debt: any) => debt.car && debt.car._id)
+      .map((debt: any) => debt.car._id)
+  );
+
   const cars = (carsData as any)?.cars || [];
   
   // Mashinalarni faol va arxiv bo'yicha filtrlash
-  // Faol: hali tugatilmagan mashinalar (status !== 'completed' va status !== 'delivered')
-  // Arxiv: tugatilgan mashinalar (status === 'completed' yoki status === 'delivered')
+  // Faol: hali tugatilmagan mashinalar (status !== 'completed' va status !== 'delivered') 
+  // VA haqiqiy qarzi bo'lmagan mashinalar
+  // Arxiv: tugatilgan mashinalar (status === 'completed' yoki status === 'delivered') 
+  // YOKI haqiqiy qarzi bor mashinalar
   const activeCars = cars.filter((car: Car) => 
     !car.isDeleted && 
     car.status !== 'completed' && 
-    car.status !== 'delivered'
+    car.status !== 'delivered' &&
+    !carsWithActiveDebtIds.has(car._id) // Faqat haqiqiy qarzi bor mashinalarni chiqarib tashlash
   );
   
   const archivedCars = cars.filter((car: Car) => 
     car.isDeleted || 
     car.status === 'completed' || 
-    car.status === 'delivered'
+    car.status === 'delivered' ||
+    carsWithActiveDebtIds.has(car._id) // Faqat haqiqiy qarzi bor mashinalarni arxivga qo'shish
   );
   
   // Hozirgi tab bo'yicha mashinalarni ko'rsatish
@@ -330,8 +352,12 @@ const Cars: React.FC = () => {
                     
                     // Qarzi bor yoki yo'qligini tekshirish
                     const paidAmount = car.paidAmount || 0;
-                    const hasDebt = displayTotal > paidAmount;
+                    const hasCarDebt = displayTotal > paidAmount; // Mashina qarzi
+                    const hasActiveDebt = carsWithActiveDebtIds.has(car._id); // Qarzlar sahifasidagi qarz
                     const remainingAmount = displayTotal - paidAmount;
+                    
+                    // Agar qarzlar sahifasida faol qarz bo'lsa yoki mashina qarzi bo'lsa
+                    const hasDebt = hasActiveDebt || hasCarDebt;
                     
                     return (
                       <tr key={car._id} className={`hover:bg-gray-50 transition-colors ${
@@ -460,7 +486,9 @@ const Cars: React.FC = () => {
                       {t("Qarzi bor", language)}: {displayedCars.filter((car: Car) => {
                         const total = car.totalEstimate || 0;
                         const paid = car.paidAmount || 0;
-                        return total > paid;
+                        const hasCarDebt = total > paid; // Mashina qarzi
+                        const hasActiveDebt = carsWithActiveDebtIds.has(car._id); // Qarzlar sahifasidagi qarz
+                        return hasActiveDebt || hasCarDebt; // Ikkala holatni tekshirish
                       }).length} ta
                     </span>
                   </div>

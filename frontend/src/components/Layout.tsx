@@ -14,15 +14,17 @@ import {
   ListTodo,
   Package,
   BookOpen,
+  Menu,
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
-import BottomNavbar from './BottomNavbar';
+import Sidebar from './Sidebar';
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // localStorage'dan tilni o'qish va o'zgartirish
   const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
@@ -42,7 +44,7 @@ const Layout: React.FC = () => {
   // Screen size detection
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 768); // md breakpoint
     };
 
     checkScreenSize();
@@ -98,6 +100,14 @@ const Layout: React.FC = () => {
       {isMobile && (
         <div className="fixed top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50">
           <div className="flex items-center justify-between px-4 py-3">
+            {/* Menu Button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:scale-105 transition-all duration-200 group"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
             {/* Logo and Site Name */}
             <div className="flex items-center space-x-3">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${getRoleGradient()} shadow-lg overflow-hidden`}>
@@ -136,6 +146,9 @@ const Layout: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Sidebar - Mobile */}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       {/* Sidebar - faqat desktop uchun */}
       {!isMobile && (
@@ -312,15 +325,12 @@ const Layout: React.FC = () => {
 
       {/* Main content */}
       <div className={`transition-all duration-300 ${isMobile ? 'pl-0' : (isExpanded ? 'pl-72' : 'pl-20')}`}>
-        <main className={`py-8 ${isMobile ? 'pt-20 pb-24' : ''}`}>
+        <main className={`py-8 ${isMobile ? 'pt-20 pb-8' : ''}`}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>
         </main>
       </div>
-
-      {/* Bottom Navigation - faqat mobile da */}
-      <BottomNavbar />
     </div>
   );
 };

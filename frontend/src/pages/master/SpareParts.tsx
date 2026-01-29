@@ -55,7 +55,7 @@ const SpareParts: React.FC = () => {
   const fetchSpareParts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/spare-parts`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spare-parts?limit=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

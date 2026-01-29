@@ -3,11 +3,12 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface ITransaction extends Document {
   type: 'income' | 'expense';
   category: string;
+  categoryId?: mongoose.Types.ObjectId; // Xarajat kategoriyasi ID'si
   amount: number;
   description: string;
   paymentMethod: 'cash' | 'card' | 'click';
   relatedTo?: {
-    type: 'debt' | 'car' | 'other';
+    type: 'debt' | 'car' | 'expense_category' | 'other';
     id?: mongoose.Types.ObjectId;
   };
   createdBy: mongoose.Types.ObjectId;
@@ -25,6 +26,11 @@ const transactionSchema = new Schema<ITransaction>({
     type: String,
     required: true,
     trim: true
+  },
+  categoryId: {
+    type: Schema.Types.ObjectId,
+    ref: 'ExpenseCategory',
+    required: false
   },
   amount: {
     type: Number,
@@ -44,7 +50,7 @@ const transactionSchema = new Schema<ITransaction>({
   relatedTo: {
     type: {
       type: String,
-      enum: ['debt', 'car', 'other']
+      enum: ['debt', 'car', 'expense_category', 'other']
     },
     id: {
       type: Schema.Types.ObjectId,

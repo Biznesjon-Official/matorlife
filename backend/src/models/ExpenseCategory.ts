@@ -32,6 +32,12 @@ const expenseCategorySchema = new Schema<IExpenseCategory>({
   icon: {
     type: String,
     required: true,
+    enum: [
+      'ShoppingCart', 'Home', 'Zap', 'Users', 'Truck', 'Megaphone', 
+      'Monitor', 'FileText', 'DollarSign', 'CreditCard', 'Wallet',
+      'Building', 'Car', 'Fuel', 'Wrench', 'Package', 'Phone',
+      'Wifi', 'Lightbulb', 'Calculator', 'Briefcase'
+    ],
     default: 'DollarSign'
   },
   color: {

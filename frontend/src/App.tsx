@@ -4,7 +4,6 @@ import Layout from '@/components/Layout';
 import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
-import MasterDashboard from '@/pages/master/Dashboard';
 import ApprenticeDashboard from '@/pages/apprentice/Dashboard';
 import Tasks from '@/pages/Tasks';
 import Cars from '@/pages/Cars';
@@ -112,9 +111,9 @@ function DashboardRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Agar master bo'lsa, master dashboard ga yo'naltirish
+  // Agar master bo'lsa, to'g'ridan-to'g'ri kassa sahifasiga yo'naltirish
   if (user.role === 'master') {
-    return <Navigate to="/app/master/dashboard" replace />;
+    return <Navigate to="/app/master/cashier" replace />;
   }
 
   // Agar apprentice bo'lsa, dashboard ko'rsatish
@@ -164,11 +163,6 @@ function AppRoutes() {
         } />
         
         {/* Master routes */}
-        <Route path="master/dashboard" element={
-          <MasterRoute>
-            <MasterDashboard />
-          </MasterRoute>
-        } />
         <Route path="master/cashier" element={
           <MasterRoute>
             <MasterCashier />

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useTransactions, useTransactionStats } from '../../hooks/useTransactions';
+import { useTransactions } from '../../hooks/useTransactions';
+import { TransactionResponse } from '@/types';
 import { useExpenseCategories, useDeleteExpenseCategory } from '../../hooks/useExpenseCategories';
 import AddExpenseCategoryModal from '@/components/AddExpenseCategoryModal';
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign,
+  TrendingUp,
+  TrendingDown,
   Calendar,
   Plus,
   Trash2,
@@ -15,7 +15,8 @@ import {
   Zap,
   Users,
   Settings,
-  Package
+  Package,
+  DollarSign
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
@@ -68,12 +69,11 @@ const Expenses: React.FC = () => {
   const dateRange = getDateRange();
   const { data: transactionsData, isLoading } = useTransactions({ 
     type: filter === 'all' ? undefined : filter,
-    category: selectedCategory || undefined,
+    categoryId: selectedCategory || undefined, // categoryId bo'yicha filter
     ...dateRange
   });
-  const { data: stats } = useTransactionStats();
 
-  const transactions = transactionsData?.transactions || [];
+  const transactions = (transactionsData as TransactionResponse)?.transactions || [];
   const categories = categoriesData?.categories || [];
 
   // Icon mapping
@@ -155,13 +155,13 @@ const Expenses: React.FC = () => {
   // Kategoriya bo'yicha xarajatlarni hisoblash
   const getCategoryExpenses = (categoryId: string) => {
     return transactions
-      .filter((t: any) => t.type === 'expense' && t.category === categoryId)
+      .filter((t: any) => t.type === 'expense' && (t.categoryId === categoryId || t.category === categories.find((c: any) => c._id === categoryId)?.nameUz))
       .reduce((sum: number, t: any) => sum + t.amount, 0);
   };
 
   // Kategoriya bo'yicha transaksiyalar sonini hisoblash
   const getCategoryTransactionCount = (categoryId: string) => {
-    return transactions.filter((t: any) => t.type === 'expense' && t.category === categoryId).length;
+    return transactions.filter((t: any) => t.type === 'expense' && (t.categoryId === categoryId || t.category === categories.find((c: any) => c._id === categoryId)?.nameUz)).length;
   };
 
   // Bugungi xarajatlarni hisoblash
@@ -173,7 +173,7 @@ const Expenses: React.FC = () => {
     return transactions
       .filter((t: any) => 
         t.type === 'expense' && 
-        t.category === categoryId &&
+        (t.categoryId === categoryId || t.category === categories.find((c: any) => c._id === categoryId)?.nameUz) &&
         new Date(t.createdAt) >= todayStart &&
         new Date(t.createdAt) < todayEnd
       )
@@ -226,60 +226,6 @@ const Expenses: React.FC = () => {
               <Plus className="h-4 w-4" />
               {t("Yangi xarajat", language)}
             </Link>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-          <div className="card p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 sm:p-3 bg-green-500 rounded-xl">
-                <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                {t('Kirim', language)}
-              </span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold text-green-900 mb-2">
-              {formatCurrency(stats?.summary?.totalIncome || 0)}
-            </div>
-            <p className="text-xs sm:text-sm text-green-600">
-              {stats?.summary?.incomeCount || 0} {t('ta transaksiya', language)}
-            </p>
-          </div>
-
-          <div className="card p-4 sm:p-6 bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 sm:p-3 bg-red-500 rounded-xl">
-                <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-red-700 bg-red-100 px-2 py-1 rounded-full">
-                {t('Chiqim', language)}
-              </span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-bold text-red-900 mb-2">
-              {formatCurrency(stats?.summary?.totalExpense || 0)}
-            </div>
-            <p className="text-xs sm:text-sm text-red-600">
-              {stats?.summary?.expenseCount || 0} {t('ta transaksiya', language)}
-            </p>
-          </div>
-
-          <div className="card p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 sm:p-3 bg-blue-500 rounded-xl">
-                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-              </div>
-              <span className="text-xs sm:text-sm font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
-                {t('Balans', language)}
-              </span>
-            </div>
-            <div className={`text-2xl sm:text-3xl font-bold mb-2 ${(stats?.summary?.balance || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-              {formatCurrency(stats?.summary?.balance || 0)}
-            </div>
-            <p className={`text-xs sm:text-sm ${(stats?.summary?.balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {(stats?.summary?.balance || 0) >= 0 ? t('Ijobiy', language) : t('Salbiy', language)}
-            </p>
           </div>
         </div>
       </div>

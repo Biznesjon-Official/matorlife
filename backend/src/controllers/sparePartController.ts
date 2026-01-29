@@ -30,37 +30,108 @@ export const searchSpareParts = async (req: AuthRequest, res: Response) => {
 
 export const getSpareParts = async (req: AuthRequest, res: Response) => {
   try {
-    const { search, page = 1, limit = 20 } = req.query;
+    const { 
+      search, 
+      page = 1, 
+      limit = 20, 
+      lowStock,
+      sortBy = 'usageCount',
+      sortOrder = 'desc'
+    } = req.query;
+    
+    // Validate and sanitize inputs
+    const pageNum = Math.max(1, Number(page));
+    const limitNum = Math.min(100, Math.max(1, Number(limit))); // Max 100 items per page
+    const skip = (pageNum - 1) * limitNum;
     
     const filter: any = { isActive: true };
     
-    if (search) {
+    // Search filter
+    if (search && typeof search === 'string' && search.trim()) {
+      const searchTerm = search.trim();
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { supplier: { $regex: search, $options: 'i' } }
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { supplier: { $regex: searchTerm, $options: 'i' } }
       ];
     }
-
-    const skip = (Number(page) - 1) * Number(limit);
     
-    const spareParts = await SparePart.find(filter)
-      .sort({ usageCount: -1, name: 1 })
-      .skip(skip)
-      .limit(Number(limit));
+    // Low stock filter
+    if (lowStock === 'true') {
+      filter.quantity = { $lte: 3 };
+    }
+    
+    // Build sort object
+    const sortObj: any = {};
+    const validSortFields = ['name', 'quantity', 'usageCount', 'costPrice', 'sellingPrice', 'createdAt'];
+    const sortField = validSortFields.includes(sortBy as string) ? sortBy : 'usageCount';
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
+    
+    sortObj[sortField as string] = sortDirection;
+    if (sortField !== 'name') {
+      sortObj.name = 1; // Secondary sort by name
+    }
+    
+    // Execute queries in parallel for better performance
+    const [spareParts, total] = await Promise.all([
+      SparePart.find(filter)
+        .sort(sortObj)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(), // Use lean() for better performance
+      SparePart.countDocuments(filter)
+    ]);
 
-    const total = await SparePart.countDocuments(filter);
+    // Calculate statistics
+    const stats = await SparePart.aggregate([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: null,
+          totalItems: { $sum: 1 },
+          totalQuantity: { $sum: '$quantity' },
+          totalValue: { $sum: { $multiply: ['$sellingPrice', '$quantity'] } },
+          totalProfit: { $sum: { $multiply: [{ $subtract: ['$sellingPrice', '$costPrice'] }, '$quantity'] } },
+          lowStockCount: {
+            $sum: {
+              $cond: [{ $lte: ['$quantity', 3] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    const statistics = stats[0] || {
+      totalItems: 0,
+      totalQuantity: 0,
+      totalValue: 0,
+      totalProfit: 0,
+      lowStockCount: 0
+    };
 
     res.json({
       spareParts,
       pagination: {
-        page: Number(page),
-        limit: Number(limit),
+        page: pageNum,
+        limit: limitNum,
         total,
-        pages: Math.ceil(total / Number(limit))
+        pages: Math.ceil(total / limitNum),
+        hasNext: pageNum < Math.ceil(total / limitNum),
+        hasPrev: pageNum > 1
+      },
+      statistics,
+      filters: {
+        search: search || null,
+        lowStock: lowStock === 'true',
+        sortBy: sortField,
+        sortOrder: sortOrder
       }
     });
   } catch (error: any) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error fetching spare parts:', error);
+    res.status(500).json({ 
+      message: 'Zapchastlarni yuklashda xatolik yuz berdi', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 

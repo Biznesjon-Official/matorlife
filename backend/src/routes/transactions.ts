@@ -5,8 +5,10 @@ import {
   getTransactions,
   getTransactionById,
   getTransactionSummary,
-  deleteTransaction
-} from '../controllers/transactionController';
+  getTransactionStats,
+  deleteTransaction,
+  bulkDeleteTransactions
+} from '../controllers/transactionControllerOptimized';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
 
@@ -22,11 +24,26 @@ router.post('/', authenticate, authorize('master'), [
   handleValidationErrors
 ], createTransaction);
 
-// Get transactions
+// Get transactions with advanced filtering and pagination
 router.get('/', authenticate, getTransactions);
 
-// Get transaction summary
+// Get transaction summary with period filtering
 router.get('/summary', authenticate, getTransactionSummary);
+
+// Get transaction statistics
+router.get('/stats', authenticate, getTransactionStats);
+
+// Bulk delete transactions (master only)
+router.post('/bulk-delete', authenticate, authorize('master'), [
+  body('ids').isArray({ min: 1 }).withMessage('IDs array is required'),
+  body('ids.*').isMongoId().withMessage('Invalid transaction ID'),
+  handleValidationErrors
+], bulkDeleteTransactions);
+
+// Export transactions (placeholder - would need actual implementation)
+router.get('/export', authenticate, (req, res) => {
+  res.status(501).json({ message: 'Export functionality not yet implemented' });
+});
 
 // Get transaction by ID
 router.get('/:id', authenticate, getTransactionById);

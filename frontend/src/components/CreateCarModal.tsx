@@ -217,14 +217,24 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         
         const normalizedItemName = normalizeText(itemName);
         
-        // Mavjud zapchastlar orasida qidirish
+        // Mavjud zapchastlar orasida qidirish - aniqroq qidiruv
         const foundSparePart = suggestions.find((sparePart: any) => {
           const normalizedName = normalizeText(sparePart.name);
-          return normalizedName === normalizedItemName;
+          // Aniq mos kelish yoki selectedSparePartId mavjudligi
+          return normalizedName === normalizedItemName || 
+                 (selectedSparePartId && sparePart._id === selectedSparePartId);
         });
         
-        // Agar topilmasa, ogohlantirish va "Keltirish" ga o'tkazish
-        if (!foundSparePart) {
+        // Agar selectedSparePartId mavjud bo'lsa, zapchast dropdown dan tanlangan deb hisoblaymiz
+        if (selectedSparePartId) {
+          // Dropdown dan tanlangan zapchast - mavjudligini tekshirish shart emas
+          // Faqat miqdorini tekshirish kerak
+          if (foundSparePart && foundSparePart.quantity <= 0) {
+            alert(`❌ "${foundSparePart.name}" zapchasti tugagan! Mavjud emas.`);
+            return;
+          }
+        } else if (!foundSparePart) {
+          // Qo'lda kiritilgan zapchast va mavjud emas
           const confirmSwitch = window.confirm(
             `⚠️ "${itemName}" zapchasti bizda mavjud emas!\n\n` +
             `Bu zapchastni "Keltirish kerak bo'lganlar" ro'yxatiga qo'shmoqchimisiz?\n\n` +
@@ -242,6 +252,12 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
           } else {
             return; // Bekor qilindi, qaytadan kiritish
           }
+        }
+        
+        // Agar zapchast topilgan bo'lsa va miqdori 0 dan kam bo'lsa, xatolik
+        if (foundSparePart && foundSparePart.quantity <= 0) {
+          alert(`❌ "${foundSparePart.name}" zapchasti tugagan! Mavjud emas.`);
+          return;
         }
       }
       
@@ -277,6 +293,9 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       setItemQuantity('1');
       setItemSource('available'); // Default ga qaytarish
       setSelectedSparePartId('');
+      
+      // Success message
+      toast.success(t('Zapchast qo\'shildi', language));
     }
   };
 
