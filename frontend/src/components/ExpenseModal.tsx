@@ -371,7 +371,6 @@ const GenericExpenseModal: React.FC<GenericExpenseModalProps> = ({
               onSuccess={(transactionData) => {
                 handleCategoryModalSuccess(transactionData);
               }}
-              category={selectedCategory}
             />
           )}
 

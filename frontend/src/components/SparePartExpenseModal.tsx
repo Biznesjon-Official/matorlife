@@ -8,14 +8,12 @@ interface SparePartExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (data: any) => void;
-  category: any;
 }
 
 const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
   isOpen,
   onClose,
-  onSuccess,
-  category
+  onSuccess
 }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

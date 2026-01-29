@@ -7,11 +7,8 @@ import {
   TrendingDown, 
   DollarSign,
   Calendar,
-  Filter,
-  Download,
   Plus,
   Trash2,
-  Eye,
   BarChart3,
   ShoppingCart,
   Home,
@@ -158,13 +155,13 @@ const Expenses: React.FC = () => {
   // Kategoriya bo'yicha xarajatlarni hisoblash
   const getCategoryExpenses = (categoryId: string) => {
     return transactions
-      .filter(t => t.type === 'expense' && t.category === categoryId)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .filter((t: any) => t.type === 'expense' && t.category === categoryId)
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
   };
 
   // Kategoriya bo'yicha transaksiyalar sonini hisoblash
   const getCategoryTransactionCount = (categoryId: string) => {
-    return transactions.filter(t => t.type === 'expense' && t.category === categoryId).length;
+    return transactions.filter((t: any) => t.type === 'expense' && t.category === categoryId).length;
   };
 
   // Bugungi xarajatlarni hisoblash
@@ -174,13 +171,13 @@ const Expenses: React.FC = () => {
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
     
     return transactions
-      .filter(t => 
+      .filter((t: any) => 
         t.type === 'expense' && 
         t.category === categoryId &&
         new Date(t.createdAt) >= todayStart &&
         new Date(t.createdAt) < todayEnd
       )
-      .reduce((sum, t) => sum + t.amount, 0);
+      .reduce((sum: number, t: any) => sum + t.amount, 0);
   };
 
   // Kategoriyani o'chirish funksiyasi

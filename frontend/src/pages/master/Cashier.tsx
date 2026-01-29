@@ -9,14 +9,10 @@ import {
   Calendar,
   BarChart3,
   Eye,
-  Filter,
-  Download,
   Wallet,
   CreditCard,
   Smartphone,
-  Clock,
-  CheckCircle,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import { formatCurrency } from '@/lib/utils';
