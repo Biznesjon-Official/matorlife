@@ -33,7 +33,7 @@ const MasterTasks: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('active'); // 'active' - faqat faol vazifalar
   const [searchTerm, setSearchTerm] = useState('');
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -91,9 +91,18 @@ const MasterTasks: React.FC = () => {
     }
   };
 
-  const filteredTasks = filter === 'all' 
-    ? tasks?.tasks 
-    : tasks?.tasks?.filter((task: any) => task.status === filter);
+  const filteredTasks = (() => {
+    if (filter === 'all') {
+      return tasks?.tasks;
+    } else if (filter === 'active') {
+      // Faqat faol vazifalar (tasdiqlangan va rad etilganlarni chiqarib tashlash)
+      return tasks?.tasks?.filter((task: any) => 
+        task.status !== 'approved' && task.status !== 'rejected'
+      );
+    } else {
+      return tasks?.tasks?.filter((task: any) => task.status === filter);
+    }
+  })();
 
   const searchedTasks = filteredTasks?.filter((task: any) =>
     task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -264,6 +273,9 @@ const MasterTasks: React.FC = () => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="w-full px-4 py-3 text-sm font-semibold bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer shadow-sm hover:shadow-md transition-all duration-200"
               >
+                <option value="active">
+                  Faol vazifalar ({tasks?.tasks?.filter((t: any) => t.status !== 'approved' && t.status !== 'rejected').length || 0})
+                </option>
                 <option value="all">
                   Barchasi ({tasks?.tasks?.length || 0})
                 </option>
@@ -346,7 +358,7 @@ const MasterTasks: React.FC = () => {
                   <div className="flex items-center gap-2 bg-purple-50 px-2.5 py-1.5 rounded-lg">
                     <Car className="h-3.5 w-3.5 text-purple-600 shrink-0" />
                     <span className="font-semibold text-gray-900 text-sm truncate">
-                      {task.car ? `${task.car.make} ${task.car.model}` : 'Mashina tanlanmagan'}
+                      {task.car ? `${task.car.make} ${task.car.carModel}` : 'Mashina tanlanmagan'}
                     </span>
                   </div>
                 </div>

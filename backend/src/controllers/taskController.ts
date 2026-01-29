@@ -2,6 +2,91 @@ import { Response } from 'express';
 import Task from '../models/Task';
 import { AuthRequest } from '../middleware/auth';
 
+/**
+ * Mashina barcha ishlar tugaganda avtomatik tugatish funksiyasi
+ * Bu funksiya ham vazifalar, ham xizmatlar tasdiqlanganda ishlaydi
+ */
+async function checkAndCompleteCarIfReady(carId: any) {
+  try {
+    const CarService = require('../models/CarService').default;
+    
+    // Barcha vazifalar va xizmatlarni tekshirish
+    const allTasks = await Task.find({ car: carId });
+    const allServices = await CarService.find({ car: carId });
+    
+    // Vazifalar holati: barcha vazifalar ko'rib chiqilgan va kamida bittasi tasdiqlangan
+    const allTasksReviewed = allTasks.length === 0 || allTasks.every((t: any) => 
+      t.status === 'approved' || t.status === 'rejected'
+    );
+    const hasApprovedTasks = allTasks.length === 0 || allTasks.some((t: any) => t.status === 'approved');
+    
+    // Xizmatlar holati: barcha xizmatlar tasdiqlangan
+    const allServicesApproved = allServices.length === 0 || allServices.every((s: any) => 
+      s.status === 'completed'
+    );
+    
+    console.log(`🔍 Mashina holati tekshirilmoqda:`, {
+      carId,
+      tasksCount: allTasks.length,
+      servicesCount: allServices.length,
+      allTasksReviewed,
+      hasApprovedTasks,
+      allServicesApproved,
+      taskStatuses: allTasks.map((t: any) => ({ id: t._id, status: t.status, title: t.title })),
+      serviceStatuses: allServices.map((s: any) => ({ id: s._id, status: s.status }))
+    });
+    
+    // Agar barcha ishlar tugagan bo'lsa
+    if (allTasksReviewed && hasApprovedTasks && allServicesApproved) {
+      const Car = require('../models/Car').default;
+      const car = await Car.findById(carId);
+      
+      if (car && car.status !== 'completed') {
+        console.log(`🎯 Barcha ishlar tugadi - mashina tugatilmoqda: ${car.licensePlate}`);
+        
+        // Mashina statusini completed ga o'zgartirish
+        car.status = 'completed';
+        
+        // Qarz tekshirish va yaratish
+        const totalAmount = car.totalEstimate || 0;
+        const paidAmount = car.paidAmount || 0;
+        const remainingAmount = totalAmount - paidAmount;
+
+        if (remainingAmount > 0) {
+          try {
+            const debtService = require('../services/debtService').default;
+            await debtService.createDebtForCompletedCar({
+              carId: car._id,
+              clientName: car.ownerName,
+              clientPhone: car.ownerPhone,
+              totalAmount,
+              paidAmount,
+              description: `${car.make} ${car.carModel} (${car.licensePlate}) - Avtomatik yaratilgan qarz (barcha ishlar tugadi)`,
+              notes: 'Barcha ishlar tugaganda avtomatik yaratilgan qarz'
+            });
+          } catch (debtError) {
+            console.error('❌ Qarz yaratishda xatolik:', debtError);
+          }
+        } else {
+          console.log(`✅ Mashina to'liq to'langan holda tugatildi: ${car.licensePlate}`);
+        }
+
+        await car.save();
+        console.log(`✅ Mashina avtomatik tugatildi: ${car.licensePlate} - ${car.ownerName}`);
+        
+        return { completed: true, car };
+      }
+    } else {
+      console.log(`⏳ Mashina hali tugamagan: vazifalar=${allTasksReviewed}, xizmatlar=${allServicesApproved}`);
+    }
+    
+    return { completed: false };
+  } catch (error) {
+    console.error('❌ Mashina tugatishda xatolik:', error);
+    throw error;
+  }
+}
+
 export const createTask = async (req: AuthRequest, res: Response) => {
   try {
     const { 
@@ -280,6 +365,8 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     if (approved) {
       task.approvedAt = new Date();
       
+      console.log(`✅ Vazifa tasdiqlandi: ${task.title} - Status: ${task.status}`);
+      
       const User = require('../models/User').default;
       
       // Yangi tizim: Ko'p shogirdlar
@@ -298,6 +385,19 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
           task.assignedTo,
           { $inc: { earnings: task.apprenticeEarning } }
         );
+      }
+
+      // Barcha vazifalar va xizmatlar tasdiqlangan yoki yo'qligini tekshirish
+      if (task.car) {
+        const completionResult = await checkAndCompleteCarIfReady(task.car);
+        
+        // Response'ga mashina tugatilganligi haqida ma'lumot qo'shish
+        return res.json({
+          message: `Task ${approved ? 'approved' : 'rejected'} successfully`,
+          task,
+          carCompleted: completionResult.completed,
+          carData: completionResult.car
+        });
       }
     } else {
       task.rejectionReason = rejectionReason;

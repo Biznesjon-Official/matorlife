@@ -44,8 +44,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
       setFormData({
         title: task.title || '',
         description: task.description || '',
-        assignedTo: typeof task.assignedTo === 'object' ? task.assignedTo._id : task.assignedTo,
-        car: typeof task.car === 'object' ? task.car._id : task.car,
+        assignedTo: task.assignedTo && typeof task.assignedTo === 'object' ? task.assignedTo._id : (task.assignedTo || ''),
+        car: task.car && typeof task.car === 'object' ? task.car._id : (task.car || ''),
         service: task.service || '',
         priority: task.priority || 'medium',
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
@@ -363,7 +363,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                   required
                 >
                   <option value="">Tanlang</option>
-                  {(carsData as any)?.cars?.map((car: any) => (
+                  {(carsData as any)?.cars
+                    ?.filter((car: any) => 
+                      !car.isDeleted && 
+                      car.status !== 'completed' && 
+                      car.status !== 'delivered'
+                    )
+                    ?.map((car: any) => (
                     <option key={car._id} value={car._id}>
                       {car.make} {car.carModel}
                     </option>

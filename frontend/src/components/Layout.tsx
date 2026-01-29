@@ -56,6 +56,7 @@ const Layout: React.FC = () => {
   // Rol asosida navigatsiya menyusini aniqlash
   const getMasterNavigation = () => [
     { name: t('Kassa', language), href: '/app/master/cashier', icon: CreditCard },
+    { name: t('Xarajatlar', language), href: '/app/master/expenses', icon: BookOpen },
     { name: t('Avtomobillar', language), href: '/app/cars', icon: Car },
     { name: t('Shogirdlar', language), href: '/app/master/apprentices', icon: Users },
     { name: t('Vazifalar', language), href: '/app/master/tasks', icon: CheckSquare },

@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import Debt from '../models/Debt';
+import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import telegramService from '../services/telegramService';
 export const createDebt = async (req: AuthRequest, res: Response) => {
@@ -17,6 +18,17 @@ export const createDebt = async (req: AuthRequest, res: Response) => {
     });
     await debt.save();
     await debt.populate('car', 'make carModel licensePlate');
+    
+    // Qarz yaratilganda kassa daromadini yangilash
+    const user = req.user!;
+    
+    if (type === 'payable') {
+      // Bizning qarzimiz yaratilganda - daromaddan kamayadi (chiqim)
+      user.earnings = Math.max(0, user.earnings - amount);
+      await user.save();
+    }
+    // receivable type uchun hech narsa qilmaymiz, chunki bu faqat qarz yozuvi
+    
     // Telegram xabar yuborish
     try {
       const debtData = {
@@ -36,7 +48,8 @@ export const createDebt = async (req: AuthRequest, res: Response) => {
     }
     res.status(201).json({
       message: 'Debt record created successfully',
-      debt
+      debt,
+      updatedEarnings: user.earnings
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -79,6 +92,7 @@ export const addPayment = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Debt record not found' });
     }
     
+    // To'lov qo'shish
     debt.paymentHistory.push({
       amount,
       date: new Date(),
@@ -88,6 +102,10 @@ export const addPayment = async (req: AuthRequest, res: Response) => {
     
     await debt.save();
     await debt.populate('car', 'make carModel licensePlate');
+    
+    // ❌ OLIB TASHLANDI: Daromad yangilash
+    // Daromad faqat Transaction orqali yangilanadi (transactionController.ts)
+    // Bu yerda faqat qarz ma'lumotlarini yangilaymiz
     
     // To'lov qo'shilganda Telegram xabar yuborish
     try {

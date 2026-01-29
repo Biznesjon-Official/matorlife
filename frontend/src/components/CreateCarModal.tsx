@@ -5,6 +5,7 @@ import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useSearchSpareParts, useIncrementSparePartUsage } from '@/hooks/useSpareParts';
 import { formatCurrency } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
+import toast from 'react-hot-toast';
 
 interface CreateCarModalProps {
   isOpen: boolean;
@@ -102,6 +103,33 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
     setItemName(value);
     setShowSuggestions(value.length >= 2);
     setSelectedSuggestionIndex(-1);
+    
+    // Agar 2 ta yoki undan ko'p harf yozilgan bo'lsa, tekshirish
+    if (value.length >= 2) {
+      // Qidiruv so'zini tozalash
+      const normalizeText = (text: string) => {
+        return text.toLowerCase().trim();
+      };
+      
+      const normalizedValue = normalizeText(value);
+      
+      // Mavjud zapchastlar orasida qidirish
+      const foundSparePart = suggestions.some((sparePart: any) => {
+        const normalizedName = normalizeText(sparePart.name);
+        return normalizedName.includes(normalizedValue) || normalizedValue.includes(normalizedName);
+      });
+      
+      // Agar topilsa, avtomatik "Bizda bor" ga o'tkazish
+      if (foundSparePart) {
+        setItemSource('available');
+      } 
+      // Agar topilmasa, avtomatik "Keltirish" ga o'tkazish
+      else if (value.length >= 3) {
+        setItemSource('tobring');
+        setItemPrice('0');
+        setDisplayItemPrice('0');
+      }
+    }
   };
 
   const handleItemNameFocus = () => {
@@ -132,6 +160,9 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
     setSelectedSparePartId(sparePart._id);
     setShowSuggestions(false);
     setSelectedSuggestionIndex(-1);
+    
+    // Avtomatik "Bizda bor" ga o'tkazish
+    setItemSource('available');
     
     // Increment usage count
     incrementUsageMutation.mutate(sparePart._id);
@@ -176,6 +207,44 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
   const addItem = () => {
     if (itemName && itemPrice !== undefined && itemPrice !== null) {
       const quantity = parseInt(itemQuantity) || 1;
+      
+      // Agar "Bizda bor" tanlangan bo'lsa, mavjudligini tekshirish
+      if (itemSource === 'available' && currentStep === 2) {
+        // Qidiruv so'zini tozalash
+        const normalizeText = (text: string) => {
+          return text.toLowerCase().trim();
+        };
+        
+        const normalizedItemName = normalizeText(itemName);
+        
+        // Mavjud zapchastlar orasida qidirish
+        const foundSparePart = suggestions.find((sparePart: any) => {
+          const normalizedName = normalizeText(sparePart.name);
+          return normalizedName === normalizedItemName;
+        });
+        
+        // Agar topilmasa, ogohlantirish va "Keltirish" ga o'tkazish
+        if (!foundSparePart) {
+          const confirmSwitch = window.confirm(
+            `⚠️ "${itemName}" zapchasti bizda mavjud emas!\n\n` +
+            `Bu zapchastni "Keltirish kerak bo'lganlar" ro'yxatiga qo'shmoqchimisiz?\n\n` +
+            `"OK" - Keltirish kerak bo'lganlar ro'yxatiga qo'shish\n` +
+            `"Bekor qilish" - Qaytadan kiritish`
+          );
+          
+          if (confirmSwitch) {
+            // "Keltirish" ga o'tkazish va narxni 0 qilish
+            setItemSource('tobring');
+            setItemPrice('0');
+            setDisplayItemPrice('0');
+            toast.success(t('Zapchast "Keltirish kerak" ro\'yxatiga o\'tkazildi', language));
+            return; // Funksiyani to'xtatish, foydalanuvchi qayta "Qo'shish" ni bossin
+          } else {
+            return; // Bekor qilindi, qaytadan kiritish
+          }
+        }
+      }
+      
       // Agar "Keltirish" tanlangan bo'lsa, narx 0 bo'ladi
       const price = itemSource === 'tobring' ? 0 : (parseFloat(itemPrice) || 0);
       
@@ -602,7 +671,7 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Plus className="h-5 w-5 text-green-600" />
-                  <h4 className="font-bold text-green-900">{t("Ish qo'shish", language)}</h4>
+                  <h4 className="font-bold text-green-900">{t("Zapchast qo'shish", language)}</h4>
                 </div>
                 
                 <div className="space-y-3">
@@ -614,7 +683,7 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                       onFocus={handleItemNameFocus}
                       onBlur={handleItemNameBlur}
                       onKeyDown={handleKeyDown}
-                      placeholder={t("Ish nomi", language) + " *"}
+                      placeholder={t("Zapchast nomi", language) + " *"}
                       className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                     

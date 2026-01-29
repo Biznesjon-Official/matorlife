@@ -13,7 +13,8 @@ import {
   getClientParts,
   getArchivedCars,
   restoreCar,
-  addCarPayment
+  addCarPayment,
+  completeCar
 } from '../controllers/carController';
 import { authenticate } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -140,6 +141,12 @@ router.post('/:id/payment', authenticate, [
   body('paymentMethod').isIn(['cash', 'card', 'click']).withMessage('Invalid payment method'),
   handleValidationErrors
 ], addCarPayment);
+
+// Complete car work
+router.post('/:id/complete', authenticate, [
+  body('notes').optional().trim().isLength({ max: 500 }).withMessage('Notes must be less than 500 characters'),
+  handleValidationErrors
+], completeCar);
 
 // Delete car
 router.delete('/:id', authenticate, deleteCar);

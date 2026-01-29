@@ -36,7 +36,7 @@ const ApprenticeTasks: React.FC = () => {
   
   // Debug logging
   const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
+  const [activeTab, setActiveTab] = useState<'active' | 'all' | 'completed'>('active'); // Default: faqat faol vazifalar
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
   const [carServices, setCarServices] = useState<any[]>([]);
@@ -193,7 +193,10 @@ const ApprenticeTasks: React.FC = () => {
   // Filter tasks based on active tab
   let filteredTasks = myTasks;
   if (activeTab === 'active') {
-    filteredTasks = [...assignedTasks, ...inProgressTasks];
+    // Faqat faol vazifalar (tasdiqlangan va rad etilganlarni chiqarib tashlash)
+    filteredTasks = myTasks.filter((task: any) => 
+      task.status !== 'approved' && task.status !== 'rejected'
+    );
   } else if (activeTab === 'completed') {
     filteredTasks = [...completedTasks, ...approvedTasks];
   }
@@ -296,6 +299,16 @@ const ApprenticeTasks: React.FC = () => {
           {/* Tabs */}
           <div className="flex space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-lg overflow-x-auto">
             <button
+              onClick={() => setActiveTab('active')}
+              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'active'
+                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              {t('Faol', language)} ({myTasks.filter((t: any) => t.status !== 'approved' && t.status !== 'rejected').length})
+            </button>
+            <button
               onClick={() => setActiveTab('all')}
               className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'all'
@@ -304,16 +317,6 @@ const ApprenticeTasks: React.FC = () => {
               }`}
             >
               {t('Hammasi', language)} ({myTasks.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
-                activeTab === 'active'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t('Faol', language)} ({assignedTasks.length + inProgressTasks.length})
             </button>
             <button
               onClick={() => setActiveTab('completed')}

@@ -582,18 +582,18 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
               {/* Qism qo'shish formi */}
               <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100">
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={newPart.name}
-                        onChange={handlePartNameChange}
-                        onFocus={handlePartNameFocus}
-                        onBlur={handlePartNameBlur}
-                        onKeyDown={handleKeyDown}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        placeholder={t('Qism nomi', language) + ' *'}
-                      />
+                  {/* Qism nomi input - to'liq kenglikda */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={newPart.name}
+                      onChange={handlePartNameChange}
+                      onFocus={handlePartNameFocus}
+                      onBlur={handlePartNameBlur}
+                      onKeyDown={handleKeyDown}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder={t('Qism nomi', language) + ' *'}
+                    />
                       
                       {/* Autocomplete Dropdown */}
                       {showSuggestions && suggestions.length > 0 && (
@@ -642,12 +642,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       {/* Search icon */}
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     </div>
-                    <select
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    >
-                      <option value="">{t('Ehtiyot qism', language)}</option>
-                    </select>
-                  </div>
+                  
+                  {/* Boshqa maydonlar */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <input
                       type="number"

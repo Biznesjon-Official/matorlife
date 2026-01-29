@@ -128,7 +128,7 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ isOpen, onClose, task }) 
                     </p>
                   </div>
                 </div>
-              ) : (
+              ) : task.assignedTo ? (
                 <div className="flex items-center gap-2">
                   <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm">
                     {task.assignedTo?.name?.charAt(0).toUpperCase() || '?'}
@@ -143,6 +143,10 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ isOpen, onClose, task }) 
                     )}
                   </div>
                 </div>
+              ) : (
+                <div className="text-center py-2">
+                  <p className="text-sm text-gray-500">Shogird tayinlanmagan</p>
+                </div>
               )}
             </div>
 
@@ -152,9 +156,15 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ isOpen, onClose, task }) 
                 <Car className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-600" />
                 <span className="text-xs sm:text-sm font-semibold text-purple-900">Avtomobil</span>
               </div>
-              <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{task.car.make} {task.car.carModel}</p>
-              <p className="text-xs sm:text-sm text-gray-600 truncate">{task.car.licensePlate}</p>
-              <p className="text-xs text-gray-500 mt-1 truncate">{task.car.ownerName}</p>
+              {task.car ? (
+                <>
+                  <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{task.car.make} {task.car.carModel}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{task.car.licensePlate}</p>
+                  <p className="text-xs text-gray-500 mt-1 truncate">{task.car.ownerName}</p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">Mashina tanlanmagan</p>
+              )}
             </div>
 
             {/* Estimated Hours */}

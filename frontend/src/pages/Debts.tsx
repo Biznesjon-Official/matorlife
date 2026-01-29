@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useDebts, useDebtSummary, useAddPayment } from '@/hooks/useDebts';
-import CreateDebtModal from '@/components/CreateDebtModal';
 import EditDebtModal from '@/components/EditDebtModal';
 import DeleteDebtModal from '@/components/DeleteDebtModal';
 import { Plus, DollarSign, TrendingUp, TrendingDown, Calendar, Phone, Eye, Edit, Trash2, X, FileText, User } from 'lucide-react';
@@ -11,7 +10,6 @@ import { t } from '@/lib/transliteration';
 const Debts: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -30,7 +28,8 @@ const Debts: React.FC = () => {
   const { data: debtSummary, isLoading: summaryLoading } = useDebtSummary();
   const addPaymentMutation = useAddPayment();
 
-  const debts = (debtsData as any)?.debts || [];
+  // Faqat to'lanmagan va qisman to'langan qarzlarni ko'rsatish
+  const debts = ((debtsData as any)?.debts || []).filter((debt: Debt) => debt.status !== 'paid');
 
   const getStatusConfig = (status: string) => {
     switch (status) {
@@ -543,15 +542,6 @@ const Debts: React.FC = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="group relative bg-white hover:bg-blue-50 text-blue-600 px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-2 hover:scale-105 w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="text-sm sm:text-base font-semibold">
-                {t("Yangi qarz", language)}
-              </span>
-            </button>
           </div>
         </div>
 
@@ -708,15 +698,8 @@ const Debts: React.FC = () => {
               </div>
               <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t("Qarzlar topilmadi", language)}</h3>
               <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base px-4 sm:px-0">
-                {t("Tizimga birinchi qarzni qo'shishdan boshlang va moliyaviy majburiyatlarni kuzatib boring.", language)}
+                {t("Qarzlar avtomatik ravishda mashina to'lovi qisman to'langanda yaratiladi.", language)}
               </p>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
-              >
-                <Plus className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                {t("Birinchi qarzni qo'shish", language)}
-              </button>
             </div>
           </div>
         ) : (
@@ -874,10 +857,6 @@ const Debts: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <CreateDebtModal 
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
       {selectedDebt && !isEditModalOpen && !isDeleteModalOpen && <DebtDetailModal debt={selectedDebt} />}
       {selectedDebt && isPaymentModalOpen && (
         <AddPaymentModal debt={selectedDebt} />

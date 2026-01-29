@@ -55,9 +55,13 @@ const DeleteTaskModal: React.FC<DeleteTaskModalProps> = ({
               <p className="font-bold text-gray-900 text-sm sm:text-base truncate">{task.title}</p>
               <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">{task.description}</p>
               <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-2 text-xs text-gray-500">
-                <span className="truncate">Shogird: {task.assignedTo.name}</span>
+                <span className="truncate">
+                  Shogird: {task.assignments && task.assignments.length > 0 
+                    ? `${task.assignments.length} ta` 
+                    : (task.assignedTo?.name || 'Noma\'lum')}
+                </span>
                 <span className="hidden sm:inline">•</span>
-                <span className="truncate">{task.car.make} {task.car.carModel}</span>
+                <span className="truncate">{task.car?.make} {task.car?.carModel}</span>
               </div>
             </div>
           </div>

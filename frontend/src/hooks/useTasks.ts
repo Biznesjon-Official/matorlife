@@ -107,17 +107,44 @@ export const useApproveTask = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      // Task cache'larini yangilash
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['task'] });
       queryClient.invalidateQueries({ queryKey: ['taskStats'] });
       
+      // Mashina cache'larini ham yangilash (avtomatik tugatish uchun)
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['car'] });
+      
+      // Car services cache'larini yangilash
+      queryClient.invalidateQueries({ queryKey: ['car-services'] });
+      queryClient.invalidateQueries({ queryKey: ['car-service'] });
+      
+      // Qarz cache'larini yangilash (yangi qarzlar uchun)
+      queryClient.invalidateQueries({ queryKey: ['debts'] });
+      
       // User ma'lumotlarini yangilash (earnings uchun)
       refreshUser();
       
-      toast.success(`Task ${data.task.status === 'approved' ? 'approved' : 'rejected'} successfully`);
+      // Success message
+      const message = data.task.status === 'approved' ? 'Vazifa tasdiqlandi' : 'Vazifa rad etildi';
+      toast.success(message);
+      
+      // Agar mashina avtomatik tugatilgan bo'lsa, qo'shimcha xabar
+      if (data.carCompleted && data.carData) {
+        toast.success(`🚗 Mashina avtomatik tugatildi: ${data.carData.licensePlate}`, {
+          duration: 4000,
+          icon: '✅'
+        });
+      }
+      
+      // Force refresh after a short delay to ensure all data is updated
+      setTimeout(() => {
+        queryClient.invalidateQueries();
+      }, 1000);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to process task');
+      toast.error(error.response?.data?.message || 'Vazifani tasdiqlashda xatolik');
     },
   });
 };

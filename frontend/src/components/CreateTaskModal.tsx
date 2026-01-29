@@ -263,7 +263,13 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                 required
               >
                 <option value="">Mashinani tanlang</option>
-                {(carsData as any)?.cars?.map((car: any) => (
+                {(carsData as any)?.cars
+                  ?.filter((car: any) => 
+                    !car.isDeleted && 
+                    car.status !== 'completed' && 
+                    car.status !== 'delivered'
+                  )
+                  ?.map((car: any) => (
                   <option key={car._id} value={car._id}>
                     {car.make} {car.carModel} - {car.licensePlate}
                   </option>

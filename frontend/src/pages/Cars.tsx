@@ -4,9 +4,9 @@ import CreateCarModal from '@/components/CreateCarModal';
 import ViewCarModal from '@/components/ViewCarModal';
 import EditCarStepModal from '@/components/EditCarStepModal';
 import DeleteCarModal from '@/components/DeleteCarModal';
-import CarPaymentModal from '@/components/CarPaymentModal';
 import RestoreCarModal from '@/components/RestoreCarModal';
-import { Plus, Search, Car as CarIcon, Eye, Edit, Trash2, Phone, Package2, DollarSign, Filter, CheckCircle, RotateCcw } from 'lucide-react';
+import CompleteCarModal from '@/components/CompleteCarModal';
+import { Plus, Search, Car as CarIcon, Eye, Edit, Trash2, Phone, Package2, Filter, CheckCircle, RotateCcw, DollarSign } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Car } from '@/types';
 import { t } from '@/lib/transliteration';
@@ -20,8 +20,8 @@ const Cars: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -37,10 +37,19 @@ const Cars: React.FC = () => {
   const cars = (carsData as any)?.cars || [];
   
   // Mashinalarni faol va arxiv bo'yicha filtrlash
-  // Faol: o'chirilmagan va to'lanmagan
-  // Arxiv: o'chirilgan yoki to'liq to'langan
-  const activeCars = cars.filter((car: Car) => !car.isDeleted && car.paymentStatus !== 'paid');
-  const archivedCars = cars.filter((car: Car) => car.isDeleted || car.paymentStatus === 'paid');
+  // Faol: hali tugatilmagan mashinalar (status !== 'completed' va status !== 'delivered')
+  // Arxiv: tugatilgan mashinalar (status === 'completed' yoki status === 'delivered')
+  const activeCars = cars.filter((car: Car) => 
+    !car.isDeleted && 
+    car.status !== 'completed' && 
+    car.status !== 'delivered'
+  );
+  
+  const archivedCars = cars.filter((car: Car) => 
+    car.isDeleted || 
+    car.status === 'completed' || 
+    car.status === 'delivered'
+  );
   
   // Hozirgi tab bo'yicha mashinalarni ko'rsatish
   const displayedCars = activeTab === 'active' ? activeCars : archivedCars;
@@ -60,11 +69,6 @@ const Cars: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handlePayment = (car: Car) => {
-    setSelectedCar(car);
-    setIsPaymentModalOpen(true);
-  };
-
   const handleEditFromView = () => {
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -80,12 +84,17 @@ const Cars: React.FC = () => {
     setIsRestoreModalOpen(true);
   };
 
+  const handleCompleteCar = (car: Car) => {
+    setSelectedCar(car);
+    setIsCompleteModalOpen(true);
+  };
+
   const closeAllModals = () => {
     setIsViewModalOpen(false);
     setIsEditModalOpen(false);
     setIsDeleteModalOpen(false);
-    setIsPaymentModalOpen(false);
     setIsRestoreModalOpen(false);
+    setIsCompleteModalOpen(false);
     setSelectedCar(null);
   };
 
@@ -319,22 +328,51 @@ const Cars: React.FC = () => {
                     const calculatedTotal = partsTotal + serviceItemsTotal;
                     const displayTotal = car.totalEstimate || calculatedTotal;
                     
+                    // Qarzi bor yoki yo'qligini tekshirish
+                    const paidAmount = car.paidAmount || 0;
+                    const hasDebt = displayTotal > paidAmount;
+                    const remainingAmount = displayTotal - paidAmount;
+                    
                     return (
-                      <tr key={car._id} className={`hover:bg-green-50 transition-colors ${car.isDeleted ? 'bg-red-50/30' : ''}`}>
+                      <tr key={car._id} className={`hover:bg-gray-50 transition-colors ${
+                        car.isDeleted ? 'bg-red-50/50' : 
+                        hasDebt ? 'bg-red-50/30 border-l-4 border-l-red-500' : 'bg-green-50/30'
+                      }`}>
                         <td className="px-4 py-4">
                           <div className="flex items-center">
-                            <div className={`flex-shrink-0 h-10 w-10 ${car.isDeleted ? 'bg-gradient-to-br from-red-100 to-pink-100' : 'bg-gradient-to-br from-green-100 to-emerald-100'} rounded-full flex items-center justify-center`}>
-                              <span className={`${car.isDeleted ? 'text-red-700' : 'text-green-700'} font-bold text-sm`}>
+                            <div className={`flex-shrink-0 h-10 w-10 ${
+                              car.isDeleted ? 'bg-gradient-to-br from-red-100 to-pink-100' : 
+                              hasDebt ? 'bg-gradient-to-br from-red-100 to-orange-100' :
+                              'bg-gradient-to-br from-green-100 to-emerald-100'
+                            } rounded-full flex items-center justify-center`}>
+                              <span className={`${
+                                car.isDeleted ? 'text-red-700' : 
+                                hasDebt ? 'text-red-700' : 'text-green-700'
+                              } font-bold text-sm`}>
                                 {car.ownerName.charAt(0).toUpperCase()}
                               </span>
                             </div>
                             <div className="ml-3">
                               <p className="text-sm font-semibold text-gray-900">{car.ownerName}</p>
-                              {car.isDeleted && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                                  {t("O'chirilgan", language)}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {car.isDeleted && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    {t("O'chirilgan", language)}
+                                  </span>
+                                )}
+                                {hasDebt && !car.isDeleted && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    <DollarSign className="h-3 w-3 mr-1" />
+                                    {t("Qarzi bor", language)}
+                                  </span>
+                                )}
+                                {!hasDebt && !car.isDeleted && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    {t("To'liq to'langan", language)}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -361,9 +399,21 @@ const Cars: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span className="text-sm font-bold text-green-600">
-                            {formatCurrency(displayTotal)}
-                          </span>
+                          <div className="space-y-1">
+                            <div className="text-sm font-bold text-gray-900">
+                              {formatCurrency(displayTotal)}
+                            </div>
+                            {paidAmount > 0 && (
+                              <div className="text-xs text-green-600">
+                                {t("To'langan", language)}: {formatCurrency(paidAmount)}
+                              </div>
+                            )}
+                            {hasDebt && (
+                              <div className="text-xs font-bold text-red-600">
+                                {t("Qarz", language)}: {formatCurrency(remainingAmount)}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
@@ -397,14 +447,26 @@ const Cars: React.FC = () => {
             {/* Arxiv statistikasi */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-t border-green-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-700">
-                    {t("Jami arxivlangan", language)}: {displayedCars.length} ta
-                  </span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="text-sm font-semibold text-green-700">
+                      {t("Jami arxivlangan", language)}: {displayedCars.length} ta
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-red-600" />
+                    <span className="text-sm font-semibold text-red-700">
+                      {t("Qarzi bor", language)}: {displayedCars.filter((car: Car) => {
+                        const total = car.totalEstimate || 0;
+                        const paid = car.paidAmount || 0;
+                        return total > paid;
+                      }).length} ta
+                    </span>
+                  </div>
                 </div>
-                <div className="text-sm text-green-600">
-                  {t("To'liq to'langan mashinalar", language)}
+                <div className="text-sm text-gray-600">
+                  {t("Tugatilgan mashinalar", language)}
                 </div>
               </div>
             </div>
@@ -501,16 +563,18 @@ const Cars: React.FC = () => {
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                         <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
                       </button>
-                      {displayTotal > 0 && car.status !== 'delivered' && (
+                      
+                      {/* Complete Button - Only for in-progress cars */}
+                      {car.status === 'in-progress' && (
                         <button 
-                          onClick={() => handlePayment(car)}
-                          className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
-                          title={t("To'lov", language)}
+                          onClick={() => handleCompleteCar(car)}
+                          className="p-2 sm:p-2.5 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 rounded-lg sm:rounded-xl transition-all duration-200"
+                          title={t("Tugatish", language)}
                         >
-                          <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
-                          <span className="text-xs sm:text-sm">{t("To'lov", language)}</span>
+                          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                         </button>
                       )}
+                      
                       <button 
                         onClick={() => handleEditCar(car)}
                         className="p-2 sm:p-2.5 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
@@ -562,20 +626,20 @@ const Cars: React.FC = () => {
             car={selectedCar}
           />
           
-          <CarPaymentModal
-            isOpen={isPaymentModalOpen}
-            onClose={closeAllModals}
-            car={selectedCar}
-            onSuccess={() => {
-              // Refresh cars data
-              window.location.reload();
-            }}
-          />
-          
           <RestoreCarModal
             isOpen={isRestoreModalOpen}
             onClose={closeAllModals}
             car={selectedCar}
+          />
+          
+          <CompleteCarModal
+            isOpen={isCompleteModalOpen}
+            onClose={closeAllModals}
+            car={selectedCar}
+            onComplete={() => {
+              // Refresh cars data after completion
+              window.location.reload();
+            }}
           />
         </>
       )}

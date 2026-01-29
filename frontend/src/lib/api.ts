@@ -90,3 +90,11 @@ export const chatApi = {
     return response.data;
   }
 };
+
+// Car API
+export const carApi = {
+  completeCar: async (carId: string, notes?: string) => {
+    const response = await api.post(`/cars/${carId}/complete`, { notes });
+    return response.data;
+  }
+};

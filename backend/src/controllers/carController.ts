@@ -4,6 +4,7 @@ import Task from '../models/Task';
 import SparePart from '../models/SparePart';
 import { AuthRequest } from '../middleware/auth';
 import telegramService from '../services/telegramService';
+import debtService from '../services/debtService';
 export const createCar = async (req: AuthRequest, res: Response) => {
   try {
     const { make, carModel, year, licensePlate, ownerName, ownerPhone, parts, serviceItems, usedSpareParts } = req.body;
@@ -87,13 +88,37 @@ export const getCars = async (req: AuthRequest, res: Response) => {
     
     if (status) filter.status = status;
     if (search) {
-      filter.$or = [
-        { make: { $regex: search, $options: 'i' } },
-        { carModel: { $regex: search, $options: 'i' } },
-        { licensePlate: { $regex: search, $options: 'i' } },
-        { ownerName: { $regex: search, $options: 'i' } }
-      ];
+      // Qidiruv so'zini tozalash (bo'shliqlar, kichik harflar, maxsus belgilar)
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .replace(/\s+/g, '') // Barcha bo'shliqlarni olib tashlash
+          .replace(/[^a-z0-9а-яё]/gi, ''); // Faqat harf va raqamlar (lotin va kirill)
+      };
+      
+      const normalizedSearch = normalizeText(search as string);
+      
+      // Barcha mashinalarni olish va frontend da filtrlash
+      const allCars = await Car.find(filter).sort({ createdAt: -1 });
+      
+      // Har bir mashinani qidiruv so'zi bilan solishtirish
+      const filteredCars = allCars.filter((car: any) => {
+        const licensePlate = normalizeText(car.licensePlate || '');
+        const make = normalizeText(car.make || '');
+        const model = normalizeText(car.carModel || '');
+        const owner = normalizeText(car.ownerName || '');
+        
+        return (
+          licensePlate.includes(normalizedSearch) ||
+          make.includes(normalizedSearch) ||
+          model.includes(normalizedSearch) ||
+          owner.includes(normalizedSearch)
+        );
+      });
+      
+      return res.json({ cars: filteredCars });
     }
+    
     const cars = await Car.find(filter).sort({ createdAt: -1 });
     res.json({ cars });
   } catch (error: any) {
@@ -495,6 +520,67 @@ export const restoreCar = async (req: AuthRequest, res: Response) => {
 };
 
 
+// Complete car work and create debt if needed
+export const completeCar = async (req: AuthRequest, res: Response) => {
+  try {
+    const carId = req.params.id;
+    const { notes } = req.body;
+
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Mashina topilmadi' });
+    }
+
+    if (car.status === 'completed' || car.status === 'delivered') {
+      return res.status(400).json({ message: 'Mashina allaqachon tugatilgan' });
+    }
+
+    // Update car status to completed
+    car.status = 'completed';
+    
+    // Calculate remaining debt
+    const totalAmount = car.totalEstimate;
+    const paidAmount = car.paidAmount || 0;
+    const remainingAmount = totalAmount - paidAmount;
+
+    // If there's remaining debt, create debt entry
+    if (remainingAmount > 0) {
+      try {
+        await debtService.createDebtForCompletedCar({
+          carId: car._id,
+          clientName: car.ownerName,
+          clientPhone: car.ownerPhone,
+          totalAmount,
+          paidAmount,
+          description: `${car.make} ${car.carModel} (${car.licensePlate}) - Mashina ta'miri qarzi`,
+          notes: notes || 'Mashina tugatilganda avtomatik yaratilgan qarz'
+        });
+        
+        console.log(`💰 Qarz yaratildi: ${car.ownerName} - ${remainingAmount} so'm`);
+      } catch (debtError) {
+        console.error('❌ Qarz yaratishda xatolik:', debtError);
+        // Don't fail the completion if debt creation fails
+      }
+    }
+
+    await car.save();
+
+    console.log(`✅ Mashina tugatildi: ${car.licensePlate} - ${car.ownerName}`);
+    
+    res.json({
+      message: remainingAmount > 0 
+        ? 'Mashina tugatildi va qarz yaratildi' 
+        : 'Mashina muvaffaqiyatli tugatildi',
+      car,
+      debtCreated: remainingAmount > 0,
+      remainingAmount
+    });
+  } catch (error: any) {
+    console.error('❌ Mashinani tugatishda xatolik:', error);
+    res.status(500).json({ message: 'Server xatoligi', error: error.message });
+  }
+};
+
 // Add payment to car
 export const addCarPayment = async (req: AuthRequest, res: Response) => {
   try {
@@ -541,59 +627,8 @@ export const addCarPayment = async (req: AuthRequest, res: Response) => {
 
     console.log(`✅ To'lov qo'shildi: ${amount} so'm - ${car.licensePlate} - ${paymentMethod || 'cash'}`);
 
-    // ✨ YANGI: Agar to'liq to'lanmagan bo'lsa, qarz yaratish yoki yangilash
-    if (car.paidAmount < car.totalEstimate) {
-      const remainingAmount = car.totalEstimate - car.paidAmount;
-      
-      const Debt = require('../models/Debt').default;
-      
-      // Avval bu mashina uchun qarz borligini tekshirish
-      let existingDebt = await Debt.findOne({
-        car: car._id,
-        type: 'receivable',
-        status: { $in: ['pending', 'partial'] }
-      });
-
-      if (existingDebt) {
-        // Mavjud qarzni yangilash
-        existingDebt.amount = remainingAmount;
-        existingDebt.description = `${car.make} ${car.carModel} (${car.licensePlate}) uchun qolgan to'lov`;
-        await existingDebt.save();
-        console.log(`📝 Qarz yangilandi: ${remainingAmount} so'm - ${car.ownerName}`);
-      } else {
-        // Yangi qarz yaratish
-        const newDebt = new Debt({
-          type: 'receivable',
-          amount: remainingAmount,
-          description: `${car.make} ${car.carModel} (${car.licensePlate}) uchun qolgan to'lov`,
-          creditorName: car.ownerName,
-          creditorPhone: car.ownerPhone,
-          car: car._id,
-          status: 'pending',
-          paidAmount: 0,
-          paymentHistory: [],
-          createdBy: req.user?.id
-        });
-        
-        await newDebt.save();
-        console.log(`📝 Qarz yaratildi: ${remainingAmount} so'm - ${car.ownerName}`);
-      }
-    } else {
-      // Agar to'liq to'langan bo'lsa, qarzni to'langan deb belgilash
-      const Debt = require('../models/Debt').default;
-      await Debt.updateMany(
-        {
-          car: car._id,
-          type: 'receivable',
-          status: { $in: ['pending', 'partial'] }
-        },
-        {
-          status: 'paid',
-          paidAmount: { $set: '$amount' }
-        }
-      );
-      console.log(`✅ Qarz to'liq to'landi - ${car.licensePlate}`);
-    }
+    // ❌ ESKI KOD OLIB TASHLANDI - DebtService ishlatiladi
+    // Bu yerda qarz yaratish/yangilash yo'q, chunki carServiceController allaqachon buni qiladi
 
     res.json({
       message: 'Payment added successfully',

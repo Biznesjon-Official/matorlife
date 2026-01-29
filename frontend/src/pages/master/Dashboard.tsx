@@ -159,10 +159,6 @@ const MasterDashboard: React.FC = memo(() => {
               <DollarSign className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600 mr-2 sm:mr-3" />
               {t("Qarz daftarchasi", language)}
             </h3>
-            <Link to="/app/debts" className="btn-primary btn-sm w-full sm:w-auto justify-center">
-              <Plus className="h-4 w-4 mr-2" />
-              {t("Yangi qarz", language)}
-            </Link>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:gap-4 md:gap-6 lg:grid-cols-3">
             <div className="card p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-glow-green transition-all duration-300">
