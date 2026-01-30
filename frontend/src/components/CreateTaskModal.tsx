@@ -118,6 +118,16 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
           ...task,
           assignments: task.assignments.map(assignment => {
             if (assignment.id === assignmentId) {
+              // Agar shogird tanlansa, uning foizini avtomatik o'rnatish
+              if (field === 'apprenticeId' && value) {
+                const selectedApprentice = apprenticesData?.users?.find((a: any) => a._id === value);
+                const apprenticePercentage = selectedApprentice?.percentage || 50;
+                return { 
+                  ...assignment, 
+                  apprenticeId: value,
+                  percentage: apprenticePercentage 
+                };
+              }
               return { ...assignment, [field]: value };
             }
             return assignment;
@@ -413,7 +423,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                       <option value="">Tanlang</option>
                                       {apprenticesData?.users?.map((apprentice: any) => (
                                         <option key={apprentice._id} value={apprentice._id}>
-                                          {apprentice.name}
+                                          {apprentice.name} ({apprentice.percentage || 50}%)
                                         </option>
                                       ))}
                                     </select>
@@ -423,11 +433,11 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                     <input
                                       type="number"
                                       value={assignment.percentage}
-                                      onChange={(e) => updateApprentice(task.id, assignment.id, 'percentage', Number(e.target.value))}
-                                      min="0"
-                                      max="100"
-                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                                      readOnly
+                                      disabled
+                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-gray-100 text-gray-600 cursor-not-allowed"
                                       placeholder="Foiz %"
+                                      title="Ustoz tomonidan belgilangan foiz"
                                     />
                                   </div>
                                 </div>

@@ -33,7 +33,7 @@ export const getSpareParts = async (req: AuthRequest, res: Response) => {
     const { 
       search, 
       page = 1, 
-      limit = 20, 
+      limit = 10000, 
       lowStock,
       sortBy = 'usageCount',
       sortOrder = 'desc'
@@ -41,7 +41,7 @@ export const getSpareParts = async (req: AuthRequest, res: Response) => {
     
     // Validate and sanitize inputs
     const pageNum = Math.max(1, Number(page));
-    const limitNum = Math.min(100, Math.max(1, Number(limit))); // Max 100 items per page
+    const limitNum = Math.min(100000, Math.max(1, Number(limit))); // Cheksiz mahsulotlar
     const skip = (pageNum - 1) * limitNum;
     
     const filter: any = { isActive: true };

@@ -83,7 +83,9 @@ const CreateSparePartModal: React.FC<CreateSparePartModalProps> = ({ isOpen, onC
       // Agar faqat bitta narx kiritilgan bo'lsa, ikkinchisini avtomatik to'ldirish
       const costPrice = Number(formData.costPrice) || Number(formData.sellingPrice);
       const sellingPrice = Number(formData.sellingPrice) || Number(formData.costPrice);
+      const totalAmount = costPrice * Number(formData.quantity);
 
+      // 1. Zapchastni qo'shish
       await api.post('/spare-parts', {
         name: formData.name,
         costPrice: costPrice,
@@ -91,6 +93,22 @@ const CreateSparePartModal: React.FC<CreateSparePartModalProps> = ({ isOpen, onC
         price: sellingPrice, // Backward compatibility
         quantity: Number(formData.quantity),
         supplier: formData.supplier
+      });
+
+      // 2. Transaction yaratish (chiqim)
+      const description = `${t('Zapchast sotib olindi', language)}: ${formData.name}
+${t('Miqdor', language)}: ${formData.quantity} dona
+${t('Birlik narxi', language)}: ${costPrice.toLocaleString()} so'm
+${t('Jami', language)}: ${totalAmount.toLocaleString()} so'm
+${t('Yetkazib beruvchi', language)}: ${formData.supplier}`;
+
+      await api.post('/transactions', {
+        type: 'expense',
+        category: 'spare_parts',
+        amount: totalAmount,
+        description: description,
+        paymentMethod: 'cash',
+        sparePartName: formData.name // Zapchast nomini yuborish
       });
 
       onSuccess();

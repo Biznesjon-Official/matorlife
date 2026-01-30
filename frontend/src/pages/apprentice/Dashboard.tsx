@@ -307,8 +307,10 @@ const ApprenticeDashboard: React.FC = () => {
               </div>
             </div>
             <div className="text-center sm:text-right">
-              <div className="text-2xl sm:text-3xl font-bold">{new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{new Intl.NumberFormat('uz-UZ').format(user?.totalEarnings || 0)}</div>
               <div className="text-sm text-green-100">{t('Jami daromad', language)}</div>
+              <div className="text-lg font-semibold mt-1">{new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}</div>
+              <div className="text-xs text-green-200">{t('Joriy oylik', language)}</div>
             </div>
           </div>
         </div>
@@ -322,7 +324,7 @@ const ApprenticeDashboard: React.FC = () => {
                   <Award className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-green-700 mb-1">{t('Jami daromad', language)}</p>
+                  <p className="text-xs sm:text-sm text-green-700 mb-1">{t('Joriy oylik', language)}</p>
                   <p className="text-lg sm:text-2xl font-bold text-green-900">
                     {new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}
                   </p>
@@ -337,9 +339,11 @@ const ApprenticeDashboard: React.FC = () => {
                   <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-blue-700 mb-1">{t('Vazifalar soni', language)}</p>
-                  <p className="text-lg sm:text-2xl font-bold text-blue-900">{approvedTasks.length}</p>
-                  <p className="text-xs text-blue-600">{t('ta vazifa', language)}</p>
+                  <p className="text-xs sm:text-sm text-blue-700 mb-1">{t('Jami daromad', language)}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-blue-900">
+                    {new Intl.NumberFormat('uz-UZ').format(user?.totalEarnings || 0)}
+                  </p>
+                  <p className="text-xs text-blue-600">{t('so\'m', language)}</p>
                 </div>
               </div>
             </div>

@@ -35,6 +35,10 @@ if (process.env.TELEGRAM_BOT_TOKEN_CAR || process.env.TELEGRAM_BOT_TOKEN_DEBT) {
   }
 }
 
+// Initialize Monthly Reset Cron Job
+import { startMonthlyResetJob } from './services/monthlyResetService';
+startMonthlyResetJob();
+
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
 

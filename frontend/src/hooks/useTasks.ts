@@ -149,6 +149,26 @@ export const useApproveTask = () => {
   });
 };
 
+export const useRestartTask = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.patch(`/tasks/${id}/restart`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task'] });
+      queryClient.invalidateQueries({ queryKey: ['taskStats'] });
+      toast.success('Vazifa qayta boshlandi');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Vazifani qayta boshlashda xatolik');
+    },
+  });
+};
+
 export const useDeleteTask = () => {
   const queryClient = useQueryClient();
   
@@ -157,13 +177,33 @@ export const useDeleteTask = () => {
       const response = await api.delete(`/tasks/${id}`);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      // Cache dan o'chirilgan vazifani olib tashlash
+      queryClient.setQueryData(['tasks'], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          tasks: oldData.tasks?.filter((task: any) => task._id !== id) || []
+        };
+      });
+      
+      // Barcha cache'larni yangilash
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['taskStats'] });
+      queryClient.invalidateQueries({ queryKey: ['cars'] });
+      queryClient.invalidateQueries({ queryKey: ['car-services'] });
+      
       toast.success('Vazifa muvaffaqiyatli o\'chirildi');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Vazifani o\'chirishda xatolik yuz berdi');
+      // 404 xatosi - vazifa allaqachon o'chirilgan
+      if (error.response?.status === 404) {
+        toast.error('Vazifa allaqachon o\'chirilgan');
+        // Cache ni yangilash
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      } else {
+        toast.error(error.response?.data?.message || 'Vazifani o\'chirishda xatolik yuz berdi');
+      }
     },
   });
 };

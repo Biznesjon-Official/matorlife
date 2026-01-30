@@ -28,6 +28,8 @@ const Expenses: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('expense');
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'all'>('all');
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<any>(null);
   
   const language = useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -181,18 +183,28 @@ const Expenses: React.FC = () => {
   };
 
   // Kategoriyani o'chirish funksiyasi
-  const handleDeleteCategory = async (categoryId: string) => {
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+    
     try {
-      await deleteCategoryMutation.mutateAsync(categoryId);
+      await deleteCategoryMutation.mutateAsync(categoryToDelete._id);
       
       // Agar o'chirilgan kategoriya tanlangan bo'lsa, tanlovni bekor qilamiz
-      if (selectedCategory === categoryId) {
+      if (selectedCategory === categoryToDelete._id) {
         setSelectedCategory(null);
       }
+      
+      // Modal yopish
+      setShowDeleteModal(false);
+      setCategoryToDelete(null);
     } catch (error: any) {
       console.error('Kategoriya o\'chirishda xatolik:', error);
-      alert(error.response?.data?.message || t('Xatolik yuz berdi', language));
     }
+  };
+
+  const openDeleteModal = (category: any) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
   };
 
   return (
@@ -298,12 +310,7 @@ const Expenses: React.FC = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const categoryName = category.nameUz;
-                        const confirmMessage = `"${categoryName}" kategoriyasini o'chirishni xohlaysizmi?\n\nDiqqat: Bu kategoriya bilan bog'liq barcha ma'lumotlar saqlanib qoladi, lekin kategoriya ro'yxatdan o'chib ketadi.`;
-                        
-                        if (window.confirm(confirmMessage)) {
-                          handleDeleteCategory(category._id);
-                        }
+                        openDeleteModal(category);
                       }}
                       className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 shadow-lg hover:shadow-xl transform hover:scale-110"
                       title={t('Kategoriyani o\'chirish', language)}
@@ -549,6 +556,97 @@ const Expenses: React.FC = () => {
         isOpen={showAddCategoryModal}
         onClose={() => setShowAddCategoryModal(false)}
       />
+
+      {/* Delete Category Modal */}
+      {showDeleteModal && categoryToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all animate-fade-in">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-600 to-pink-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Trash2 className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">{t('Kategoriyani o\'chirish', language)}</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setCategoryToDelete(null);
+                  }}
+                  className="text-white/80 hover:text-white p-1 transition-colors"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-900 mb-1">
+                      {t('Diqqat!', language)}
+                    </p>
+                    <p className="text-sm text-red-800">
+                      <strong>"{categoryToDelete.nameUz}"</strong> {t('kategoriyasini o\'chirishni xohlaysizmi?', language)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-blue-800">
+                    {t('Bu kategoriya bilan bog\'liq barcha ma\'lumotlar saqlanib qoladi, lekin kategoriya ro\'yxatdan o\'chib ketadi.', language)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setCategoryToDelete(null);
+                }}
+                disabled={deleteCategoryMutation.isPending}
+                className="flex-1 px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {t('Bekor qilish', language)}
+              </button>
+              <button
+                onClick={handleDeleteCategory}
+                disabled={deleteCategoryMutation.isPending}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {deleteCategoryMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    <span>{t('O\'chirilmoqda...', language)}</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    <span>{t('O\'chirish', language)}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

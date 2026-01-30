@@ -12,7 +12,8 @@ import {
   Wallet,
   CreditCard,
   Smartphone,
-  Clock
+  Clock,
+  History
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import { formatCurrency } from '@/lib/utils';
@@ -22,10 +23,14 @@ import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import IncomeModal from '@/components/IncomeModal';
 import ExpenseModal from '@/components/ExpenseModal';
+import MonthlyHistoryModal from '@/components/MonthlyHistoryModal';
+import MonthlyResetModal from '@/components/MonthlyResetModal';
 
 const MasterCashier: React.FC = memo(() => {
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'all'>('today');
 
@@ -75,7 +80,13 @@ const MasterCashier: React.FC = memo(() => {
     totalExpense: 0,
     balance: 0,
     incomeCount: 0,
-    expenseCount: 0
+    expenseCount: 0,
+    incomeCash: 0,
+    incomeCard: 0,
+    expenseCash: 0,
+    expenseCard: 0,
+    balanceCash: 0,
+    balanceCard: 0
   };
 
   const getPaymentMethodIcon = (method: string) => {
@@ -96,6 +107,16 @@ const MasterCashier: React.FC = memo(() => {
     }
   };
 
+  const handleMonthlyReset = async () => {
+    try {
+      const { transactionApi } = await import('@/lib/api');
+      await transactionApi.resetMonthlyEarnings();
+    } catch (error: any) {
+      console.error('Reset xatosi:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6 animate-fade-in">
@@ -113,17 +134,36 @@ const MasterCashier: React.FC = memo(() => {
                 <p className="text-sm sm:text-base text-gray-600 mt-1">{t("Kirim va chiqimlarni boshqarish", language)}</p>
               </div>
             </div>
-            <Link 
-              to="/app/master/expenses"
-              className="btn-secondary btn-sm flex items-center gap-2 w-full sm:w-auto justify-center"
-            >
-              <BarChart3 className="h-4 w-4" />
-              {t("Batafsil hisobot", language)}
-            </Link>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setIsResetModalOpen(true)}
+                className="btn-danger btn-sm flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                title={t("Barcha daromadlarni 0 ga qaytarish", language)}
+              >
+                <Calendar className="h-4 w-4" />
+                {t('Oylik Reset', language)}
+              </button>
+              <button
+                onClick={() => setIsHistoryModalOpen(true)}
+                className="btn-secondary btn-sm flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                title={t("Oylik tarix", language)}
+              >
+                <History className="h-4 w-4" />
+                {t('Tarix', language)}
+              </button>
+              <Link 
+                to="/app/master/expenses"
+                className="btn-secondary btn-sm flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+              >
+                <BarChart3 className="h-4 w-4" />
+                {t("Hisobot", language)}
+              </Link>
+            </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
+            {/* KIRIM CARD */}
             <div className="card p-4 sm:p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 hover:shadow-lg transition-all">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-green-500 rounded-lg">
@@ -133,14 +173,44 @@ const MasterCashier: React.FC = memo(() => {
                   {t('Kirim', language)}
                 </span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-green-900 mb-1">
-                {summaryLoading ? '...' : formatCurrency(summary.totalIncome)}
+              
+              {/* Umumiy summa - 50% */}
+              <div className="mb-3 pb-3 border-b border-green-200">
+                <p className="text-xs text-green-600 mb-1">{t('Umumiy', language)}</p>
+                <div className="text-xl sm:text-2xl font-bold text-green-900">
+                  {summaryLoading ? '...' : formatCurrency(summary.totalIncome)}
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-green-600">
+              
+              {/* Naqd va Karta - 25% har biri */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Wallet className="h-3 w-3 text-green-600" />
+                    <p className="text-xs text-green-600">{t('Naqd', language)}</p>
+                  </div>
+                  <div className="text-sm font-bold text-green-900">
+                    {summaryLoading ? '...' : formatCurrency(summary.incomeCash || 0)}
+                  </div>
+                </div>
+                
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <CreditCard className="h-3 w-3 text-green-600" />
+                    <p className="text-xs text-green-600">{t('Karta', language)}</p>
+                  </div>
+                  <div className="text-sm font-bold text-green-900">
+                    {summaryLoading ? '...' : formatCurrency(summary.incomeCard || 0)}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs sm:text-sm text-green-600 mt-3">
                 {summary.incomeCount} {t('ta transaksiya', language)}
               </p>
             </div>
 
+            {/* CHIQIM CARD */}
             <div className="card p-4 sm:p-5 bg-gradient-to-br from-red-50 to-pink-50 border-red-200 hover:shadow-lg transition-all">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-red-500 rounded-lg">
@@ -150,14 +220,44 @@ const MasterCashier: React.FC = memo(() => {
                   {t('Chiqim', language)}
                 </span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-red-900 mb-1">
-                {summaryLoading ? '...' : formatCurrency(summary.totalExpense)}
+              
+              {/* Umumiy summa - 50% */}
+              <div className="mb-3 pb-3 border-b border-red-200">
+                <p className="text-xs text-red-600 mb-1">{t('Umumiy', language)}</p>
+                <div className="text-xl sm:text-2xl font-bold text-red-900">
+                  {summaryLoading ? '...' : formatCurrency(summary.totalExpense)}
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-red-600">
+              
+              {/* Naqd va Karta - 25% har biri */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Wallet className="h-3 w-3 text-red-600" />
+                    <p className="text-xs text-red-600">{t('Naqd', language)}</p>
+                  </div>
+                  <div className="text-sm font-bold text-red-900">
+                    {summaryLoading ? '...' : formatCurrency(summary.expenseCash || 0)}
+                  </div>
+                </div>
+                
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <CreditCard className="h-3 w-3 text-red-600" />
+                    <p className="text-xs text-red-600">{t('Karta', language)}</p>
+                  </div>
+                  <div className="text-sm font-bold text-red-900">
+                    {summaryLoading ? '...' : formatCurrency(summary.expenseCard || 0)}
+                  </div>
+                </div>
+              </div>
+              
+              <p className="text-xs sm:text-sm text-red-600 mt-3">
                 {summary.expenseCount} {t('ta transaksiya', language)}
               </p>
             </div>
 
+            {/* BALANS CARD */}
             <div className="card p-4 sm:p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200 hover:shadow-lg transition-all">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-blue-500 rounded-lg">
@@ -167,28 +267,40 @@ const MasterCashier: React.FC = memo(() => {
                   {t('Balans', language)}
                 </span>
               </div>
-              <div className={`text-xl sm:text-2xl font-bold mb-1 ${summary.balance >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-                {summaryLoading ? '...' : formatCurrency(summary.balance)}
-              </div>
-              <p className={`text-xs sm:text-sm ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {summary.balance >= 0 ? t('Ijobiy', language) : t('Salbiy', language)}
-              </p>
-            </div>
-
-            <div className="card p-4 sm:p-5 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 hover:shadow-lg transition-all">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-purple-500 rounded-lg">
-                  <Clock className="h-5 w-5 text-white" />
+              
+              {/* Umumiy balans - 50% */}
+              <div className="mb-3 pb-3 border-b border-blue-200">
+                <p className="text-xs text-blue-600 mb-1">{t('Umumiy', language)}</p>
+                <div className={`text-xl sm:text-2xl font-bold ${summary.balance >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                  {summaryLoading ? '...' : formatCurrency(summary.balance)}
                 </div>
-                <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full">
-                  {t('Bugun', language)}
-                </span>
               </div>
-              <div className="text-xl sm:text-2xl font-bold text-purple-900 mb-1">
-                {transactionsLoading ? '...' : transactions.length}
+              
+              {/* Naqd va Karta balansi - 25% har biri */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <Wallet className="h-3 w-3 text-blue-600" />
+                    <p className="text-xs text-blue-600">{t('Naqd', language)}</p>
+                  </div>
+                  <div className={`text-sm font-bold ${(summary.balanceCash || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                    {summaryLoading ? '...' : formatCurrency(summary.balanceCash || 0)}
+                  </div>
+                </div>
+                
+                <div className="bg-white/50 rounded-lg p-2">
+                  <div className="flex items-center gap-1 mb-1">
+                    <CreditCard className="h-3 w-3 text-blue-600" />
+                    <p className="text-xs text-blue-600">{t('Karta', language)}</p>
+                  </div>
+                  <div className={`text-sm font-bold ${(summary.balanceCard || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                    {summaryLoading ? '...' : formatCurrency(summary.balanceCard || 0)}
+                  </div>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-purple-600">
-                {t('ta transaksiya', language)}
+              
+              <p className={`text-xs sm:text-sm mt-3 ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {summary.balance >= 0 ? t('Ijobiy', language) : t('Salbiy', language)}
               </p>
             </div>
           </div>
@@ -444,6 +556,16 @@ const MasterCashier: React.FC = memo(() => {
       <ExpenseModal
         isOpen={isExpenseModalOpen}
         onClose={() => setIsExpenseModalOpen(false)}
+      />
+      <MonthlyHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+      />
+      <MonthlyResetModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={handleMonthlyReset}
+        currentStats={summary}
       />
     </div>
   );

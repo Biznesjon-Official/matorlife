@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Lock, Eye, EyeOff, AlertCircle, Edit3, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, User, Phone, Percent, AlertCircle, Edit3, Upload, Image as ImageIcon } from 'lucide-react';
 import { User as UserType } from '@/types';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { formatPhoneNumber, validatePhoneNumber, getPhoneDigits } from '@/lib/phoneUtils';
 import { t } from '@/lib/transliteration';
 import api from '@/lib/api';
 
@@ -17,12 +18,12 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
   const [formData, setFormData] = useState({
     name: '',
     username: '',
-    password: '',
+    phone: '',
+    percentage: 50,
     profession: '',
     experience: 0,
     profileImage: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -43,7 +44,8 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
       setFormData({
         name: apprentice.name,
         username: apprentice.username,
-        password: '',
+        phone: apprentice.phone ? formatPhoneNumber(apprentice.phone) : '',
+        percentage: apprentice.percentage || 50,
         profession: apprentice.profession || '',
         experience: apprentice.experience || 0,
         profileImage: apprentice.profileImage || ''
@@ -67,8 +69,12 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
       newErrors.username = t("Username faqat harflar, raqamlar va _ belgisidan iborat bo'lishi mumkin", language);
     }
 
-    if (formData.password && formData.password.length < 6) {
-      newErrors.password = t("Parol kamida 6 ta belgidan iborat bo'lishi kerak", language);
+    if (!formData.phone || !validatePhoneNumber(formData.phone)) {
+      newErrors.phone = t("Telefon raqam to'liq va to'g'ri formatda kiritilishi kerak", language);
+    }
+
+    if (formData.percentage < 0 || formData.percentage > 100) {
+      newErrors.percentage = t("Foiz 0 dan 100 gacha bo'lishi kerak", language);
     }
 
     setErrors(newErrors);
@@ -93,14 +99,12 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
       const updateData: any = {
         name: formData.name,
         username: formData.username,
+        phone: getPhoneDigits(formData.phone), // Faqat raqamlarni yuborish
+        percentage: formData.percentage,
         profession: formData.profession,
         experience: formData.experience,
         profileImage: profileImageUrl
       };
-
-      if (formData.password) {
-        updateData.password = formData.password;
-      }
 
       const response = await api.patch(`/auth/users/${apprentice._id}`, updateData);
 
@@ -118,10 +122,21 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Telefon raqam uchun formatlash
+    if (name === 'phone') {
+      const formatted = formatPhoneNumber(value);
+      setFormData(prev => ({
+        ...prev,
+        phone: formatted
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -347,40 +362,69 @@ const EditApprenticeModal: React.FC<EditApprenticeModalProps> = ({ isOpen, onClo
               />
             </div>
 
-            {/* Password */}
+            {/* Phone Number */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                {t('Yangi parol', language)} <span className="text-gray-400 text-xs">({t('ixtiyoriy', language)})</span>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('Telefon raqam', language)}
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
-                  className={`w-full pl-10 pr-12 py-2.5 border-2 rounded-lg focus:outline-none transition-all ${
-                    errors.password 
+                  required
+                  className={`w-full pl-10 pr-4 py-2.5 border-2 rounded-lg focus:outline-none transition-all ${
+                    errors.phone 
                       ? 'border-red-300 focus:border-red-500' 
                       : 'border-gray-200 focus:border-blue-500'
                   }`}
-                  placeholder={t("Bo'sh qoldiring agar o'zgartirmasangiz", language)}
+                  placeholder="+998901234567"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
               </div>
-              {errors.password && (
+              {errors.phone && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {errors.password}
+                  {errors.phone}
                 </p>
               )}
+            </div>
+
+            {/* Percentage */}
+            <div>
+              <label htmlFor="percentage" className="block text-sm font-medium text-gray-700 mb-1.5">
+                {t('Foiz ulushi', language)} (%)
+              </label>
+              <div className="relative">
+                <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="number"
+                  id="percentage"
+                  name="percentage"
+                  value={formData.percentage}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  max="100"
+                  className={`w-full pl-10 pr-4 py-2.5 border-2 rounded-lg focus:outline-none transition-all ${
+                    errors.percentage 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-gray-200 focus:border-blue-500'
+                  }`}
+                  placeholder="50"
+                />
+              </div>
+              {errors.percentage && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.percentage}
+                </p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                {t("Shogirtning vazifa to'lovidan oladigan ulushi", language)}
+              </p>
             </div>
 
             {/* Buttons */}

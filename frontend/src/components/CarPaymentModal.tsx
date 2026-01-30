@@ -196,39 +196,17 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
         totalPayment: cash + card
       });
 
-      if (carService) {
-        // Naqd to'lovni qo'shish
-        if (cash > 0) {
-          await api.post(`/car-services/${carService._id}/payment`, {
-            amount: cash,
-            paymentMethod: 'cash',
-            notes: `${t('Naqd', language)}${notes ? ` - ${notes}` : ''}`
-          });
-        }
+      // ✨ YANGI: Agar CarService yo'q bo'lsa, avtomatik yaratish
+      let serviceToUse = carService;
+      
+      if (!serviceToUse) {
+        console.log('⚠️ CarService topilmadi, yangi yaratilmoqda...');
         
-        // Plastik to'lovni qo'shish
-        if (card > 0) {
-          await api.post(`/car-services/${carService._id}/payment`, {
-            amount: card,
-            paymentMethod: 'card',
-            notes: `${t('Plastik', language)}${notes ? ` - ${notes}` : ''}`
-          });
-        }
-        
-        // To'lovdan keyin yangilangan ma'lumotlarni olish
-        const response = await api.get(`/car-services?carId=${car._id}`);
-        const services = response.data.services || [];
-        const latestService = services.find((s: any) => s.status !== 'delivered');
-        if (latestService) {
-          setCarService(latestService);
-        }
-      } else {
-        // CarService yaratish
         const parts = car.parts || [];
         const serviceItems = car.serviceItems || [];
         
         if (parts.length === 0 && serviceItems.length === 0) {
-          alert(t('Mashina uchun qismlar yoki ish haqi topilmadi.', language));
+          alert(t('Mashina uchun qismlar yoki ish haqi topilmadi. Iltimos, avval mashinani tahrirlang.', language));
           setLoading(false);
           return;
         }
@@ -250,32 +228,52 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
           }))
         ];
         
-        const createServiceResponse = await api.post('/car-services', {
-          carId: car._id,
-          parts: allItems
-        });
-        
-        const newService = createServiceResponse.data.service;
-        
+        try {
+          const createServiceResponse = await api.post('/car-services', {
+            carId: car._id,
+            parts: allItems
+          });
+          
+          serviceToUse = createServiceResponse.data.service;
+          setCarService(serviceToUse);
+          console.log('✅ Yangi CarService yaratildi:', serviceToUse._id);
+        } catch (createError: any) {
+          console.error('❌ CarService yaratishda xatolik:', createError);
+          alert(t('Xizmat yaratishda xatolik. Iltimos, qaytadan urinib ko\'ring.', language));
+          setLoading(false);
+          return;
+        }
+      }
+
+      // To'lovlarni qo'shish
+      if (serviceToUse) {
         // Naqd to'lovni qo'shish
         if (cash > 0) {
-          await api.post(`/car-services/${newService._id}/payment`, {
+          await api.post(`/car-services/${serviceToUse._id}/payment`, {
             amount: cash,
             paymentMethod: 'cash',
             notes: `${t('Naqd', language)}${notes ? ` - ${notes}` : ''}`
           });
+          console.log(`💵 Naqd to'lov qo'shildi: ${cash} so'm`);
         }
         
         // Plastik to'lovni qo'shish
         if (card > 0) {
-          await api.post(`/car-services/${newService._id}/payment`, {
+          await api.post(`/car-services/${serviceToUse._id}/payment`, {
             amount: card,
             paymentMethod: 'card',
             notes: `${t('Plastik', language)}${notes ? ` - ${notes}` : ''}`
           });
+          console.log(`💳 Plastik to'lov qo'shildi: ${card} so'm`);
         }
         
-        setCarService(newService);
+        // To'lovdan keyin yangilangan ma'lumotlarni olish
+        const response = await api.get(`/car-services?carId=${car._id}`);
+        const services = response.data.services || [];
+        const latestService = services.find((s: any) => s.status !== 'delivered');
+        if (latestService) {
+          setCarService(latestService);
+        }
       }
 
       // Reset form

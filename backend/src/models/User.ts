@@ -6,9 +6,12 @@ export interface IUser extends Document {
   email: string;
   username: string;
   password: string;
+  phone?: string; // Telefon raqam
+  percentage?: number; // Shogird foizi (0-100)
   role: 'master' | 'apprentice';
   masterId?: mongoose.Types.ObjectId; // Shogird qaysi ustoz tomonidan qo'shilgan
-  earnings: number;
+  earnings: number; // Joriy oylik daromad
+  totalEarnings: number; // Jami daromad (barcha vaqt davomida)
   profileImage?: string; // Profil rasmi
   profession?: string; // Kasbi
   experience?: number; // Tajriba (yillarda)
@@ -43,12 +46,29 @@ const userSchema = new Schema<IUser>({
     required: true,
     minlength: 6
   },
+  phone: {
+    type: String,
+    sparse: true,
+    trim: true,
+    default: undefined
+  },
+  percentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: undefined
+  },
   role: {
     type: String,
     enum: ['master', 'apprentice'],
     required: true
   },
   earnings: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  totalEarnings: {
     type: Number,
     default: 0,
     min: 0

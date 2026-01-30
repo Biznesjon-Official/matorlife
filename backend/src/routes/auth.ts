@@ -21,12 +21,28 @@ router.post('/register', [
 router.post('/login', [
   body('username').optional().trim().isLength({ min: 1 }).withMessage('Username must not be empty'),
   body('email').optional().isEmail().withMessage('Please provide a valid email'),
-  body('password').notEmpty().withMessage('Password is required'),
-  // Custom validation: username yoki email majburiy
+  body('phone').optional().trim().isLength({ min: 9 }).withMessage('Telefon raqam noto\'g\'ri'),
+  body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  // Custom validation: username/email + password YOKI username + phone
   body().custom((value, { req }) => {
-    if (!req.body.username && !req.body.email) {
+    const { username, email, password, phone } = req.body;
+    
+    // Agar telefon raqam berilgan bo'lsa (shogirt)
+    if (phone) {
+      if (!username) {
+        throw new Error('Username kiritilishi kerak');
+      }
+      return true;
+    }
+    
+    // Agar telefon yo'q bo'lsa (ustoz)
+    if (!username && !email) {
       throw new Error('Username or email is required');
     }
+    if (!password) {
+      throw new Error('Password is required');
+    }
+    
     return true;
   }),
   handleValidationErrors

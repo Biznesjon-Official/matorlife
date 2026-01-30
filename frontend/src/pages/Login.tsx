@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '@/contexts/AuthContext';
 import { Eye, EyeOff, ArrowRight, Sparkles, Lock, User } from 'lucide-react';
+import { formatPhoneNumber, getPhoneDigits } from '@/lib/phoneUtils';
 import toast from 'react-hot-toast';
 import { t } from '@/lib/transliteration';
 
 interface LoginForm {
   username: string;
   password: string;
+  phone: string;
 }
 
 const Login: React.FC = () => {
@@ -16,6 +18,8 @@ const Login: React.FC = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'master' | 'apprentice' | null>(null);
+  const [phoneValue, setPhoneValue] = useState('');
   
   // localStorage'dan tilni o'qish (faqat o'qish, o'zgartirish yo'q)
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -32,7 +36,13 @@ const Login: React.FC = () => {
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
     try {
-      await login(data.username, data.password);
+      if (selectedRole === 'apprentice') {
+        // Shogirt - username va telefon raqam bilan kirish (faqat raqamlarni yuborish)
+        await login(data.username, '', getPhoneDigits(phoneValue));
+      } else {
+        // Ustoz - username va parol bilan kirish
+        await login(data.username, data.password);
+      }
       toast.success(t('Xush kelibsiz!', language));
       navigate('/app/dashboard');
     } catch (error: any) {
@@ -93,94 +103,241 @@ const Login: React.FC = () => {
 
             {/* Mobile-Optimized Login Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
-              {/* Username Field */}
-              <div className="group">
-                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                  <User className="h-4 w-4 mr-2 text-blue-600" />
-                  {t("Foydalanuvchi nomi", language)}
-                </label>
-                <div className="relative">
-                  <input
-                    {...register('username', {
-                      required: t('Foydalanuvchi nomi kiritilishi shart', language)
-                    })}
-                    type="text"
-                    className="input group-hover:border-blue-400 transition-all duration-300 text-sm sm:text-base"
-                    placeholder={t("Foydalanuvchi nomingizni kiriting", language)}
-                  />
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 pointer-events-none transition-all duration-300"></div>
-                </div>
-                {errors.username && (
-                  <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
-                    <span className="mr-1">⚠</span>
-                    {errors.username.message}
+              {/* Role Selection */}
+              {!selectedRole ? (
+                <div className="space-y-3">
+                  <p className="text-center text-sm font-semibold text-gray-700 mb-4">
+                    {t("Kim sifatida kirmoqchisiz?", language)}
                   </p>
-                )}
-              </div>
-
-              {/* Password Field */}
-              <div className="group">
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
-                  <Lock className="h-4 w-4 mr-2 text-blue-600" />
-                  {t("Parol", language)}
-                </label>
-                <div className="relative">
-                  <input
-                    {...register('password', {
-                      required: t('Parol kiritilishi shart', language)
-                    })}
-                    type={showPassword ? 'text' : 'password'}
-                    className="input pr-12 group-hover:border-blue-400 transition-all duration-300 text-sm sm:text-base"
-                    placeholder={t("Parolingizni kiriting", language)}
-                  />
+                  
+                  {/* Master Button */}
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400 hover:text-blue-600 transition-colors"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setSelectedRole('master')}
+                    className="w-full p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-300 group"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
-                    ) : (
-                      <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
-                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-500 rounded-lg">
+                          <User className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-blue-900">{t("Ustoz", language)}</p>
+                          <p className="text-xs text-blue-600">{t("Username va parol bilan", language)}</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </button>
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 pointer-events-none transition-all duration-300"></div>
-                </div>
-                {errors.password && (
-                  <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
-                    <span className="mr-1">⚠</span>
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="relative w-full btn-lg group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-5 sm:mt-6 py-3 sm:py-4"
-              >
-                {/* Button Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
-                
-                {/* Button Content */}
-                <span className="relative flex items-center justify-center text-sm sm:text-base font-semibold">
-                  {isLoading ? (
+                  {/* Apprentice Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole('apprentice')}
+                    className="w-full p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl hover:from-green-100 hover:to-emerald-100 hover:border-green-300 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-green-500 rounded-lg">
+                          <User className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-green-900">{t("Shogird", language)}</p>
+                          <p className="text-xs text-green-600">{t("Telefon raqam bilan", language)}</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-green-600 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Back Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRole(null)}
+                    className="text-sm text-gray-600 hover:text-blue-600 font-medium transition-colors inline-flex items-center group mb-2"
+                  >
+                    <span className="group-hover:-translate-x-1 transition-transform">←</span>
+                    <span className="ml-1">{t("Orqaga", language)}</span>
+                  </button>
+
+                  {/* Role Badge */}
+                  <div className="flex justify-center mb-4">
+                    <div className={`inline-flex items-center space-x-2 ${
+                      selectedRole === 'master' 
+                        ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border-blue-200' 
+                        : 'bg-gradient-to-r from-green-100 to-emerald-100 border-green-200'
+                    } border rounded-full px-4 py-2`}>
+                      <User className={`h-4 w-4 ${selectedRole === 'master' ? 'text-blue-600' : 'text-green-600'}`} />
+                      <span className={`text-sm font-semibold ${selectedRole === 'master' ? 'text-blue-800' : 'text-green-800'}`}>
+                        {selectedRole === 'master' ? t("Ustoz", language) : t("Shogird", language)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {selectedRole === 'master' ? (
                     <>
-                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      {t("Kirilmoqda...", language)}
+                      {/* Username Field */}
+                      <div className="group">
+                        <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                          <User className="h-4 w-4 mr-2 text-blue-600" />
+                          {t("Foydalanuvchi nomi", language)}
+                        </label>
+                        <div className="relative">
+                          <input
+                            {...register('username', {
+                              required: selectedRole === 'master' ? t('Foydalanuvchi nomi kiritilishi shart', language) : false
+                            })}
+                            type="text"
+                            className="input group-hover:border-blue-400 transition-all duration-300 text-sm sm:text-base"
+                            placeholder={t("Foydalanuvchi nomingizni kiriting", language)}
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 pointer-events-none transition-all duration-300"></div>
+                        </div>
+                        {errors.username && (
+                          <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
+                            <span className="mr-1">⚠</span>
+                            {errors.username.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Password Field */}
+                      <div className="group">
+                        <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                          <Lock className="h-4 w-4 mr-2 text-blue-600" />
+                          {t("Parol", language)}
+                        </label>
+                        <div className="relative">
+                          <input
+                            {...register('password', {
+                              required: selectedRole === 'master' ? t('Parol kiritilishi shart', language) : false
+                            })}
+                            type={showPassword ? 'text' : 'password'}
+                            className="input pr-12 group-hover:border-blue-400 transition-all duration-300 text-sm sm:text-base"
+                            placeholder={t("Parolingizni kiriting", language)}
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-400 hover:text-blue-600 transition-colors"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                            ) : (
+                              <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
+                            )}
+                          </button>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 to-indigo-500/0 group-hover:from-blue-500/5 group-hover:to-indigo-500/5 pointer-events-none transition-all duration-300"></div>
+                        </div>
+                        {errors.password && (
+                          <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
+                            <span className="mr-1">⚠</span>
+                            {errors.password.message}
+                          </p>
+                        )}
+                      </div>
                     </>
                   ) : (
                     <>
-                      {t("Kirish", language)}
-                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                      {/* Username Field for Apprentice */}
+                      <div className="group">
+                        <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                          <User className="h-4 w-4 mr-2 text-green-600" />
+                          {t("Foydalanuvchi nomi", language)}
+                        </label>
+                        <div className="relative">
+                          <input
+                            {...register('username', {
+                              required: selectedRole === 'apprentice' ? t('Foydalanuvchi nomi kiritilishi shart', language) : false
+                            })}
+                            type="text"
+                            className="input group-hover:border-green-400 transition-all duration-300 text-sm sm:text-base"
+                            placeholder={t("Foydalanuvchi nomingizni kiriting", language)}
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/0 to-emerald-500/0 group-hover:from-green-500/5 group-hover:to-emerald-500/5 pointer-events-none transition-all duration-300"></div>
+                        </div>
+                        {errors.username && (
+                          <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
+                            <span className="mr-1">⚠</span>
+                            {errors.username.message}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Phone Field */}
+                      <div className="group">
+                        <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                          <User className="h-4 w-4 mr-2 text-green-600" />
+                          {t("Telefon raqam", language)}
+                        </label>
+                        <div className="relative">
+                          <input
+                            {...register('phone', {
+                              required: selectedRole === 'apprentice' ? t('Telefon raqam kiritilishi shart', language) : false
+                            })}
+                            type="tel"
+                            value={phoneValue}
+                            onChange={(e) => {
+                              const formatted = formatPhoneNumber(e.target.value);
+                              setPhoneValue(formatted);
+                            }}
+                            className="input group-hover:border-green-400 transition-all duration-300 text-sm sm:text-base"
+                            placeholder="+998 90 123 45 67"
+                          />
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-green-500/0 to-emerald-500/0 group-hover:from-green-500/5 group-hover:to-emerald-500/5 pointer-events-none transition-all duration-300"></div>
+                        </div>
+                        {errors.phone && (
+                          <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center animate-fade-in">
+                            <span className="mr-1">⚠</span>
+                            {errors.phone.message}
+                          </p>
+                        )}
+                        <p className="mt-2 text-xs text-gray-500">
+                          {t("Ustoz tomonidan berilgan ma'lumotlarni kiriting", language)}
+                        </p>
+                      </div>
                     </>
                   )}
-                </span>
-              </button>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`relative w-full btn-lg group overflow-hidden ${
+                      selectedRole === 'master'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600'
+                    } text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-5 sm:mt-6 py-3 sm:py-4`}
+                  >
+                    {/* Button Glow Effect */}
+                    <div className={`absolute inset-0 ${
+                      selectedRole === 'master'
+                        ? 'bg-gradient-to-r from-blue-400 to-indigo-400'
+                        : 'bg-gradient-to-r from-green-400 to-emerald-400'
+                    } opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl`}></div>
+                    
+                    {/* Button Content */}
+                    <span className="relative flex items-center justify-center text-sm sm:text-base font-semibold">
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          {t("Kirilmoqda...", language)}
+                        </>
+                      ) : (
+                        <>
+                          {t("Kirish", language)}
+                          <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </span>
+                  </button>
+                </>
+              )}
             </form>
 
             {/* Back to Home */}

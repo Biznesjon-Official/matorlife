@@ -26,9 +26,6 @@ const SpareParts: React.FC = () => {
   const [filteredParts, setFilteredParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showLowStock, setShowLowStock] = useState(false);
-  const [viewMode, setViewMode] = useState<'warehouse' | 'client'>('warehouse');
-  const [clientParts, setClientParts] = useState<any[]>([]);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -43,19 +40,16 @@ const SpareParts: React.FC = () => {
 
   useEffect(() => {
     fetchSpareParts();
-    if (viewMode === 'client') {
-      fetchClientParts();
-    }
-  }, [viewMode]);
+  }, []);
 
   useEffect(() => {
     filterParts();
-  }, [spareParts, searchTerm, showLowStock]);
+  }, [spareParts, searchTerm]);
 
   const fetchSpareParts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/spare-parts?limit=100`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/spare-parts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -73,46 +67,6 @@ const SpareParts: React.FC = () => {
     }
   };
 
-  const fetchClientParts = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cars/client-parts`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      setClientParts(data.parts || []);
-    } catch (error) {
-      console.error('Error fetching client parts:', error);
-      setClientParts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRemoveClientPart = async (carId: string, partId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/cars/${carId}/parts/${partId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      fetchClientParts();
-    } catch (error) {
-      console.error('Error removing client part:', error);
-    }
-  };
-
   const filterParts = () => {
     let filtered = [...spareParts];
 
@@ -121,10 +75,6 @@ const SpareParts: React.FC = () => {
         part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         part.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (showLowStock) {
-      filtered = filtered.filter(part => part.quantity <= 3);
     }
 
     setFilteredParts(filtered);
@@ -322,49 +272,19 @@ const SpareParts: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-3 sm:p-6">
-          <div className="space-y-3 sm:space-y-4">
-            <div className="flex items-center gap-2">
-              <select
-                value={viewMode}
-                onChange={(e) => setViewMode(e.target.value as 'warehouse' | 'client')}
-                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium"
-              >
-                <option value="warehouse">{t('Omborda bor', language)}</option>
-                <option value="client">{t('Clientlar keltirish kerak', language)}</option>
-              </select>
-            </div>
-
-            {viewMode === 'warehouse' && (
-              <>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder={t('Qidirish...', language)}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium placeholder:text-gray-400"
-                  />
-                </div>
-                
-                <div className="flex justify-center sm:justify-end">
-                  <label className="flex items-center space-x-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-all">
-                    <input
-                      type="checkbox"
-                      checked={showLowStock}
-                      onChange={(e) => setShowLowStock(e.target.checked)}
-                      className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
-                    />
-                    <span className="text-sm font-medium text-gray-700">{t('Faqat kam qolganlar', language)}</span>
-                  </label>
-                </div>
-              </>
-            )}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder={t('Zapchast nomi yoki yetkazib beruvchi bo\'yicha qidirish...', language)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm font-medium placeholder:text-gray-400"
+            />
           </div>
         </div>
 
-        {viewMode === 'warehouse' ? (
-          filteredParts.length === 0 ? (
+        {filteredParts.length === 0 ? (
             <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
               <div className="max-w-md mx-auto">
                 <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
@@ -372,12 +292,12 @@ const SpareParts: React.FC = () => {
                 </div>
                 <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t('Zapchastlar topilmadi', language)}</h3>
                 <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base px-4 sm:px-0">
-                  {searchTerm || showLowStock
+                  {searchTerm
                     ? t('Qidiruv so\'rovingizga mos zapchastlar topilmadi.', language)
                     : t('Tizimga birinchi zapchastni qo\'shishdan boshlang.', language)
                   }
                 </p>
-                {!searchTerm && !showLowStock && (
+                {!searchTerm && (
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 text-sm sm:text-base"
@@ -534,73 +454,7 @@ const SpareParts: React.FC = () => {
                 );
               })}
             </div>
-          )
-        ) : (
-          clientParts.length === 0 ? (
-            <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
-              <div className="max-w-md mx-auto">
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-full w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                  <AlertTriangle className="h-8 w-8 sm:h-12 sm:w-12 text-orange-600" />
-                </div>
-                <h3 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3">{t('Client keltirishi kerak bo\'lgan qismlar yo\'q', language)}</h3>
-                <p className="text-gray-600 text-sm sm:text-base px-4 sm:px-0">
-                  {t('Hozircha hech qanday avtomobil uchun client keltirishi kerak bo\'lgan ehtiyot qismlar yo\'q.', language)}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {clientParts.map((item: any) => (
-                <div key={`${item.carId}-${item.part._id}`} className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-orange-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-3 sm:p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 sm:space-x-3">
-                        <div className="bg-white/20 backdrop-blur-xl p-2 rounded-lg">
-                          <Package className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm sm:text-base font-bold text-white">
-                            {item.carInfo.make} {item.carInfo.model}
-                          </h3>
-                          <p className="text-xs text-orange-100">{item.carInfo.licensePlate}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-orange-100">{t('Egasi', language)}</p>
-                        <p className="text-sm font-semibold text-white">{item.carInfo.ownerName}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 sm:p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-1">{item.part.name}</h4>
-                        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                          <span className="flex items-center">
-                            <Box className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-orange-500" />
-                            {t('Miqdor', language)}: <strong className="ml-1">{item.part.quantity}</strong>
-                          </span>
-                          <span className="flex items-center">
-                            <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-green-500" />
-                            {t('Narx', language)}: <strong className="ml-1">{item.part.price.toLocaleString()}</strong>
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleRemoveClientPart(item.carId, item.part._id)}
-                        className="ml-3 p-2 sm:p-2.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
-                        title={t("O'chirish", language)}
-                      >
-                        <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        )}
+          )}
       </div>
 
       <CreateSparePartModal

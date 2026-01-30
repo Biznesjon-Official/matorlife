@@ -294,7 +294,7 @@ export default function AIChatWidget() {
       <button
         data-ai-chat-button
         onClick={() => setIsOpen(true)}
-        className={`fixed ${isLandingPage ? 'bottom-6 right-6' : 'bottom-20 right-4 sm:bottom-6 sm:right-6'} lg:bottom-6 lg:right-6 transition-all duration-300 hover:scale-105 z-30 group ${
+        className={`fixed bottom-6 right-4 sm:right-6 lg:bottom-6 lg:right-6 transition-all duration-300 hover:scale-105 z-30 group ${
           shouldAnimate ? 'animate-bounce-attention' : ''
         }`}
       >
@@ -324,27 +324,36 @@ export default function AIChatWidget() {
             </div>
           </div>
         ) : (
-          <>
-            <img src="/logo.jpg" alt="Mator Life AI" className={`w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full shadow-xl ${shouldAnimate ? 'animate-wiggle' : ''}`} />
+          <div className="relative">
+            <img 
+              src="/logo.jpg" 
+              alt="Mator Life AI" 
+              className={`w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-full shadow-xl ${shouldAnimate ? 'animate-wiggle' : ''}`} 
+            />
             <span className={`absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-white ${
               shouldAnimate ? 'animate-ping' : 'animate-pulse'
             }`}></span>
             {shouldAnimate && (
               <span className="absolute -top-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full animate-ping"></span>
             )}
-            <div className={`absolute bottom-full right-0 mb-2 px-2 sm:px-3 py-1 bg-gray-900 text-white text-xs sm:text-sm rounded-lg transition-opacity whitespace-nowrap pointer-events-none ${
+            
+            <div className={`absolute bottom-full right-0 mb-3 px-4 py-2 bg-gray-900 text-white text-sm rounded-xl transition-opacity whitespace-nowrap pointer-events-none shadow-xl ${
               shouldAnimate ? 'opacity-100 animate-bounce-in' : 'opacity-0 group-hover:opacity-100'
             }`}>
-              Mator Life AI
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-yellow-400" />
+                <span>{t('AI bilan suhbatlashing', language)}</span>
+              </div>
+              <div className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
             </div>
-          </>
+          </div>
         )}
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-16 right-2 sm:bottom-6 sm:right-6 lg:bottom-6 lg:right-6 w-[calc(100vw-16px)] sm:w-96 h-[calc(100vh-140px)] sm:h-[600px] lg:h-[600px] bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col z-30 border border-gray-200">
+    <div className="fixed bottom-6 right-2 sm:right-6 lg:bottom-6 lg:right-6 w-[calc(100vw-16px)] sm:w-96 h-[calc(100vh-80px)] sm:h-[600px] lg:h-[600px] bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col z-30 border border-gray-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 sm:p-4 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

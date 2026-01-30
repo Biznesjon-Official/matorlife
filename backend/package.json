@@ -17,7 +17,15 @@
     "pm2:logs": "pm2 logs mator-life-backend",
     "pm2:monit": "pm2 monit",
     "create-subscription": "ts-node src/scripts/createSubscription.ts",
-    "update-master": "ts-node src/scripts/updateMasterUser.ts"
+    "update-master": "ts-node src/scripts/updateMasterUser.ts",
+    "reset-db": "ts-node src/scripts/resetDatabase.ts",
+    "check-db": "ts-node src/scripts/checkDatabase.ts",
+    "update-master-credentials": "ts-node src/scripts/updateMasterCredentials.ts",
+    "test-login": "ts-node src/scripts/testLogin.ts",
+    "seed-master": "ts-node src/scripts/seedMaster.ts",
+    "add-total-earnings": "ts-node src/scripts/addTotalEarnings.ts",
+    "test-salary": "ts-node src/scripts/testSalaryPayment.ts",
+    "reset-apprentice-data": "ts-node src/scripts/resetApprenticeData.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -104,7 +104,8 @@ ${t('Yetkazib beruvchi', language)}: ${formData.supplier}`;
       onSuccess({
         amount: totalAmount,
         description: description,
-        paymentMethod: formData.paymentMethod
+        paymentMethod: formData.paymentMethod,
+        sparePartName: formData.name // Zapchast nomini qo'shish
       });
 
       // Form ni tozalash

@@ -95,9 +95,9 @@ const MasterTasks: React.FC = () => {
     if (filter === 'all') {
       return tasks?.tasks;
     } else if (filter === 'active') {
-      // Faqat faol vazifalar (tasdiqlangan va rad etilganlarni chiqarib tashlash)
+      // Faqat faol vazifalar (faqat tasdiqlangan o'chadi, rad etilgan qoladi)
       return tasks?.tasks?.filter((task: any) => 
-        task.status !== 'approved' && task.status !== 'rejected'
+        task.status !== 'approved' // Faqat tasdiqlangan vazifalar yashirin
       );
     } else {
       return tasks?.tasks?.filter((task: any) => task.status === filter);
@@ -145,9 +145,17 @@ const MasterTasks: React.FC = () => {
 
   const confirmDelete = async () => {
     if (selectedTask) {
-      await deleteTaskMutation.mutateAsync(selectedTask._id);
-      setIsDeleteModalOpen(false);
-      setSelectedTask(null);
+      try {
+        await deleteTaskMutation.mutateAsync(selectedTask._id);
+        setIsDeleteModalOpen(false);
+        setSelectedTask(null);
+      } catch (error) {
+        // Xatolik toast orqali ko'rsatiladi
+        console.error('Delete task error:', error);
+        // Modal ni yopish
+        setIsDeleteModalOpen(false);
+        setSelectedTask(null);
+      }
     }
   };
 
@@ -274,7 +282,7 @@ const MasterTasks: React.FC = () => {
                 className="w-full px-4 py-3 text-sm font-semibold bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer shadow-sm hover:shadow-md transition-all duration-200"
               >
                 <option value="active">
-                  Faol vazifalar ({tasks?.tasks?.filter((t: any) => t.status !== 'approved' && t.status !== 'rejected').length || 0})
+                  Faol vazifalar ({tasks?.tasks?.filter((t: any) => t.status !== 'approved').length || 0})
                 </option>
                 <option value="all">
                   Barchasi ({tasks?.tasks?.length || 0})

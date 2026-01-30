@@ -8,6 +8,7 @@ import {
   updateTaskStatus,
   approveTask,
   getTaskStats,
+  restartTask,
   deleteTask
 } from '../controllers/taskController';
 import { authenticate, authorize } from '../middleware/auth';
@@ -64,6 +65,9 @@ router.patch('/:id/approve', authenticate, authorize('master'), [
   body('approved').isBoolean().withMessage('Approved must be a boolean'),
   handleValidationErrors
 ], approveTask);
+
+// Restart rejected task
+router.patch('/:id/restart', authenticate, restartTask);
 
 // Delete task (master can delete any task, apprentice can delete their own tasks)
 router.delete('/:id', authenticate, deleteTask);

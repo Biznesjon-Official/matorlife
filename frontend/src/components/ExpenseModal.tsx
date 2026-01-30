@@ -9,9 +9,11 @@ import {
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { formatNumber, parseFormattedNumber } from '@/lib/utils';
 import { t } from '@/lib/transliteration';
-import { useCreateTransaction } from '@/hooks/useTransactionsOptimized';
+import { useCreateTransaction } from '@/hooks/useTransactions';
 import { useExpenseCategories } from '@/hooks/useExpenseCategories';
 import { Transaction } from '@/types';
+import SalaryExpenseModal from './SalaryExpenseModal';
+import CreateSparePartModal from './CreateSparePartModal';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -29,6 +31,8 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
+  const [isSparePartModalOpen, setIsSparePartModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     amount: '',
     amountDisplay: '',
@@ -62,6 +66,8 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
   const handleClose = () => {
     setStep('categories');
     setSelectedCategory(null);
+    setIsSalaryModalOpen(false);
+    setIsSparePartModalOpen(false);
     setFormData({
       amount: '',
       amountDisplay: '',
@@ -74,7 +80,43 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
 
   const handleCategorySelect = (category: any) => {
     setSelectedCategory(category);
-    setStep('form');
+    
+    // Agar "Maosh" kategoriyasi bo'lsa, maxsus modal ochish
+    if (category.nameUz === 'Oyliklar' || category.nameUz.toLowerCase().includes('maosh') || category.nameUz.toLowerCase().includes('oylik')) {
+      setIsSalaryModalOpen(true);
+    } 
+    // Agar "Zapchastlar" kategoriyasi bo'lsa, zapchast qo'shish modali ochish
+    else if (category.nameUz === 'Zapchastlar' || category.nameUz.toLowerCase().includes('zapchast') || category.nameUz.toLowerCase().includes('ehtiyot qism')) {
+      setIsSparePartModalOpen(true);
+    } 
+    else {
+      setStep('form');
+    }
+  };
+
+  const handleSalarySuccess = async (salaryData: any) => {
+    setLoading(true);
+    try {
+      await createTransactionMutation.mutateAsync({
+        type: 'expense',
+        category: selectedCategory.nameUz,
+        categoryId: selectedCategory._id,
+        amount: salaryData.amount,
+        description: salaryData.description,
+        paymentMethod: salaryData.paymentMethod,
+        relatedTo: {
+          type: 'expense_category',
+          id: selectedCategory._id
+        }
+      } as Partial<Transaction>);
+
+      handleClose();
+    } catch (error: any) {
+      console.error('Error creating salary expense:', error);
+      alert(error.response?.data?.message || t('Xatolik yuz berdi', language));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const validateForm = () => {
@@ -384,6 +426,38 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+
+      {/* Salary Expense Modal */}
+      {isSalaryModalOpen && selectedCategory && (
+        <SalaryExpenseModal
+          isOpen={isSalaryModalOpen}
+          onClose={() => {
+            setIsSalaryModalOpen(false);
+            setSelectedCategory(null);
+            setStep('categories');
+          }}
+          onSuccess={handleSalarySuccess}
+          category={selectedCategory}
+        />
+      )}
+
+      {/* Spare Part Modal */}
+      {isSparePartModalOpen && (
+        <CreateSparePartModal
+          isOpen={isSparePartModalOpen}
+          onClose={() => {
+            setIsSparePartModalOpen(false);
+            setSelectedCategory(null);
+            setStep('categories');
+          }}
+          onSuccess={() => {
+            setIsSparePartModalOpen(false);
+            setSelectedCategory(null);
+            setStep('categories');
+            handleClose();
+          }}
+        />
+      )}
     </div>
   );
 };

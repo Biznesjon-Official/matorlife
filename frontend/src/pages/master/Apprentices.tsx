@@ -297,7 +297,7 @@ const Apprentices: React.FC = () => {
                   </div>
 
                   {/* Task Stats Grid */}
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
+                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
                     <div className="text-center p-2 sm:p-2.5 bg-blue-50 rounded-lg border border-blue-100">
                       <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mx-auto mb-1" />
                       <p className="text-sm sm:text-base font-bold text-blue-900">{stats.totalTasks}</p>
@@ -312,6 +312,23 @@ const Apprentices: React.FC = () => {
                       <Award className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 mx-auto mb-1" />
                       <p className="text-sm sm:text-base font-bold text-purple-900">{stats.awards}</p>
                       <p className="text-xs text-purple-600 font-medium">{t("Mukofot", language)}</p>
+                    </div>
+                  </div>
+
+                  {/* Earnings Display */}
+                  <div className="mb-4 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border-2 border-emerald-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
+                          <span className="text-white text-lg font-bold">💰</span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-emerald-600 font-medium">{t("Jami daromad", language)}</p>
+                          <p className="text-base sm:text-lg font-bold text-emerald-900">
+                            {(apprentice.totalEarnings || 0).toLocaleString()} {t("so'm", language)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

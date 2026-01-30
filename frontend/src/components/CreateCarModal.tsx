@@ -57,6 +57,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
   const [itemQuantity, setItemQuantity] = useState('1');
   const [itemCategory, setItemCategory] = useState<'part' | 'material'>('part');
   const [itemSource, setItemSource] = useState<'available' | 'tobring'>('available'); // Yangi state
+  const [tobringPrice, setTobringPrice] = useState(''); // Keltirish uchun pul
+  const [displayTobringPrice, setDisplayTobringPrice] = useState('0'); // Keltirish uchun ko'rsatiladigan pul
   
   // Autocomplete states
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -261,8 +263,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         }
       }
       
-      // Agar "Keltirish" tanlangan bo'lsa, narx 0 bo'ladi
-      const price = itemSource === 'tobring' ? 0 : (parseFloat(itemPrice) || 0);
+      // Agar "Keltirish" tanlangan bo'lsa, tobringPrice dan olamiz (0 yoki kiritilgan qiymat)
+      const price = itemSource === 'tobring' ? (parseFloat(tobringPrice) || 0) : (parseFloat(itemPrice) || 0);
       
       // Agar zapchast tanlangan bo'lsa, usedSpareParts ga qo'shish
       if (selectedSparePartId && currentStep === 2) {
@@ -293,6 +295,8 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       setItemQuantity('1');
       setItemSource('available'); // Default ga qaytarish
       setSelectedSparePartId('');
+      setTobringPrice(''); // Keltirish pulini tozalash
+      setDisplayTobringPrice('0'); // Keltirish ko'rsatiladigan pulini tozalash
       
       // Success message
       toast.success(t('Zapchast qo\'shildi', language));
@@ -775,11 +779,6 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                         checked={itemSource === 'tobring'}
                         onChange={(e) => {
                           setItemSource(e.target.value as 'available' | 'tobring');
-                          // Keltirish tanlansa, narxni 0 qilamiz
-                          if (e.target.value === 'tobring') {
-                            setItemPrice('0');
-                            setDisplayItemPrice('0');
-                          }
                         }}
                         className="w-4 h-4 text-blue-600"
                       />
@@ -787,15 +786,42 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                     </label>
                   </div>
 
+                  {/* Keltirish uchun pul kiritish maydoni */}
+                  {itemSource === 'tobring' && (
+                    <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-3">
+                      <label className="block text-xs font-semibold text-orange-700 mb-2">
+                        💰 {t('Mijoz keltirish uchun pul berdi (ixtiyoriy)', language)}
+                      </label>
+                      <input
+                        type="text"
+                        value={displayTobringPrice}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\./g, '');
+                          const numValue = parseInt(value) || 0;
+                          setTobringPrice(numValue.toString());
+                          setDisplayTobringPrice(numValue === 0 ? '0' : formatNumber(numValue));
+                        }}
+                        onFocus={() => {
+                          if (tobringPrice === '0' || !tobringPrice) {
+                            setDisplayTobringPrice('');
+                          }
+                        }}
+                        onBlur={() => {
+                          if (displayTobringPrice === '' || tobringPrice === '0' || !tobringPrice) {
+                            setDisplayTobringPrice('0');
+                            setTobringPrice('0');
+                          }
+                        }}
+                        placeholder="0 so'm (bo'sh qoldirish mumkin)"
+                        className="w-full px-3 py-2 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      />
+                      <p className="text-xs text-orange-600 mt-1">
+                        ℹ️ {t('Agar mijoz pul bermagan bo\'lsa, 0 so\'m bo\'ladi', language)}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-3 gap-3">
-                    <input
-                      type="number"
-                      value={itemQuantity}
-                      onChange={(e) => setItemQuantity(e.target.value)}
-                      placeholder={t("Soni", language)}
-                      min="1"
-                      className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
                     <input
                       type="text"
                       value={displayItemPrice}
@@ -809,10 +835,18 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                         itemSource === 'tobring' ? 'bg-gray-100 cursor-not-allowed' : ''
                       }`}
                     />
+                    <input
+                      type="number"
+                      value={itemQuantity}
+                      onChange={(e) => setItemQuantity(e.target.value)}
+                      placeholder={t("Soni", language) + " *"}
+                      min="1"
+                      className="px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
                     <button
                       type="button"
                       onClick={addItem}
-                      disabled={!itemName || itemPrice === undefined || itemPrice === null || itemPrice === ''}
+                      disabled={!itemName || (itemSource === 'available' && (itemPrice === undefined || itemPrice === null || itemPrice === ''))}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <Plus className="h-4 w-4" />
@@ -863,12 +897,23 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                                 <span className="text-xs text-gray-600">{item.quantity} dona</span>
                                 <span className="text-xs text-gray-400">×</span>
                                 <span className={`text-xs font-bold ${isToBring ? 'text-orange-600' : 'text-green-600'}`}>
-                                  {isToBring ? t('Mijoz keltiradi', language) : formatCurrency(item.price)}
+                                  {isToBring 
+                                    ? (item.price > 0 
+                                        ? `${formatCurrency(item.price)} (keltirish uchun berildi)` 
+                                        : t('Mijoz keltiradi (0 so\'m)', language))
+                                    : formatCurrency(item.price)
+                                  }
                                 </span>
                                 {!isToBring && (
                                   <>
                                     <span className="text-xs text-gray-400">=</span>
                                     <span className="text-sm font-bold text-gray-900">{formatCurrency(item.price * item.quantity)}</span>
+                                  </>
+                                )}
+                                {isToBring && item.price > 0 && (
+                                  <>
+                                    <span className="text-xs text-gray-400">=</span>
+                                    <span className="text-sm font-bold text-orange-600">{formatCurrency(item.price * item.quantity)}</span>
                                   </>
                                 )}
                                 {isFromSpareParts && !isToBring && (
@@ -953,11 +998,14 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (itemName && itemPrice && parseFloat(itemPrice) > 0) {
+                      if (itemName) {
+                        // Agar pul kiritilmagan bo'lsa, 0 qo'yamiz
+                        const price = itemPrice && parseFloat(itemPrice) > 0 ? parseFloat(itemPrice) : 0;
+                        
                         setItems(prev => [...prev, {
                           name: itemName,
                           description: '',
-                          price: parseFloat(itemPrice),
+                          price: price,
                           quantity: 1,
                           category: 'labor',
                           source: 'available' // Ish haqi har doim bizda bor
@@ -967,7 +1015,7 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                         setDisplayItemPrice('0');
                       }
                     }}
-                    disabled={!itemName || itemPrice === undefined || itemPrice === null || itemPrice === ''}
+                    disabled={!itemName}
                     className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all"
                   >
                     <Plus className="h-5 w-5" />

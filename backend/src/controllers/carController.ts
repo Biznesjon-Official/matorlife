@@ -262,10 +262,83 @@ export const updateCar = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Mashina yangilanmadi' });
     }
 
-    res.json({
-      message: 'Mashina muvaffaqiyatli yangilandi',
-      car
-    });
+    // ✨ YANGI: CarService yaratish yoki yangilash
+    try {
+      const CarService = require('../models/CarService').default;
+      
+      console.log('🔍 CarService tekshirilmoqda:', carId);
+      
+      // Mavjud CarService ni topish (delivered bo'lmagan)
+      let carService = await CarService.findOne({ 
+        car: carId, 
+        status: { $ne: 'delivered' } 
+      }).sort({ createdAt: -1 });
+      
+      // Barcha qismlar va xizmatlarni birlashtirish
+      const allItems = [
+        ...(updateData.parts || []).map((part: any) => ({
+          name: part.name,
+          description: part.description || '',
+          price: part.price,
+          quantity: part.quantity,
+          category: 'part' as const
+        })),
+        ...(updateData.serviceItems || []).map((item: any) => ({
+          name: item.name,
+          description: item.description || '',
+          price: item.price,
+          quantity: item.quantity,
+          category: item.category
+        }))
+      ];
+      
+      if (carService) {
+        // ✅ Mavjud CarService ni yangilash
+        carService.items = allItems;
+        carService.totalPrice = updateData.totalEstimate;
+        
+        // Agar to'lov qilingan bo'lsa, paymentStatus ni saqlash
+        if (carService.paidAmount > 0) {
+          if (carService.paidAmount >= updateData.totalEstimate) {
+            carService.paymentStatus = 'paid';
+          } else {
+            carService.paymentStatus = 'partial';
+          }
+        }
+        
+        await carService.save();
+        console.log(`🔄 CarService yangilandi: ${carId} - Jami: ${updateData.totalEstimate} so'm`);
+      } else if (allItems.length > 0) {
+        // ✅ Yangi CarService yaratish (faqat qismlar yoki xizmatlar bo'lsa)
+        carService = new CarService({
+          car: carId,
+          items: allItems,
+          totalPrice: updateData.totalEstimate,
+          paidAmount: car.paidAmount || 0,
+          paymentStatus: car.paymentStatus || 'pending',
+          createdBy: req.user?.id,
+          status: 'in-progress'
+        });
+        await carService.save();
+        console.log(`✨ Yangi CarService yaratildi: ${carId} - Jami: ${updateData.totalEstimate} so'm`);
+      } else {
+        console.log(`⚠️ CarService yaratilmadi: qismlar yoki xizmatlar yo'q`);
+      }
+      
+      res.json({
+        message: 'Mashina muvaffaqiyatli yangilandi',
+        car,
+        carService: carService || null
+      });
+    } catch (serviceError: any) {
+      console.error('⚠️ CarService yaratishda xatolik:', serviceError.message);
+      // CarService xatosi asosiy jarayonni to'xtatmasin
+      res.json({
+        message: 'Mashina yangilandi, lekin xizmat yaratishda xatolik',
+        car,
+        serviceError: serviceError.message
+      });
+    }
   } catch (error: any) {
     // MongoDB duplicate key error
     if (error.code === 11000) {

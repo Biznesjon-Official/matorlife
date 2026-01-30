@@ -783,7 +783,7 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
               {/* Xizmat qo'shish formi */}
               <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100">
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
                     <input
                       type="text"
                       value={newServiceItem.name}
@@ -791,29 +791,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder={t('Xizmat nomi', language) + ' *'}
                     />
-                    <select
-                      value={newServiceItem.category}
-                      onChange={(e) => setNewServiceItem({ ...newServiceItem, category: e.target.value as 'part' | 'material' | 'labor' })}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    >
-                      <option value="labor">{t('Ish haqi', language)}</option>
-                      <option value="part">{t('Qism', language)}</option>
-                      <option value="material">{t('Material', language)}</option>
-                    </select>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <input
-                      type="number"
-                      min="1"
-                      value={newServiceItem.quantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === '' ? 1 : Math.max(1, Number(value));
-                        setNewServiceItem({ ...newServiceItem, quantity: numValue });
-                      }}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      placeholder={t('Soni', language)}
-                    />
                     <input
                       type="number"
                       min="0"
@@ -827,6 +806,18 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder={t("Narx (so'm)", language) + ' *'}
                     />
+                    <input
+                      type="number"
+                      min="1"
+                      value={newServiceItem.quantity}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const numValue = value === '' ? 1 : Math.max(1, Number(value));
+                        setNewServiceItem({ ...newServiceItem, quantity: numValue });
+                      }}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      placeholder={t('Soni', language) + ' *'}
+                    />
                     <div className="flex items-center justify-center bg-gray-50 rounded-lg px-2 py-1 col-span-2 sm:col-span-1">
                       <span className="text-xs font-medium text-gray-600 text-center">
                         = {((newServiceItem.quantity || 1) * (newServiceItem.price || 0)).toLocaleString()} {t("so'm", language)}
@@ -835,7 +826,7 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                     <button
                       type="button"
                       onClick={editingServiceIndex !== null ? handleUpdateServiceItem : handleAddServiceItem}
-                      disabled={!newServiceItem.name.trim() || newServiceItem.quantity <= 0 || newServiceItem.price <= 0}
+                      disabled={!newServiceItem.name.trim() || newServiceItem.quantity <= 0}
                       className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-all flex items-center justify-center py-2 px-3 col-span-2 sm:col-span-1"
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -869,13 +860,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                             <h5 className="text-sm font-medium text-gray-900 truncate">{item.name}</h5>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium self-start sm:self-auto ${
-                              item.category === 'labor' ? 'bg-purple-100 text-purple-800' :
-                              item.category === 'part' ? 'bg-blue-100 text-blue-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {item.category === 'labor' ? t('Ish haqi', language) : 
-                               item.category === 'part' ? t('Qism', language) : t('Material', language)}
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium self-start sm:self-auto bg-purple-100 text-purple-800">
+                              {t('Ish haqi', language)}
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-xs text-gray-500 mt-1">

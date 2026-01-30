@@ -98,3 +98,25 @@ export const carApi = {
     return response.data;
   }
 };
+
+// Transaction API
+export const transactionApi = {
+  resetMonthlyEarnings: async () => {
+    const response = await api.post('/transactions/reset-monthly');
+    return response.data;
+  },
+  getMonthlyHistory: async (limit?: number) => {
+    const response = await api.get('/transactions/monthly-history', {
+      params: { limit }
+    });
+    return response.data;
+  },
+  getMonthHistory: async (year: number, month: number) => {
+    const response = await api.get(`/transactions/monthly-history/${year}/${month}`);
+    return response.data;
+  },
+  deleteMonthlyHistory: async (id: string) => {
+    const response = await api.delete(`/transactions/monthly-history/${id}`);
+    return response.data;
+  }
+};

@@ -219,6 +219,20 @@ export const getTransactionSummary = async (req: AuthRequest, res: Response) => 
       }
     ]);
 
+    // Get payment method breakdown
+    const paymentMethodBreakdown = await Transaction.aggregate([
+      {
+        $group: {
+          _id: {
+            type: '$type',
+            paymentMethod: '$paymentMethod'
+          },
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
     // Get period-specific summary if period is specified
     let periodSummary = [];
     if (Object.keys(dateFilter).length > 0) {
@@ -239,6 +253,28 @@ export const getTransactionSummary = async (req: AuthRequest, res: Response) => 
     const overallExpense = overallSummary.find(s => s._id === 'expense') || { totalAmount: 0, count: 0 };
     const overallBalance = overallIncome.totalAmount - overallExpense.totalAmount;
 
+    // Calculate payment method totals for income
+    const incomeCash = paymentMethodBreakdown
+      .filter(p => p._id.type === 'income' && p._id.paymentMethod === 'cash')
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    
+    const incomeCard = paymentMethodBreakdown
+      .filter(p => p._id.type === 'income' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    // Calculate payment method totals for expense
+    const expenseCash = paymentMethodBreakdown
+      .filter(p => p._id.type === 'expense' && p._id.paymentMethod === 'cash')
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    
+    const expenseCard = paymentMethodBreakdown
+      .filter(p => p._id.type === 'expense' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    // Calculate balance by payment method
+    const balanceCash = incomeCash - expenseCash;
+    const balanceCard = incomeCard - expenseCard;
+
     // Process period results
     const periodIncome = periodSummary.find(s => s._id === 'income') || { totalAmount: 0, count: 0 };
     const periodExpense = periodSummary.find(s => s._id === 'expense') || { totalAmount: 0, count: 0 };
@@ -250,6 +286,12 @@ export const getTransactionSummary = async (req: AuthRequest, res: Response) => 
       balance: overallBalance,
       incomeCount: overallIncome.count,
       expenseCount: overallExpense.count,
+      incomeCash,
+      incomeCard,
+      expenseCash,
+      expenseCard,
+      balanceCash,
+      balanceCard,
       ...(period && {
         [`${period}Income`]: periodIncome.totalAmount,
         [`${period}Expense`]: periodExpense.totalAmount,

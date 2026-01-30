@@ -1,11 +1,13 @@
 import { Response } from 'express';
 import Transaction from '../models/Transaction';
 import User from '../models/User';
+import Debt from '../models/Debt';
 import { AuthRequest } from '../middleware/auth';
+import { manualMonthlyReset } from '../services/monthlyResetService';
 
 export const createTransaction = async (req: AuthRequest, res: Response) => {
   try {
-    const { type, category, amount, description, paymentMethod, relatedTo } = req.body;
+    const { type, category, amount, description, paymentMethod, relatedTo, apprenticeId, sparePartName } = req.body;
 
     const transaction = new Transaction({
       type,
@@ -26,6 +28,43 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     } else {
       user.earnings = Math.max(0, user.earnings - amount);
     }
+    
+    // Agar oylik maosh to'lansa (salary category)
+    if (type === 'expense' && category === 'salary' && apprenticeId) {
+      const apprentice = await User.findById(apprenticeId);
+      if (apprentice) {
+        // 1. Joriy daromadni jami daromadga qo'shish
+        apprentice.totalEarnings += apprentice.earnings;
+        
+        // 2. Joriy daromadni 0 ga qaytarish
+        apprentice.earnings = 0;
+        
+        await apprentice.save();
+        
+        console.log(`✅ Oylik to'landi: ${apprentice.name}`);
+        console.log(`   Jami daromad: ${apprentice.totalEarnings} so'm`);
+        console.log(`   Joriy daromad: ${apprentice.earnings} so'm (0 ga qaytarildi)`);
+      }
+    }
+    
+    // Agar zapchast chiqimi bo'lsa, avtomatik qarz yaratish
+    let createdDebt = null;
+    if (type === 'expense' && category === 'spare_parts' && sparePartName) {
+      const debt = new Debt({
+        type: 'payable', // Mening qarzim
+        amount: amount,
+        description: `Zapchast sotib olindi: ${sparePartName}`,
+        creditorName: user.name || 'Master',
+        status: 'pending',
+        createdBy: req.user!._id
+      });
+      
+      await debt.save();
+      createdDebt = debt;
+      
+      console.log(`✅ Zapchast uchun qarz yaratildi: ${sparePartName} - ${amount} so'm`);
+    }
+    
     await user.save();
 
     await transaction.populate('createdBy', 'name');
@@ -150,6 +189,7 @@ export const getTransactionById = async (req: AuthRequest, res: Response) => {
 
 export const getTransactionSummary = async (req: AuthRequest, res: Response) => {
   try {
+    // Barcha transaksiyalarni olish (reset qilinganda eski transaksiyalar o'chiriladi)
     const summary = await Transaction.aggregate([
       {
         $group: {
@@ -160,9 +200,45 @@ export const getTransactionSummary = async (req: AuthRequest, res: Response) => 
       }
     ]);
 
+    // Get payment method breakdown
+    const paymentMethodBreakdown = await Transaction.aggregate([
+      {
+        $group: {
+          _id: {
+            type: '$type',
+            paymentMethod: '$paymentMethod'
+          },
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
     const income = summary.find(s => s._id === 'income') || { totalAmount: 0, count: 0 };
     const expense = summary.find(s => s._id === 'expense') || { totalAmount: 0, count: 0 };
     const balance = income.totalAmount - expense.totalAmount;
+
+    // Calculate payment method totals for income
+    const incomeCash = paymentMethodBreakdown
+      .filter(p => p._id.type === 'income' && p._id.paymentMethod === 'cash')
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    
+    const incomeCard = paymentMethodBreakdown
+      .filter(p => p._id.type === 'income' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    // Calculate payment method totals for expense
+    const expenseCash = paymentMethodBreakdown
+      .filter(p => p._id.type === 'expense' && p._id.paymentMethod === 'cash')
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+    
+    const expenseCard = paymentMethodBreakdown
+      .filter(p => p._id.type === 'expense' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum, p) => sum + p.totalAmount, 0);
+
+    // Calculate balance by payment method
+    const balanceCash = incomeCash - expenseCash;
+    const balanceCard = incomeCard - expenseCard;
 
     console.log('📊 Transaction Summary:', {
       income: income.totalAmount,
@@ -176,7 +252,13 @@ export const getTransactionSummary = async (req: AuthRequest, res: Response) => 
         totalExpense: expense.totalAmount,
         balance: balance,
         incomeCount: income.count,
-        expenseCount: expense.count
+        expenseCount: expense.count,
+        incomeCash,
+        incomeCard,
+        expenseCash,
+        expenseCard,
+        balanceCash,
+        balanceCard
       }
     });
   } catch (error: any) {
@@ -210,5 +292,115 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const resetMonthlyEarnings = async (req: AuthRequest, res: Response) => {
+  try {
+    // Faqat master reset qila oladi
+    if (req.user!.role !== 'master') {
+      return res.status(403).json({ message: 'Faqat master reset qila oladi' });
+    }
+
+    const result = await manualMonthlyReset(req.user?.id);
+    
+    res.json({
+      success: true,
+      resetCount: result.resetCount,
+      deletedTransactions: result.deletedTransactions,
+      message: 'Oylik daromadlar muvaffaqiyatli 0 ga qaytarildi va tarixga saqlandi',
+      history: result.history
+    });
+  } catch (error: any) {
+    console.error('❌ Reset xatosi:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Oylik tarixni olish
+export const getMonthlyHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { limit } = req.query;
+    const { getMonthlyHistory } = await import('../services/monthlyResetService');
+    const history = await getMonthlyHistory(limit ? Number(limit) : 12);
+    
+    res.json({
+      success: true,
+      history
+    });
+  } catch (error: any) {
+    console.error('❌ Tarix olishda xatolik:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server xatoligi', 
+      error: error.message 
+    });
+  }
+};
+
+// Ma'lum oy tarixini olish
+export const getMonthHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { year, month } = req.params;
+    const { getMonthHistory } = await import('../services/monthlyResetService');
+    const history = await getMonthHistory(Number(year), Number(month));
+    
+    if (!history) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarix topilmadi'
+      });
+    }
+    
+    res.json({
+      success: true,
+      history
+    });
+  } catch (error: any) {
+    console.error('❌ Oy tarixini olishda xatolik:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server xatoligi', 
+      error: error.message 
+    });
+  }
+};
+
+// Oylik tarixni o'chirish
+export const deleteMonthlyHistory = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Faqat master o'chirishi mumkin
+    if (req.user!.role !== 'master') {
+      return res.status(403).json({
+        success: false,
+        message: 'Ruxsat yo\'q'
+      });
+    }
+    
+    const MonthlyHistory = (await import('../models/MonthlyHistory')).default;
+    const history = await MonthlyHistory.findByIdAndDelete(id);
+    
+    if (!history) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tarix topilmadi'
+      });
+    }
+    
+    console.log(`🗑️ Tarix o'chirildi: ${history.month}/${history.year}`);
+    
+    res.json({
+      success: true,
+      message: 'Tarix muvaffaqiyatli o\'chirildi'
+    });
+  } catch (error: any) {
+    console.error('❌ Tarixni o\'chirishda xatolik:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server xatoligi', 
+      error: error.message 
+    });
   }
 };

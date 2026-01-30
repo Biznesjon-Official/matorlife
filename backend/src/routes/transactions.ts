@@ -9,6 +9,7 @@ import {
   deleteTransaction,
   bulkDeleteTransactions
 } from '../controllers/transactionControllerOptimized';
+import { resetMonthlyEarnings, getMonthlyHistory, getMonthHistory, deleteMonthlyHistory } from '../controllers/transactionController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
 
@@ -32,6 +33,18 @@ router.get('/summary', authenticate, getTransactionSummary);
 
 // Get transaction statistics
 router.get('/stats', authenticate, getTransactionStats);
+
+// Reset monthly earnings (master only)
+router.post('/reset-monthly', authenticate, authorize('master'), resetMonthlyEarnings);
+
+// Get monthly history (master only)
+router.get('/monthly-history', authenticate, authorize('master'), getMonthlyHistory);
+
+// Get specific month history (master only)
+router.get('/monthly-history/:year/:month', authenticate, authorize('master'), getMonthHistory);
+
+// Delete monthly history (master only)
+router.delete('/monthly-history/:id', authenticate, authorize('master'), deleteMonthlyHistory);
 
 // Bulk delete transactions (master only)
 router.post('/bulk-delete', authenticate, authorize('master'), [

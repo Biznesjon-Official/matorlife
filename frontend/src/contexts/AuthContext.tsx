@@ -6,7 +6,7 @@ import api from '@/lib/api';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (usernameOrEmail: string, password: string) => Promise<void>;
+  login: (usernameOrEmail: string, password: string, phone?: string) => Promise<void>;
   register: (name: string, email: string, username: string, password: string, role: 'master' | 'apprentice') => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -44,16 +44,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (usernameOrEmail: string, password: string) => {
+  const login = async (usernameOrEmail: string, password: string, phone?: string) => {
     try {
-      // Username yoki email ekanligini aniqlash
-      const isEmail = usernameOrEmail.includes('@');
-      const loginData = isEmail 
-        ? { email: usernameOrEmail, password }
-        : { username: usernameOrEmail, password };
-
-      // Debug uchun
+      let loginData: any;
       
+      // Agar telefon raqam berilgan bo'lsa (shogirt)
+      if (phone) {
+        loginData = { 
+          username: usernameOrEmail,  // Username
+          phone: phone                 // Telefon raqam
+        };
+      } else {
+        // Username yoki email ekanligini aniqlash (ustoz)
+        const isEmail = usernameOrEmail.includes('@');
+        loginData = isEmail 
+          ? { email: usernameOrEmail, password }
+          : { username: usernameOrEmail, password };
+      }
+
+      console.log('Login data:', loginData); // Debug
+
       const response = await api.post('/auth/login', loginData);
       const { user: userData, token: userToken } = response.data;
       
@@ -61,7 +71,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(userToken);
       setAuthData(userData, userToken);
     } catch (error: any) {
-      // Debug uchun
+      console.error('Login error:', error.response?.data); // Debug
       throw new Error(error.response?.data?.message || 'Kirish muvaffaqiyatsiz');
     }
   };

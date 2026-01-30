@@ -103,6 +103,8 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       apprenticePercentage 
     } = req.body;
 
+    const User = require('../models/User').default;
+
     const taskData: any = {
       title,
       description,
@@ -123,28 +125,42 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       const allocatedAmount = totalPayment / apprenticeCount; // Har biriga teng bo'lish
 
       // Har bir shogird uchun hisoblash
-      taskData.assignments = assignments.map((assignment: any) => {
-        const percentage = assignment.percentage || 50;
-        const earning = (allocatedAmount * percentage) / 100;
-        const masterShare = allocatedAmount - earning;
+      const assignmentsWithPercentage = await Promise.all(
+        assignments.map(async (assignment: any) => {
+          // Shogirtning foizini User modelidan olish
+          const apprentice = await User.findById(assignment.apprenticeId);
+          const percentage = apprentice?.percentage || 50; // Agar foiz yo'q bo'lsa, default 50%
+          
+          const earning = (allocatedAmount * percentage) / 100;
+          const masterShare = allocatedAmount - earning;
 
-        return {
-          apprentice: assignment.apprenticeId,
-          percentage,
-          allocatedAmount,
-          earning,
-          masterShare
-        };
-      });
+          console.log(`💰 Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+
+          return {
+            apprentice: assignment.apprenticeId,
+            percentage,
+            allocatedAmount,
+            earning,
+            masterShare
+          };
+        })
+      );
+
+      taskData.assignments = assignmentsWithPercentage;
 
       // Birinchi shogirdni assignedTo ga ham qo'yish (backward compatibility)
       taskData.assignedTo = assignments[0].apprenticeId;
     } 
     // Eski tizim: Bitta shogird
     else if (assignedTo) {
-      const percentage = apprenticePercentage || 50;
+      // Shogirtning foizini User modelidan olish
+      const apprentice = await User.findById(assignedTo);
+      const percentage = apprentice?.percentage || 50; // Agar foiz yo'q bo'lsa, default 50%
+      
       const apprenticeEarning = (payment * percentage) / 100;
       const masterEarning = payment - apprenticeEarning;
+
+      console.log(`💰 Shogird ${apprentice?.name}: ${percentage}% = ${apprenticeEarning} so'm (jami: ${payment})`);
 
       taskData.assignedTo = assignedTo;
       taskData.apprenticePercentage = percentage;
@@ -349,47 +365,80 @@ export const updateTaskStatus = async (req: AuthRequest, res: Response) => {
 
 export const approveTask = async (req: AuthRequest, res: Response) => {
   try {
+    console.log('🔍 APPROVE TASK BOSHLANDI');
+    console.log('Request body:', req.body);
+    console.log('Task ID:', req.params.id);
+    console.log('User:', req.user?.name, req.user?.role);
+    
     const { approved, rejectionReason } = req.body;
     const task = await Task.findById(req.params.id);
 
     if (!task) {
+      console.log('❌ Task topilmadi!');
       return res.status(404).json({ message: 'Task not found' });
     }
 
+    console.log('📋 Task topildi:', {
+      id: task._id,
+      title: task.title,
+      status: task.status,
+      assignedTo: task.assignedTo,
+      assignments: task.assignments,
+      payment: task.payment,
+      apprenticeEarning: task.apprenticeEarning
+    });
+
     if (task.status !== 'completed') {
+      console.log('❌ Task completed emas! Current status:', task.status);
       return res.status(400).json({ message: 'Task must be completed before approval' });
     }
 
     task.status = approved ? 'approved' : 'rejected';
+    console.log('✏️ Status o\'zgartirildi:', task.status);
     
     if (approved) {
       task.approvedAt = new Date();
-      
-      console.log(`✅ Vazifa tasdiqlandi: ${task.title} - Status: ${task.status}`);
+      console.log(`✅ Vazifa tasdiqlandi: ${task.title}`);
       
       const User = require('../models/User').default;
       
       // Yangi tizim: Ko'p shogirdlar
       if (task.assignments && task.assignments.length > 0) {
+        console.log('💰 Ko\'p shogirdli tizim - Pul qo\'shilmoqda...');
         // Har bir shogirdga o'z ulushini qo'shish
         for (const assignment of task.assignments) {
-          await User.findByIdAndUpdate(
+          console.log(`  → Shogird ${assignment.apprentice} ga ${assignment.earning} so'm qo'shilmoqda`);
+          const updatedUser = await User.findByIdAndUpdate(
             assignment.apprentice,
-            { $inc: { earnings: assignment.earning } }
+            { $inc: { earnings: assignment.earning } },
+            { new: true }
           );
+          console.log(`  ✅ Yangilandi! Yangi balans: ${updatedUser?.earnings}`);
         }
       } 
       // Eski tizim: Bitta shogird
       else if (task.assignedTo && task.apprenticeEarning) {
-        await User.findByIdAndUpdate(
+        console.log('💰 Bitta shogirdli tizim - Pul qo\'shilmoqda...');
+        console.log(`  → Shogird ${task.assignedTo} ga ${task.apprenticeEarning} so'm qo'shilmoqda`);
+        const updatedUser = await User.findByIdAndUpdate(
           task.assignedTo,
-          { $inc: { earnings: task.apprenticeEarning } }
+          { $inc: { earnings: task.apprenticeEarning } },
+          { new: true }
         );
+        console.log(`  ✅ Yangilandi! Yangi balans: ${updatedUser?.earnings}`);
+      } else {
+        console.log('⚠️ Hech qanday shogird topilmadi yoki earning 0!');
       }
 
       // Barcha vazifalar va xizmatlar tasdiqlangan yoki yo'qligini tekshirish
       if (task.car) {
+        console.log('🚗 Mashina holatini tekshirish...');
         const completionResult = await checkAndCompleteCarIfReady(task.car);
+        
+        await task.save();
+        await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
+        
+        console.log('✅ APPROVE TASK MUVAFFAQIYATLI YAKUNLANDI');
         
         // Response'ga mashina tugatilganligi haqida ma'lumot qo'shish
         return res.json({
@@ -400,17 +449,22 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
         });
       }
     } else {
+      console.log('❌ Vazifa rad etildi');
       task.rejectionReason = rejectionReason;
     }
 
     await task.save();
     await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
 
+    console.log('✅ APPROVE TASK YAKUNLANDI');
+    
     res.json({
       message: `Task ${approved ? 'approved' : 'rejected'} successfully`,
       task
     });
   } catch (error: any) {
+    console.error('❌ APPROVE TASK XATOLIK:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -441,6 +495,50 @@ export const getTaskStats = async (req: AuthRequest, res: Response) => {
     res.json({
       stats,
       totalTasks
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const restartTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Check if task is rejected
+    if (task.status !== 'rejected') {
+      return res.status(400).json({ message: 'Only rejected tasks can be restarted' });
+    }
+
+    // Check permissions - Yangi va eski tizim uchun
+    if (req.user!.role === 'apprentice') {
+      const isAssignedOldSystem = task.assignedTo?.toString() === req.user!._id.toString();
+      const isAssignedNewSystem = task.assignments?.some((a: any) => 
+        a.apprentice.toString() === req.user!._id.toString()
+      );
+      
+      if (!isAssignedOldSystem && !isAssignedNewSystem) {
+        return res.status(403).json({ message: 'Bu vazifaga ruxsatingiz yo\'q' });
+      }
+    }
+
+    // Reset task to assigned status
+    task.status = 'assigned';
+    task.rejectionReason = undefined;
+    task.completedAt = undefined;
+    task.actualHours = undefined;
+    task.notes = undefined;
+
+    await task.save();
+    await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
+
+    res.json({
+      message: 'Task restarted successfully',
+      task
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });

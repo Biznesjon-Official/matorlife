@@ -4,8 +4,11 @@ export interface User {
   name: string;
   email: string;
   username: string;
+  phone?: string; // Telefon raqam
+  percentage?: number; // Shogird foizi
   role: 'master' | 'apprentice';
-  earnings?: number;
+  earnings?: number; // Joriy oylik daromad
+  totalEarnings?: number; // Jami daromad (barcha vaqt davomida)
   profileImage?: string;
   profession?: string;
   experience?: number;
@@ -49,6 +52,12 @@ export interface TransactionSummary {
   balance: number;
   incomeCount: number;
   expenseCount: number;
+  incomeCash: number;
+  incomeCard: number;
+  expenseCash: number;
+  expenseCard: number;
+  balanceCash: number;
+  balanceCard: number;
   todayIncome?: number;
   todayExpense?: number;
   todayBalance?: number;

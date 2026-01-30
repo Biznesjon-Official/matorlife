@@ -3,7 +3,7 @@ import { X, DollarSign, FileText, CreditCard, ArrowLeft, User, CheckCircle, Car,
 import { useQueryClient } from '@tanstack/react-query';
 import { useDebts, useAddPayment } from '@/hooks/useDebts';
 import { useCars } from '@/hooks/useCars';
-import { useCreateTransaction } from '@/hooks/useTransactionsOptimized';
+import { useCreateTransaction } from '@/hooks/useTransactions';
 import toast from 'react-hot-toast';
 import { t } from '@/lib/transliteration';
 import { formatNumber, parseFormattedNumber, formatCurrency } from '@/lib/utils';

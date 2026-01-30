@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTasks, useUpdateTaskStatus } from '@/hooks/useTasks';
+import { useTasks, useUpdateTaskStatus, useRestartTask } from '@/hooks/useTasks';
 import { 
   CheckSquare, 
   Clock, 
@@ -18,8 +18,7 @@ import {
   FileText,
   Sparkles,
   XCircle,
-  Circle,
-  Package
+  Circle
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 
@@ -27,6 +26,7 @@ const ApprenticeTasks: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks, isLoading, error } = useTasks();
   const updateTaskStatus = useUpdateTaskStatus();
+  const restartTaskMutation = useRestartTask();
   
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -39,26 +39,6 @@ const ApprenticeTasks: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'all' | 'completed'>('active'); // Default: faqat faol vazifalar
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [carServices, setCarServices] = useState<any[]>([]);
-
-  // Fetch car services
-  useEffect(() => {
-    const fetchCarServices = async () => {
-      try {
-        const response = await fetch('/api/car-services', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCarServices(data.services || []);
-        }
-      } catch (error) {
-        }
-    };
-    fetchCarServices();
-  }, [tasks]); // Refetch when tasks change
 
   // Shogird uchun vazifalarni filtrlash
   const allTasks = tasks?.tasks || [];
@@ -122,37 +102,16 @@ const ApprenticeTasks: React.FC = () => {
     }
   };
 
-  const handleRestartService = async (serviceId: string) => {
-    if (!confirm('Xizmatni qayta boshlaysizmi?')) {
+  const handleRestartTask = async (taskId: string) => {
+    if (!confirm(t('Vazifani qayta boshlaysizmi?', language))) {
       return;
     }
-
+    
+    setProcessingTaskId(taskId);
     try {
-      const response = await fetch(`/api/car-services/${serviceId}/restart`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        // Refetch car services
-        const servicesResponse = await fetch('/api/car-services', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        if (servicesResponse.ok) {
-          const data = await servicesResponse.json();
-          setCarServices(data.services || []);
-        }
-        alert('Xizmat qayta boshlandi!');
-      } else {
-        const error = await response.json();
-        alert(error.message || 'Xatolik yuz berdi');
-      }
-    } catch (error) {
-      alert('Xatolik yuz berdi');
+      await restartTaskMutation.mutateAsync(taskId);
+    } finally {
+      setProcessingTaskId(null);
     }
   };
 
@@ -189,13 +148,14 @@ const ApprenticeTasks: React.FC = () => {
   const inProgressTasks = myTasks.filter((task: any) => task.status === 'in-progress');
   const completedTasks = myTasks.filter((task: any) => task.status === 'completed');
   const approvedTasks = myTasks.filter((task: any) => task.status === 'approved');
+  const rejectedTasks = myTasks.filter((task: any) => task.status === 'rejected');
 
   // Filter tasks based on active tab
   let filteredTasks = myTasks;
   if (activeTab === 'active') {
-    // Faqat faol vazifalar (tasdiqlangan va rad etilganlarni chiqarib tashlash)
+    // Faqat faol vazifalar (tasdiqlangan va rad etilganlarni QOLDIRISH, faqat tasdiqlangan o'chadi)
     filteredTasks = myTasks.filter((task: any) => 
-      task.status !== 'approved' && task.status !== 'rejected'
+      task.status !== 'approved' // Faqat tasdiqlangan vazifalar yashirin
     );
   } else if (activeTab === 'completed') {
     filteredTasks = [...completedTasks, ...approvedTasks];
@@ -238,7 +198,7 @@ const ApprenticeTasks: React.FC = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-5">
         {[
           { 
             name: t('Tayinlangan', language), 
@@ -260,6 +220,13 @@ const ApprenticeTasks: React.FC = () => {
             icon: AlertCircle, 
             gradient: 'from-orange-500 to-red-500',
             iconBg: 'from-orange-100 to-red-100'
+          },
+          { 
+            name: t('Rad etilgan', language), 
+            value: rejectedTasks.length, 
+            icon: XCircle, 
+            gradient: 'from-red-500 to-pink-500',
+            iconBg: 'from-red-100 to-pink-100'
           },
           { 
             name: t('Tasdiqlangan', language), 
@@ -306,7 +273,7 @@ const ApprenticeTasks: React.FC = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              {t('Faol', language)} ({myTasks.filter((t: any) => t.status !== 'approved' && t.status !== 'rejected').length})
+              {t('Faol', language)} ({myTasks.filter((t: any) => t.status !== 'approved').length})
             </button>
             <button
               onClick={() => setActiveTab('all')}
@@ -380,14 +347,6 @@ const ApprenticeTasks: React.FC = () => {
         ) : (
           filteredTasks.map((task: any, index: number) => {
             const isCompleted = task.status === 'completed' || task.status === 'approved';
-            
-            // Find related car service with null checks
-            const relatedService = carServices.find((service: any) => {
-              if (!service.car || !task.car) return false;
-              const serviceCarId = typeof service.car === 'object' ? service.car._id : service.car;
-              const taskCarId = typeof task.car === 'object' ? task.car._id : task.car;
-              return serviceCarId === taskCarId;
-            });
             
             return (
               <div 
@@ -533,97 +492,6 @@ const ApprenticeTasks: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Service Status */}
-                    {relatedService && (
-                      <div className={`rounded-xl border-2 overflow-hidden ${
-                        relatedService.status === 'completed' 
-                          ? 'bg-green-50 border-green-300' 
-                          : relatedService.status === 'ready-for-delivery'
-                          ? 'bg-orange-50 border-orange-300'
-                          : relatedService.status === 'rejected'
-                          ? 'bg-red-50 border-red-300'
-                          : relatedService.status === 'in-progress'
-                          ? 'bg-blue-50 border-blue-300'
-                          : 'bg-gray-50 border-gray-300'
-                      }`}>
-                        {relatedService.status === 'completed' ? (
-                          <div className="p-4">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <div className="p-2 bg-green-500 rounded-full">
-                                <CheckCircle className="h-6 w-6 text-white" />
-                              </div>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-lg font-bold text-green-700">{t('Qabul qilindi!', language)}</p>
-                              <p className="text-sm text-green-600 mt-1">{t('Xizmat muvaffaqiyatli yakunlandi', language)}</p>
-                            </div>
-                          </div>
-                        ) : relatedService.status === 'rejected' ? (
-                          <div className="p-4">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                              <div className="p-2 bg-red-500 rounded-full">
-                                <XCircle className="h-6 w-6 text-white" />
-                              </div>
-                            </div>
-                            <div className="text-center mb-3">
-                              <p className="text-lg font-bold text-red-700">{t('Rad etildi', language)}</p>
-                              <p className="text-sm text-red-600 mt-1">{t('Qayta ishlash kerak', language)}</p>
-                            </div>
-                            {relatedService.rejectionReason && (
-                              <div className="p-3 bg-red-100 border-l-4 border-red-500 rounded mb-3">
-                                <p className="text-xs font-semibold text-red-900 mb-1">{t('Rad etish sababi:', language)}</p>
-                                <p className="text-sm text-red-800">{relatedService.rejectionReason}</p>
-                              </div>
-                            )}
-                            <button
-                              onClick={() => handleRestartService(relatedService._id)}
-                              className="w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                            >
-                              <span className="text-lg">↻</span>
-                              {t('Qayta boshlash', language)}
-                            </button>
-                          </div>
-                        ) : relatedService.status === 'ready-for-delivery' ? (
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <Package className="h-5 w-5 text-orange-600" />
-                                <div>
-                                  <p className="text-xs font-medium text-gray-600">Xizmat holati</p>
-                                  <p className="text-sm font-bold text-orange-700">{t('📦 Topshirishga tayyor', language)}</p>
-                                </div>
-                              </div>
-                              <span className="px-3 py-1 bg-orange-200 text-orange-800 text-xs font-bold rounded-full animate-pulse">
-                                {t('Ustoz tekshirmoqda', language)}
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Package className={`h-5 w-5 ${
-                                  relatedService.status === 'in-progress'
-                                  ? 'text-blue-600'
-                                  : 'text-gray-600'
-                                }`} />
-                                <div>
-                                  <p className="text-xs font-medium text-gray-600">Xizmat holati</p>
-                                  <p className={`text-sm font-bold ${
-                                    relatedService.status === 'in-progress'
-                                    ? 'text-blue-700'
-                                    : 'text-gray-700'
-                                  }`}>
-                                    {relatedService.status === 'in-progress' ? t('⚙ Jarayonda', language) : t('⏳ Kutilmoqda', language)}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {/* Notes and Rejection Reason */}
                     {task.notes && (
                       <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
@@ -693,14 +561,25 @@ const ApprenticeTasks: React.FC = () => {
                         )}
                       </button>
                     )}
-                    {task.status === 'rejected' && relatedService && (
+                    {task.status === 'rejected' && (
                       <button 
-                        onClick={() => handleRestartService(relatedService._id)}
-                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
+                        onClick={() => handleRestartTask(task._id)}
+                        disabled={processingTaskId === task._id}
+                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-red-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
                       >
-                        <span className="text-lg">↻</span>
-                        <span className="hidden sm:inline">Qayta boshlash</span>
-                        <span className="sm:hidden">Qayta</span>
+                        {processingTaskId === task._id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <span className="hidden sm:inline">Yuklanmoqda...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>{t('Qayta boshlash', language)}</span>
+                          </>
+                        )}
                       </button>
                     )}
                     {task.status === 'approved' && (

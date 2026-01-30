@@ -5,17 +5,24 @@ import { AuthRequest } from '../middleware/auth';
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, username, password, role, profileImage, profession, experience } = req.body;
+    const { name, email, username, password, phone, percentage, role, profileImage, profession, experience } = req.body;
 
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this username' });
+      return res.status(400).json({ message: 'Bu username allaqachon band' });
     }
 
     if (email && email.trim()) {
       const existingEmail = await User.findOne({ email: email.trim() });
       if (existingEmail) {
-        return res.status(400).json({ message: 'User already exists with this email' });
+        return res.status(400).json({ message: 'Bu email allaqachon band' });
+      }
+    }
+
+    if (phone && phone.trim()) {
+      const existingPhone = await User.findOne({ phone: phone.trim() });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'Bu telefon raqam allaqachon band' });
       }
     }
 
@@ -28,6 +35,12 @@ export const register = async (req: Request, res: Response) => {
     
     if (email && email.trim()) {
       userData.email = email.trim();
+    }
+    if (phone && phone.trim()) {
+      userData.phone = phone.trim();
+    }
+    if (percentage !== undefined) {
+      userData.percentage = percentage;
     }
     if (profileImage) userData.profileImage = profileImage;
     if (profession) userData.profession = profession;
@@ -51,8 +64,11 @@ export const register = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         username: user.username,
+        phone: user.phone,
+        percentage: user.percentage,
         role: user.role,
         earnings: user.earnings || 0,
+        totalEarnings: user.totalEarnings || 0,
         profileImage: user.profileImage,
         profession: user.profession,
         experience: user.experience,
@@ -67,15 +83,70 @@ export const register = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, phone } = req.body;
 
+    console.log('Login request:', { username, email, password: password ? '***' : undefined, phone }); // Debug
+
+    // Agar telefon raqam berilgan bo'lsa (shogirtlar uchun - username va telefon raqam)
+    if (phone) {
+      if (!username) {
+        return res.status(400).json({ message: 'Username kiritilishi kerak' });
+      }
+
+      // Username va telefon raqam bilan kirish
+      const user = await User.findOne({ 
+        username: username,
+        phone: phone.trim() 
+      });
+      
+      console.log('Apprentice user found:', user ? 'Yes' : 'No'); // Debug
+      
+      if (!user) {
+        return res.status(400).json({ message: 'Username yoki telefon raqam noto\'g\'ri' });
+      }
+
+      // Faqat shogirtlar telefon raqam bilan kira oladi
+      if (user.role !== 'apprentice') {
+        return res.status(400).json({ message: 'Bu ma\'lumotlar bilan kirish mumkin emas' });
+      }
+
+      const token = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET!,
+        { expiresIn: '7d' }
+      );
+
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: {
+          id: user._id,
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          phone: user.phone,
+          percentage: user.percentage,
+          role: user.role,
+          earnings: user.earnings || 0,
+          totalEarnings: user.totalEarnings || 0,
+          profileImage: user.profileImage,
+          profession: user.profession,
+          experience: user.experience,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        }
+      });
+    }
+
+    // Username/email bilan kirish (ustoz uchun)
     const loginField = username || email;
     if (!loginField) {
-      return res.status(400).json({ message: 'Username or email is required' });
+      return res.status(400).json({ message: 'Username, email yoki telefon raqam kerak' });
     }
 
     if (!password) {
-      return res.status(400).json({ message: 'Password is required' });
+      return res.status(400).json({ message: 'Parol kerak' });
     }
 
     const user = await User.findOne({
@@ -86,12 +157,12 @@ export const login = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Login yoki parol noto\'g\'ri' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: 'Login yoki parol noto\'g\'ri' });
     }
 
     const token = jwt.sign(
@@ -109,8 +180,14 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         username: user.username,
+        phone: user.phone,
+        percentage: user.percentage,
         role: user.role,
         earnings: user.earnings || 0,
+        totalEarnings: user.totalEarnings || 0,
+        profileImage: user.profileImage,
+        profession: user.profession,
+        experience: user.experience,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }
@@ -235,7 +312,13 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
     // Get task statistics for each apprentice
     const apprenticesWithStats = await Promise.all(
       apprentices.map(async (apprentice) => {
-        const tasks = await Task.find({ assignedTo: apprentice._id });
+        // Eski tizim (assignedTo) va yangi tizim (assignments) uchun vazifalarni qidirish
+        const tasks = await Task.find({
+          $or: [
+            { assignedTo: apprentice._id }, // Eski tizim
+            { 'assignments.apprentice': apprentice._id } // Yangi tizim
+          ]
+        });
         
         const stats = {
           totalTasks: tasks.length,
@@ -266,7 +349,7 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, username, password, profileImage, profession, experience } = req.body;
+    const { name, username, password, phone, percentage, profileImage, profession, experience } = req.body;
 
     // Check if user exists
     const user = await User.findById(id);
@@ -282,10 +365,20 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Check if phone is taken by another user
+    if (phone && phone !== user.phone) {
+      const existingPhone = await User.findOne({ phone: phone.trim() });
+      if (existingPhone && existingPhone._id.toString() !== id) {
+        return res.status(400).json({ message: 'Bu telefon raqam allaqachon band' });
+      }
+    }
+
     // Update fields
     if (name) user.name = name;
     if (username) user.username = username;
     if (password) user.password = password;
+    if (phone !== undefined) user.phone = phone.trim() || undefined;
+    if (percentage !== undefined) user.percentage = percentage;
     if (profileImage !== undefined) user.profileImage = profileImage;
     if (profession !== undefined) user.profession = profession;
     if (experience !== undefined) user.experience = experience;
@@ -298,6 +391,8 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
         id: user._id,
         name: user.name,
         username: user.username,
+        phone: user.phone,
+        percentage: user.percentage,
         role: user.role,
         profileImage: user.profileImage,
         profession: user.profession,

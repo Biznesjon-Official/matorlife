@@ -105,32 +105,6 @@ const ApprenticeAchievements: React.FC = () => {
   // Bajarish foizi - berilgan vazifalarning necha foizi bajarilgan
   const completionRate = myTasks.length > 0 ? Math.round((completedTasks.length / myTasks.length) * 100) : 0;
 
-  // Jami daromad - User earnings + barcha tasdiqlangan vazifalardan
-  const totalEarnings = React.useMemo(() => {
-    const savedEarnings = user?.earnings || 0;
-    
-    // Barcha tasdiqlangan vazifalardan daromad
-    const taskEarnings = approvedTasks.reduce((total: number, task: any) => {
-      // Yangi tizim: assignments
-      if (task.assignments && task.assignments.length > 0) {
-        const myAssignment = task.assignments.find((a: any) => {
-          const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
-          return apprenticeId === user?.id;
-        });
-        if (myAssignment) {
-          return total + (myAssignment.earning || 0);
-        }
-      }
-      // Eski tizim: apprenticeEarning
-      if (task.apprenticeEarning) {
-        return total + task.apprenticeEarning;
-      }
-      return total;
-    }, 0);
-    
-    return savedEarnings + taskEarnings;
-  }, [user?.earnings, approvedTasks, user?.id]);
-
   // Haftalik faoliyat
   const getWeeklyActivity = () => {
     const today = new Date();
@@ -225,12 +199,34 @@ const ApprenticeAchievements: React.FC = () => {
               <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-green-700">{t('Jami daromad', language)}</p>
+              <p className="text-xs sm:text-sm font-medium text-green-700">{t('Joriy oylik', language)}</p>
               <p className="text-xl sm:text-2xl font-bold text-green-900">
-                {new Intl.NumberFormat('uz-UZ').format(totalEarnings)}
+                {new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}
               </p>
               <p className="text-xs text-green-600">{t('so\'m', language)}</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Jami daromad kartasi - yangi */}
+      <div className="card p-4 sm:p-6 bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+            </div>
+            <div>
+              <p className="text-sm sm:text-base text-emerald-100 mb-1">{t('Jami daromad', language)}</p>
+              <p className="text-3xl sm:text-4xl font-bold">
+                {new Intl.NumberFormat('uz-UZ').format(user?.totalEarnings || 0)}
+              </p>
+              <p className="text-xs sm:text-sm text-emerald-100 mt-1">{t('so\'m (barcha vaqt)', language)}</p>
+            </div>
+          </div>
+          <div className="text-right hidden sm:block">
+            <div className="text-2xl font-bold">{approvedTasks.length}</div>
+            <div className="text-sm text-emerald-100">{t('ta vazifa', language)}</div>
           </div>
         </div>
       </div>
