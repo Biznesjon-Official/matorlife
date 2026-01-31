@@ -120,55 +120,57 @@ const Cars: React.FC = () => {
     setSelectedCar(null);
   };
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'pending': 
-        return { 
-          bg: 'bg-gradient-to-r from-amber-50 to-yellow-50', 
-          text: 'text-amber-700',
-          border: 'border-amber-200',
-          dot: 'bg-amber-500'
-        };
-      case 'in-progress': 
-        return { 
-          bg: 'bg-gradient-to-r from-blue-50 to-cyan-50', 
-          text: 'text-blue-700',
-          border: 'border-blue-200',
-          dot: 'bg-blue-500'
-        };
-      case 'completed': 
-        return { 
-          bg: 'bg-gradient-to-r from-green-50 to-emerald-50', 
-          text: 'text-green-700',
-          border: 'border-green-200',
-          dot: 'bg-green-500'
-        };
-      case 'delivered': 
-        return { 
-          bg: 'bg-gradient-to-r from-gray-50 to-slate-50', 
-          text: 'text-gray-700',
-          border: 'border-gray-200',
-          dot: 'bg-gray-500'
-        };
-      default: 
-        return { 
-          bg: 'bg-gray-50', 
-          text: 'text-gray-700',
-          border: 'border-gray-200',
-          dot: 'bg-gray-500'
-        };
-    }
-  };
+  // Unused function - commented out
+  // const getStatusConfig = (status: string) => {
+  //   switch (status) {
+  //     case 'pending': 
+  //       return { 
+  //         bg: 'bg-gradient-to-r from-amber-50 to-yellow-50', 
+  //         text: 'text-amber-700',
+  //         border: 'border-amber-200',
+  //         dot: 'bg-amber-500'
+  //       };
+  //     case 'in-progress': 
+  //       return { 
+  //         bg: 'bg-gradient-to-r from-blue-50 to-cyan-50', 
+  //         text: 'text-blue-700',
+  //         border: 'border-blue-200',
+  //         dot: 'bg-blue-500'
+  //       };
+  //     case 'completed': 
+  //       return { 
+  //         bg: 'bg-gradient-to-r from-green-50 to-emerald-50', 
+  //         text: 'text-green-700',
+  //         border: 'border-green-200',
+  //         dot: 'bg-green-500'
+  //       };
+  //     case 'delivered': 
+  //       return { 
+  //         bg: 'bg-gradient-to-r from-gray-50 to-slate-50', 
+  //         text: 'text-gray-700',
+  //         border: 'border-gray-200',
+  //         dot: 'bg-gray-500'
+  //       };
+  //     default: 
+  //       return { 
+  //         bg: 'bg-gray-50', 
+  //         text: 'text-gray-700',
+  //         border: 'border-gray-200',
+  //         dot: 'bg-gray-500'
+  //       };
+  //   }
+  // };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending': return t('Kutilmoqda', language);
-      case 'in-progress': return t('Jarayonda', language);
-      case 'completed': return t('Tayyor', language);
-      case 'delivered': return t('Topshirilgan', language);
-      default: return status;
-    }
-  };
+  // Unused function - commented out
+  // const getStatusText = (status: string) => {
+  //   switch (status) {
+  //     case 'pending': return t('Kutilmoqda', language);
+  //     case 'in-progress': return t('Jarayonda', language);
+  //     case 'completed': return t('Tayyor', language);
+  //     case 'delivered': return t('Topshirilgan', language);
+  //     default: return status;
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/20 p-2 sm:p-6 pb-20">
@@ -503,8 +505,6 @@ const Cars: React.FC = () => {
           // Faol mashinalar - Karta ko'rinishi
           <div className="grid grid-cols-1 gap-3 sm:gap-6 sm:grid-cols-2 xl:grid-cols-3">
             {displayedCars.map((car: Car) => {
-              const statusConfig = getStatusConfig(car.status);
-              
               // Narxni hisoblash (fallback sifatida)
               const partsTotal = (car.parts || []).reduce((sum, part) => sum + (part.quantity * part.price), 0);
               const serviceItemsTotal = ((car as any).serviceItems || []).reduce((sum: number, item: any) => sum + (item.quantity * item.price), 0);
@@ -533,13 +533,6 @@ const Cars: React.FC = () => {
                             <span className="text-xs sm:text-sm font-bold tracking-wider">{car.licensePlate}</span>
                           </div>
                         </div>
-                      </div>
-                      {/* Status Badge - Extra Compact */}
-                      <div className={`${statusConfig.bg} ${statusConfig.border} border px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md flex items-center space-x-1 shadow-sm flex-shrink-0 self-start`}>
-                        <div className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${statusConfig.dot} animate-pulse`}></div>
-                        <span className={`text-[9px] sm:text-[10px] font-bold ${statusConfig.text} uppercase tracking-wide whitespace-nowrap`}>
-                          {getStatusText(car.status)}
-                        </span>
                       </div>
                     </div>
                   </div>

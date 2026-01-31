@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, Calendar, TrendingUp, TrendingDown, CheckCircle, Loader } from 'lucide-react';
+import { X, AlertTriangle, CheckCircle, Loader } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import { formatCurrency } from '@/lib/utils';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -91,25 +91,20 @@ const MonthlyResetModal: React.FC<MonthlyResetModalProps> = ({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
       
-      <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl max-w-sm w-full overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-pink-600 px-4 py-3">
           <button 
             onClick={handleClose} 
             disabled={isResetting}
-            className="absolute top-3 right-3 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1 transition-colors disabled:opacity-50"
+            className="absolute top-2 right-2 text-white/80 hover:text-white rounded-lg p-1 transition-colors disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
           
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20">
-              <AlertTriangle className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">{t("Oylik Reset", language)}</h2>
-              <p className="text-white/90 text-xs">{t("Bu amal bekor qilinmaydi", language)}</p>
-            </div>
+            <AlertTriangle className="h-5 w-5 text-white" />
+            <h2 className="text-base font-bold text-white">{t("Oylik Reset", language)}</h2>
           </div>
         </div>
 
@@ -118,31 +113,22 @@ const MonthlyResetModal: React.FC<MonthlyResetModalProps> = ({
           {/* Current Stats */}
           {currentStats && (
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-green-50 rounded-lg p-2 border border-green-200">
-                <div className="flex items-center gap-1 mb-1">
-                  <TrendingUp className="h-3 w-3 text-green-600" />
-                  <span className="text-xs font-semibold text-green-700">{t('Kirim', language)}</span>
-                </div>
+              <div className="bg-green-50 rounded-lg p-2">
+                <p className="text-xs text-green-600 mb-0.5">{t('Kirim', language)}</p>
                 <p className="text-sm font-bold text-green-900">
                   {formatCurrency(currentStats.totalIncome)}
                 </p>
               </div>
 
-              <div className="bg-red-50 rounded-lg p-2 border border-red-200">
-                <div className="flex items-center gap-1 mb-1">
-                  <TrendingDown className="h-3 w-3 text-red-600" />
-                  <span className="text-xs font-semibold text-red-700">{t('Chiqim', language)}</span>
-                </div>
+              <div className="bg-red-50 rounded-lg p-2">
+                <p className="text-xs text-red-600 mb-0.5">{t('Chiqim', language)}</p>
                 <p className="text-sm font-bold text-red-900">
                   {formatCurrency(currentStats.totalExpense)}
                 </p>
               </div>
 
-              <div className="bg-blue-50 rounded-lg p-2 border border-blue-200">
-                <div className="flex items-center gap-1 mb-1">
-                  <Calendar className="h-3 w-3 text-blue-600" />
-                  <span className="text-xs font-semibold text-blue-700">{t('Balans', language)}</span>
-                </div>
+              <div className="bg-blue-50 rounded-lg p-2">
+                <p className="text-xs text-blue-600 mb-0.5">{t('Balans', language)}</p>
                 <p className={`text-sm font-bold ${currentStats.balance >= 0 ? 'text-green-900' : 'text-red-900'}`}>
                   {formatCurrency(currentStats.balance)}
                 </p>
@@ -151,47 +137,26 @@ const MonthlyResetModal: React.FC<MonthlyResetModalProps> = ({
           )}
 
           {/* Warning */}
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700">
-                {t("Ma'lumotlar tarixga saqlanadi va statistika 0 ga qaytariladi", language)}
-              </p>
-            </div>
-          </div>
-
-          {/* What will happen */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <ul className="space-y-1 text-xs text-blue-800">
-              <li className="flex items-start gap-1.5">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <span>{t("Tarixga saqlanadi", language)}</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <span>{t("Transaksiyalar arxivlanadi", language)}</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span className="text-blue-600 mt-0.5">✓</span>
-                <span>{t("Daromadlar 0 ga qaytadi", language)}</span>
-              </li>
-            </ul>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+            <p className="text-xs text-red-700">
+              {t("Ma'lumotlar tarixga saqlanadi va statistika 0 ga qaytariladi", language)}
+            </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-end gap-2">
+        <div className="bg-gray-50 border-t px-4 py-3 flex gap-2">
           <button
             onClick={handleClose}
             disabled={isResetting}
-            className="px-4 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
+            className="flex-1 px-3 py-2 text-xs font-semibold text-gray-700 bg-white border rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50"
           >
             {t('Bekor qilish', language)}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isResetting}
-            className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all disabled:opacity-50 flex items-center gap-1.5"
+            className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {isResetting ? (
               <>
@@ -199,10 +164,7 @@ const MonthlyResetModal: React.FC<MonthlyResetModalProps> = ({
                 {t('Yuklanmoqda...', language)}
               </>
             ) : (
-              <>
-                <CheckCircle className="h-3 w-3" />
-                {t("Ha, Reset qilish", language)}
-              </>
+              t("Reset qilish", language)
             )}
           </button>
         </div>

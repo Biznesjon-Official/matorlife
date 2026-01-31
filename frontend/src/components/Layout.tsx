@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import Sidebar from './Sidebar';
+import { useLowStockCount } from '@/hooks/useSpareParts';
+import { useCompletedTasksCount } from '@/hooks/useTasks';
+import { useOverdueDebtsCount } from '@/hooks/useDebts';
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -25,6 +28,12 @@ const Layout: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Fetch counts for master users
+  const isMaster = user?.role === 'master';
+  const { data: lowStockCount = 0 } = useLowStockCount();
+  const { data: completedTasksCount = 0 } = useCompletedTasksCount();
+  const { data: overdueDebtsCount = 0 } = useOverdueDebtsCount(isMaster); // Faqat master uchun
 
   // localStorage'dan tilni o'qish va o'zgartirish
   const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
@@ -85,13 +94,13 @@ const Layout: React.FC = () => {
   const getRoleGradient = () => {
     return user?.role === 'master' 
       ? 'from-blue-600 to-indigo-600' 
-      : 'from-green-600 to-emerald-600';
+      : 'from-blue-600 to-indigo-600';
   };
 
   const getActiveGradient = () => {
     return user?.role === 'master'
       ? 'from-blue-500 to-indigo-600'
-      : 'from-green-500 to-emerald-600';
+      : 'from-blue-500 to-indigo-600';
   };
 
   return (
@@ -103,9 +112,14 @@ const Layout: React.FC = () => {
             {/* Menu Button */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="p-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:scale-105 transition-all duration-200 group"
+              className="relative p-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg hover:scale-105 transition-all duration-200 group"
             >
               <Menu className="h-5 w-5" />
+              {/* Notification Indicator - agar biror ogohlantirish bo'lsa */}
+              {((user?.role === 'master' && (lowStockCount > 0 || completedTasksCount > 0 || overdueDebtsCount > 0)) || 
+                (user?.role === 'apprentice' && lowStockCount > 0)) && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-lg border-2 border-white"></div>
+              )}
             </button>
 
             {/* Logo and Site Name */}
@@ -197,7 +211,7 @@ const Layout: React.FC = () => {
                 </div>
                 <div className="ml-3 flex-1 min-w-0">
                   <p className="text-sm font-bold text-gray-900 truncate">{user?.name}</p>
-                  <p className={`text-xs font-semibold bg-gradient-to-r ${getRoleGradient()} bg-clip-text text-transparent`}>
+                  <p className={`text-xs font-semibold ${user?.role === 'master' ? 'text-blue-600' : 'text-blue-600'}`}>
                     {user?.role === 'master' ? t('Ustoz', language) : t('Shogird', language)}
                   </p>
                 </div>
@@ -233,6 +247,13 @@ const Layout: React.FC = () => {
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const isSparePartsPage = item.href === '/app/master/spare-parts';
+              const isTasksPage = item.href === '/app/master/tasks';
+              const isDebtsPage = item.href === '/app/debts';
+              const showSparePartsBadge = isSparePartsPage && lowStockCount > 0; // Shogirt uchun ham ko'rsatish
+              const showTasksBadge = user?.role === 'master' && isTasksPage && completedTasksCount > 0;
+              const showDebtsBadge = user?.role === 'master' && isDebtsPage && overdueDebtsCount > 0;
+              
               return (
                 <div key={item.name} className="relative group/item">
                   <Link
@@ -256,7 +277,37 @@ const Layout: React.FC = () => {
                     {isExpanded && (
                       <span className="relative z-10 truncate animate-fadeIn">{item.name}</span>
                     )}
-                    {active && isExpanded && (
+                    {showSparePartsBadge && isExpanded && (
+                      <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse">
+                        {lowStockCount}
+                      </div>
+                    )}
+                    {showSparePartsBadge && !isExpanded && (
+                      <div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse z-20">
+                        {lowStockCount}
+                      </div>
+                    )}
+                    {showTasksBadge && isExpanded && (
+                      <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-green-500 text-white text-xs font-bold animate-pulse">
+                        {completedTasksCount}
+                      </div>
+                    )}
+                    {showTasksBadge && !isExpanded && (
+                      <div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-green-500 text-white text-[10px] font-bold animate-pulse z-20">
+                        {completedTasksCount}
+                      </div>
+                    )}
+                    {showDebtsBadge && isExpanded && (
+                      <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-xs font-bold animate-pulse shadow-lg">
+                        {overdueDebtsCount}
+                      </div>
+                    )}
+                    {showDebtsBadge && !isExpanded && (
+                      <div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold animate-pulse z-20 shadow-lg">
+                        {overdueDebtsCount}
+                      </div>
+                    )}
+                    {active && isExpanded && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && (
                       <div className="ml-auto relative z-10 animate-fadeIn">
                         <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
                       </div>
@@ -267,6 +318,21 @@ const Layout: React.FC = () => {
                   {!isExpanded && !isHovered && (
                     <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
                       {item.name}
+                      {showSparePartsBadge && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-500 text-xs font-bold">
+                          {lowStockCount}
+                        </span>
+                      )}
+                      {showTasksBadge && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-green-500 text-xs font-bold">
+                          {completedTasksCount}
+                        </span>
+                      )}
+                      {showDebtsBadge && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold shadow-md">
+                          {overdueDebtsCount}
+                        </span>
+                      )}
                       <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
                     </div>
                   )}

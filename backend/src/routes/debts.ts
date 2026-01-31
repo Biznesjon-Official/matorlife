@@ -9,7 +9,8 @@ import {
   deleteDebt,
   getDebtSummary,
   sendDebtReminders,
-  getUpcomingDebts
+  getUpcomingDebts,
+  getOverdueDebtsCount
 } from '../controllers/debtController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -32,6 +33,9 @@ router.get('/summary', authenticate, getDebtSummary);
 
 // Get upcoming debts (muddati yaqin qarzlar)
 router.get('/upcoming', authenticate, authorize('master'), getUpcomingDebts);
+
+// Get debts count (due within 3 days or overdue) - sidebar notification uchun
+router.get('/overdue/count', authenticate, authorize('master'), getOverdueDebtsCount);
 
 // Send debt reminders (master only) - Manual trigger
 router.post('/reminders/send', authenticate, authorize('master'), sendDebtReminders);

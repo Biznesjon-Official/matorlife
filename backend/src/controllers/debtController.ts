@@ -268,3 +268,39 @@ export const getUpcomingDebts = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// Muddati yetgan yoki 3 kun qolgan qarzlar sonini qaytarish (sidebar notification uchun)
+export const getOverdueDebtsCount = async (req: AuthRequest, res: Response) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Bugunning boshlanishi
+    
+    // 3 kun keyingi sana
+    const threeDaysLater = new Date(today);
+    threeDaysLater.setDate(threeDaysLater.getDate() + 3);
+    threeDaysLater.setHours(23, 59, 59, 999);
+    
+    console.log('🔍 Checking debts with due date within 3 days...');
+    console.log('📅 Today:', today.toISOString());
+    console.log('📅 Three days later:', threeDaysLater.toISOString());
+    
+    // Muddati 3 kun ichida yoki o'tgan qarzlar
+    const debts = await Debt.find({
+      status: { $in: ['pending', 'partial'] },
+      dueDate: { $exists: true, $ne: null, $lte: threeDaysLater }
+    });
+    
+    console.log(`📊 Found ${debts.length} debts (due within 3 days or overdue)`);
+    debts.forEach(debt => {
+      const dueDate = new Date(debt.dueDate!);
+      const diffTime = dueDate.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      console.log(`  - ${debt.creditorName}: ${debt.dueDate?.toISOString()} (${diffDays} kun qoldi, status: ${debt.status})`);
+    });
+    
+    res.json({ count: debts.length });
+  } catch (error: any) {
+    console.error('❌ Error fetching debts count:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

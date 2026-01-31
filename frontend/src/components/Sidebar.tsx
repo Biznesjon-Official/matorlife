@@ -17,6 +17,9 @@ import {
   X,
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
+import { useLowStockCount } from '@/hooks/useSpareParts';
+import { useCompletedTasksCount } from '@/hooks/useTasks';
+import { useOverdueDebtsCount } from '@/hooks/useDebts';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -26,6 +29,12 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  
+  // Only fetch counts for master users
+  const isMaster = user?.role === 'master';
+  const { data: lowStockCount = 0 } = useLowStockCount();
+  const { data: completedTasksCount = 0 } = useCompletedTasksCount();
+  const { data: overdueDebtsCount = 0 } = useOverdueDebtsCount(isMaster); // Faqat master uchun
 
   // localStorage'dan tilni o'qish va o'zgartirish
   const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
@@ -71,13 +80,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const getRoleGradient = () => {
     return user?.role === 'master' 
       ? 'from-blue-600 to-indigo-600' 
-      : 'from-green-600 to-emerald-600';
+      : 'from-blue-600 to-indigo-600';
   };
 
   const getActiveGradient = () => {
     return user?.role === 'master'
       ? 'from-blue-500 to-indigo-600'
-      : 'from-green-500 to-emerald-600';
+      : 'from-blue-500 to-indigo-600';
   };
 
   // Escape key ni eshitish
@@ -126,14 +135,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className={`relative flex h-20 items-center px-4 bg-gradient-to-r ${getRoleGradient()}`}>
             <div className="absolute inset-0 bg-black opacity-5"></div>
             
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors z-10"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
             {/* Logo and Title */}
             <div className="relative z-10 flex items-center flex-1">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm flex-shrink-0 overflow-hidden">
@@ -152,6 +153,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </span>
               </div>
             </div>
+
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="relative z-50 p-2 rounded-lg bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors ml-2"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* User Info */}
@@ -168,7 +177,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               </div>
               <div className="ml-3 flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{user?.name}</p>
-                <p className={`text-xs font-semibold bg-gradient-to-r ${getRoleGradient()} bg-clip-text text-transparent`}>
+                <p className={`text-xs font-semibold ${user?.role === 'master' ? 'text-blue-600' : 'text-blue-600'}`}>
                   {user?.role === 'master' ? t('Ustoz', language) : t('Shogird', language)}
                 </p>
               </div>
@@ -180,6 +189,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const isSparePartsPage = item.href === '/app/master/spare-parts';
+              const isTasksPage = item.href === '/app/master/tasks';
+              const isDebtsPage = item.href === '/app/debts';
+              const showSparePartsBadge = isSparePartsPage && lowStockCount > 0; // Shogirt uchun ham ko'rsatish
+              const showTasksBadge = user?.role === 'master' && isTasksPage && completedTasksCount > 0;
+              const showDebtsBadge = user?.role === 'master' && isDebtsPage && overdueDebtsCount > 0;
+              
               return (
                 <Link
                   key={item.name}
@@ -202,7 +218,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     }`}
                   />
                   <span className="relative z-10 truncate">{item.name}</span>
-                  {active && (
+                  {showSparePartsBadge && (
+                    <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse">
+                      {lowStockCount}
+                    </div>
+                  )}
+                  {showTasksBadge && (
+                    <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-green-500 text-white text-xs font-bold animate-pulse">
+                      {completedTasksCount}
+                    </div>
+                  )}
+                  {showDebtsBadge && (
+                    <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-600 text-white text-xs font-bold animate-pulse shadow-lg">
+                      {overdueDebtsCount}
+                    </div>
+                  )}
+                  {active && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && (
                     <div className="ml-auto relative z-10">
                       <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
                     </div>

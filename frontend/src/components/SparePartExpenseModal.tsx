@@ -8,12 +8,14 @@ interface SparePartExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (data: any) => void;
+  createExpense?: boolean; // Chiqim yaratish kerakmi?
 }
 
 const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  createExpense = false // Default: chiqim yaratilmasin
 }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,32 +83,40 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
       // Agar faqat bitta narx kiritilgan bo'lsa, ikkinchisini avtomatik to'ldirish
       const costPrice = Number(formData.costPrice) || Number(formData.sellingPrice);
       const sellingPrice = Number(formData.sellingPrice) || Number(formData.costPrice);
-      const totalAmount = costPrice * Number(formData.quantity);
 
-      // Zapchastni zapchastlar sahifasiga qo'shish
-      await api.post('/spare-parts', {
-        name: formData.name,
-        costPrice: costPrice,
-        sellingPrice: sellingPrice,
-        price: sellingPrice, // Backward compatibility
-        quantity: Number(formData.quantity),
-        supplier: formData.supplier
-      });
+      if (createExpense) {
+        // Kassa sahifasidan: Zapchast + Chiqim yaratish
+        const response = await api.post('/spare-parts/with-expense', {
+          name: formData.name,
+          costPrice: costPrice,
+          sellingPrice: sellingPrice,
+          price: sellingPrice,
+          quantity: Number(formData.quantity),
+          supplier: formData.supplier,
+          paymentMethod: formData.paymentMethod
+        });
 
-      // Chiqim uchun description tayyorlash
-      const description = `${t('Zapchast sotib olindi', language)}: ${formData.name}
-${t('Miqdor', language)}: ${formData.quantity} dona
-${t('Birlik narxi', language)}: ${costPrice.toLocaleString()} so'm
-${t('Jami', language)}: ${totalAmount.toLocaleString()} so'm
-${t('Yetkazib beruvchi', language)}: ${formData.supplier}`;
+        // Success callback
+        onSuccess({
+          transaction: response.data.transaction,
+          sparePart: response.data.sparePart
+        });
+      } else {
+        // Zapchastlar sahifasidan: Faqat zapchast yaratish
+        await api.post('/spare-parts', {
+          name: formData.name,
+          costPrice: costPrice,
+          sellingPrice: sellingPrice,
+          price: sellingPrice,
+          quantity: Number(formData.quantity),
+          supplier: formData.supplier
+        });
 
-      // Expense callback chaqirish
-      onSuccess({
-        amount: totalAmount,
-        description: description,
-        paymentMethod: formData.paymentMethod,
-        sparePartName: formData.name // Zapchast nomini qo'shish
-      });
+        // Success callback
+        onSuccess({
+          sparePart: { name: formData.name }
+        });
+      }
 
       // Form ni tozalash
       setFormData({

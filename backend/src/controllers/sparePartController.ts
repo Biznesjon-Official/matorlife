@@ -187,6 +187,67 @@ export const createSparePart = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Zapchast + Chiqim yaratish (Kassa sahifasidan)
+export const createSparePartWithExpense = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, costPrice, sellingPrice, price, quantity = 1, supplier = 'Noma\'lum', paymentMethod = 'cash' } = req.body;
+    const Transaction = require('../models/Transaction').default;
+
+    // Check if spare part with same name already exists
+    const existingSparePart = await SparePart.findOne({ 
+      name: { $regex: `^${name.trim()}$`, $options: 'i' },
+      isActive: true 
+    });
+
+    if (existingSparePart) {
+      return res.status(400).json({ 
+        message: 'Bu nom bilan zapchast allaqachon mavjud',
+        existingSparePart 
+      });
+    }
+
+    // Zapchast yaratish
+    const sparePart = new SparePart({
+      name: name.trim(),
+      costPrice: costPrice || price,
+      sellingPrice: sellingPrice || price,
+      price: sellingPrice || price,
+      quantity,
+      supplier: supplier.trim()
+    });
+
+    await sparePart.save();
+
+    // Chiqim yaratish
+    const totalAmount = (costPrice || price) * quantity;
+    const description = `Zapchast sotib olindi: ${name.trim()}
+Miqdor: ${quantity} dona
+Birlik narxi: ${(costPrice || price).toLocaleString()} so'm
+Jami: ${totalAmount.toLocaleString()} so'm
+Yetkazib beruvchi: ${supplier.trim()}`;
+
+    const transaction = new Transaction({
+      type: 'expense',
+      category: 'spare_part_purchase',
+      amount: totalAmount,
+      description: description,
+      paymentMethod: paymentMethod,
+      createdBy: req.user!._id
+    });
+
+    await transaction.save();
+
+    res.status(201).json({
+      message: 'Zapchast va chiqim muvaffaqiyatli yaratildi',
+      sparePart,
+      transaction
+    });
+  } catch (error: any) {
+    console.error('Error creating spare part with expense:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 export const updateSparePart = async (req: AuthRequest, res: Response) => {
   try {
     const { name, costPrice, sellingPrice, price, quantity, supplier } = req.body;

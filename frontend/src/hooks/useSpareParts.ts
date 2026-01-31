@@ -203,3 +203,25 @@ export const useRemoveClientPart = () => {
     },
   });
 };
+
+// Low stock count hook for notification badge
+export const useLowStockCount = () => {
+  return useQuery({
+    queryKey: ['low-stock-count'],
+    queryFn: async (): Promise<number> => {
+      try {
+        const response = await api.get('/spare-parts?limit=1');
+        const count = response.data.statistics?.lowStockCount || 0;
+        return count;
+      } catch (error) {
+        console.error('Error fetching low stock count:', error);
+        return 0;
+      }
+    },
+    staleTime: 10000, // 10 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 2,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+};

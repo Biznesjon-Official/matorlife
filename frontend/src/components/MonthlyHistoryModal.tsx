@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, TrendingUp, TrendingDown, BarChart3, DollarSign, Wallet, CreditCard, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { X, Calendar, TrendingUp, TrendingDown, BarChart3, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import { formatCurrency } from '@/lib/utils';
 import { transactionApi } from '@/lib/api';
@@ -94,24 +94,19 @@ const MonthlyHistoryModal: React.FC<MonthlyHistoryModalProps> = ({ isOpen, onClo
       
       <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden mx-2 sm:mx-0">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
-          <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors">
-            <X className="h-5 w-5" />
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
+          <button onClick={onClose} className="absolute top-2 right-2 text-white/80 hover:text-white rounded-lg p-1 transition-colors">
+            <X className="h-4 w-4" />
           </button>
           
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">{t("Oylik tarix", language)}</h2>
-              <p className="text-white/90 text-sm">{t("Har oy uchun statistika", language)}</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-white" />
+            <h2 className="text-base font-bold text-white">{t("Oylik tarix", language)}</h2>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[calc(95vh-120px)] overflow-y-auto">
+        <div className="p-4 max-h-[calc(95vh-80px)] overflow-y-auto">
           {loading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
@@ -124,225 +119,144 @@ const MonthlyHistoryModal: React.FC<MonthlyHistoryModalProps> = ({ isOpen, onClo
               <p className="text-sm text-gray-500 mt-2">{t("Oylik reset qilganingizdan keyin tarix paydo bo'ladi", language)}</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {history.map((item) => {
                 const isExpanded = expandedMonths.has(item._id);
                 
                 return (
                   <div 
                     key={item._id}
-                    className="card border-l-4 border-l-blue-500 overflow-hidden"
+                    className="border border-gray-200 rounded-lg overflow-hidden"
                   >
                     {/* Month Header - Clickable */}
                     <div 
-                      className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => toggleMonth(item._id)}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-lg">
-                          <Calendar className="h-5 w-5 text-blue-600" />
-                        </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-blue-600" />
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">
+                          <h3 className="text-sm font-bold text-gray-900">
                             {getMonthName(item.month)} {item.year}
                           </h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs text-gray-500">
                             {new Date(item.resetDate).toLocaleDateString('uz-UZ')}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className={`text-2xl font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`text-lg font-bold ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {formatCurrency(item.balance)}
                         </div>
                         <button
                           onClick={(e) => handleDeleteClick(e, item)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title={t("O'chirish", language)}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                         {isExpanded ? (
-                          <ChevronUp className="h-5 w-5 text-gray-400" />
+                          <ChevronUp className="h-4 w-4 text-gray-400" />
                         ) : (
-                          <ChevronDown className="h-5 w-5 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
                         )}
                       </div>
                     </div>
 
                     {/* Expanded Content */}
                     {isExpanded && (
-                      <div className="px-4 pb-4 space-y-4 border-t border-gray-100">
-                        {/* Stats Grid - Kassa sahifasidagi kabi */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                      <div className="px-3 pb-3 space-y-3 border-t border-gray-100">
+                        {/* Stats Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
                           {/* KIRIM CARD */}
-                          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="p-1.5 bg-green-500 rounded-lg">
-                                <TrendingUp className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                                {t('Kirim', language)}
-                              </span>
+                          <div className="bg-green-50 rounded-lg p-2">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-xs font-semibold text-green-700">{t('Kirim', language)}</span>
                             </div>
-                            
-                            {/* Umumiy summa */}
-                            <div className="mb-2 pb-2 border-b border-green-200">
-                              <p className="text-xs text-green-600 mb-0.5">{t('Umumiy', language)}</p>
-                              <div className="text-lg font-bold text-green-900">
-                                {formatCurrency(item.totalIncome)}
-                              </div>
+                            <div className="text-base font-bold text-green-900 mb-1">
+                              {formatCurrency(item.totalIncome)}
                             </div>
-                            
-                            {/* Naqd va Karta */}
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <Wallet className="h-2.5 w-2.5 text-green-600" />
-                                  <p className="text-xs text-green-600">{t('Naqd', language)}</p>
-                                </div>
-                                <div className="text-xs font-bold text-green-900">
-                                  {formatCurrency(item.incomeCash || 0)}
-                                </div>
+                            <div className="flex gap-1.5 text-xs">
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-green-600 mb-0.5">{t('Naqd', language)}</p>
+                                <p className="font-bold text-green-900">{formatCurrency(item.incomeCash || 0)}</p>
                               </div>
-                              
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <CreditCard className="h-2.5 w-2.5 text-green-600" />
-                                  <p className="text-xs text-green-600">{t('Karta', language)}</p>
-                                </div>
-                                <div className="text-xs font-bold text-green-900">
-                                  {formatCurrency(item.incomeCard || 0)}
-                                </div>
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-green-600 mb-0.5">{t('Karta', language)}</p>
+                                <p className="font-bold text-green-900">{formatCurrency(item.incomeCard || 0)}</p>
                               </div>
                             </div>
-                            
-                            <p className="text-xs text-green-600 mt-2">
-                              {item.incomeCount} {t('ta', language)}
-                            </p>
                           </div>
 
                           {/* CHIQIM CARD */}
-                          <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="p-1.5 bg-red-500 rounded-lg">
-                                <TrendingDown className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
-                                {t('Chiqim', language)}
-                              </span>
+                          <div className="bg-red-50 rounded-lg p-2">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <TrendingDown className="h-3.5 w-3.5 text-red-600" />
+                              <span className="text-xs font-semibold text-red-700">{t('Chiqim', language)}</span>
                             </div>
-                            
-                            {/* Umumiy summa */}
-                            <div className="mb-2 pb-2 border-b border-red-200">
-                              <p className="text-xs text-red-600 mb-0.5">{t('Umumiy', language)}</p>
-                              <div className="text-lg font-bold text-red-900">
-                                {formatCurrency(item.totalExpense)}
-                              </div>
+                            <div className="text-base font-bold text-red-900 mb-1">
+                              {formatCurrency(item.totalExpense)}
                             </div>
-                            
-                            {/* Naqd va Karta */}
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <Wallet className="h-2.5 w-2.5 text-red-600" />
-                                  <p className="text-xs text-red-600">{t('Naqd', language)}</p>
-                                </div>
-                                <div className="text-xs font-bold text-red-900">
-                                  {formatCurrency(item.expenseCash || 0)}
-                                </div>
+                            <div className="flex gap-1.5 text-xs">
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-red-600 mb-0.5">{t('Naqd', language)}</p>
+                                <p className="font-bold text-red-900">{formatCurrency(item.expenseCash || 0)}</p>
                               </div>
-                              
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <CreditCard className="h-2.5 w-2.5 text-red-600" />
-                                  <p className="text-xs text-red-600">{t('Karta', language)}</p>
-                                </div>
-                                <div className="text-xs font-bold text-red-900">
-                                  {formatCurrency(item.expenseCard || 0)}
-                                </div>
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-red-600 mb-0.5">{t('Karta', language)}</p>
+                                <p className="font-bold text-red-900">{formatCurrency(item.expenseCard || 0)}</p>
                               </div>
                             </div>
-                            
-                            <p className="text-xs text-red-600 mt-2">
-                              {item.expenseCount} {t('ta', language)}
-                            </p>
                           </div>
 
                           {/* BALANS CARD */}
-                          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="p-1.5 bg-blue-500 rounded-lg">
-                                <BarChart3 className="h-3.5 w-3.5 text-white" />
-                              </div>
-                              <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                                {t('Balans', language)}
-                              </span>
+                          <div className="bg-blue-50 rounded-lg p-2">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <BarChart3 className="h-3.5 w-3.5 text-blue-600" />
+                              <span className="text-xs font-semibold text-blue-700">{t('Balans', language)}</span>
                             </div>
-                            
-                            {/* Umumiy balans */}
-                            <div className="mb-2 pb-2 border-b border-blue-200">
-                              <p className="text-xs text-blue-600 mb-0.5">{t('Umumiy', language)}</p>
-                              <div className={`text-lg font-bold ${item.balance >= 0 ? 'text-green-900' : 'text-red-900'}`}>
-                                {formatCurrency(item.balance)}
-                              </div>
+                            <div className={`text-base font-bold mb-1 ${item.balance >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                              {formatCurrency(item.balance)}
                             </div>
-                            
-                            {/* Naqd va Karta balansi */}
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <Wallet className="h-2.5 w-2.5 text-blue-600" />
-                                  <p className="text-xs text-blue-600">{t('Naqd', language)}</p>
-                                </div>
-                                <div className={`text-xs font-bold ${(item.balanceCash || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                            <div className="flex gap-1.5 text-xs">
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-blue-600 mb-0.5">{t('Naqd', language)}</p>
+                                <p className={`font-bold ${(item.balanceCash || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
                                   {formatCurrency(item.balanceCash || 0)}
-                                </div>
+                                </p>
                               </div>
-                              
-                              <div className="bg-white/50 rounded p-1.5">
-                                <div className="flex items-center gap-1 mb-0.5">
-                                  <CreditCard className="h-2.5 w-2.5 text-blue-600" />
-                                  <p className="text-xs text-blue-600">{t('Karta', language)}</p>
-                                </div>
-                                <div className={`text-xs font-bold ${(item.balanceCard || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
+                              <div className="flex-1 bg-white/60 rounded p-1">
+                                <p className="text-blue-600 mb-0.5">{t('Karta', language)}</p>
+                                <p className={`font-bold ${(item.balanceCard || 0) >= 0 ? 'text-green-900' : 'text-red-900'}`}>
                                   {formatCurrency(item.balanceCard || 0)}
-                                </div>
+                                </p>
                               </div>
                             </div>
-                            
-                            <p className={`text-xs mt-2 ${item.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {item.balance >= 0 ? t('Ijobiy', language) : t('Salbiy', language)}
-                            </p>
                           </div>
                         </div>
 
                         {/* Xodimlar daromadi */}
                         {item.userEarnings && item.userEarnings.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                              <DollarSign className="h-4 w-4 text-blue-600" />
-                              {t("Xodimlar daromadi", language)}
-                            </h4>
+                            <h4 className="text-xs font-bold text-gray-700 mb-2">{t("Xodimlar daromadi", language)}</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {item.userEarnings.map((user: any) => (
-                                <div key={user.userId} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-200">
-                                  <div className="flex items-center gap-3">
-                                    <div className="bg-blue-100 rounded-full w-10 h-10 flex items-center justify-center">
-                                      <span className="text-blue-700 font-bold text-sm">
+                                <div key={user.userId} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className="bg-blue-100 rounded-full w-8 h-8 flex items-center justify-center">
+                                      <span className="text-blue-700 font-bold text-xs">
                                         {user.name.charAt(0).toUpperCase()}
                                       </span>
                                     </div>
                                     <div>
-                                      <p className="font-semibold text-gray-900">{user.name}</p>
+                                      <p className="text-sm font-semibold text-gray-900">{user.name}</p>
                                       <p className="text-xs text-gray-500">
                                         {user.role === 'master' ? t('Usta', language) : t('Shogird', language)}
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-base font-bold text-green-600">{formatCurrency(user.earnings)}</p>
-                                  </div>
+                                  <p className="text-sm font-bold text-green-600">{formatCurrency(user.earnings)}</p>
                                 </div>
                               ))}
                             </div>

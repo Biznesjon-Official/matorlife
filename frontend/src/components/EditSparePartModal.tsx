@@ -192,26 +192,25 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-0 my-4 sm:my-0">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-5">
-          <button onClick={onClose} className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors">
-            <X className="h-5 w-5" />
+      <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden mx-2">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3">
+          <button onClick={onClose} className="absolute top-3 right-3 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1 transition-colors">
+            <X className="h-4 w-4" />
           </button>
           
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <Edit3 className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
+              <Edit3 className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{t('Zapchastni tahrirlash', language)}</h2>
-              <p className="text-purple-100 text-sm">{t("Zapchast ma'lumotlarini o'zgartiring", language)}</p>
+              <h2 className="text-base font-bold text-white">{t('Zapchastni tahrirlash', language)}</h2>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto max-h-[calc(95vh-80px)]">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
               {t('Zapchast nomi', language)} *
             </label>
             <input
@@ -220,7 +219,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
               required
               value={formData.name}
               onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+              className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
                 errors.name 
                   ? 'border-red-300 focus:border-red-500' 
                   : 'border-gray-200 focus:border-purple-500'
@@ -228,18 +227,16 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
               placeholder={t('Masalan: Tormoz kolodkasi', language)}
             />
             {errors.name && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
+              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
                 {errors.name}
               </p>
             )}
           </div>
 
-          {/* O'zini narxi va Sotish narxi */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-            {/* O'zini narxi */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 {t("O'zini narxi", language)} ({t("so'm", language)})
               </label>
               <input
@@ -248,7 +245,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 value={formData.costPriceDisplay}
                 onChange={handleChange}
                 autoComplete="off"
-                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
                   errors.costPrice 
                     ? 'border-red-300 focus:border-red-500' 
                     : 'border-gray-200 focus:border-purple-500'
@@ -256,16 +253,15 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 placeholder="800,000"
               />
               {errors.costPrice && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
                   {errors.costPrice}
                 </p>
               )}
             </div>
 
-            {/* Sotish narxi */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 {t('Sotish narxi', language)} ({t("so'm", language)})
               </label>
               <input
@@ -274,7 +270,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 value={formData.sellingPriceDisplay}
                 onChange={handleChange}
                 autoComplete="off"
-                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
                   errors.sellingPrice 
                     ? 'border-red-300 focus:border-red-500' 
                     : 'border-gray-200 focus:border-purple-500'
@@ -282,101 +278,92 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 placeholder="1,000,000"
               />
               {errors.sellingPrice && (
-                <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
                   {errors.sellingPrice}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Foyda ko'rsatish */}
           {formData.costPrice && formData.sellingPrice && Number(formData.sellingPrice) >= Number(formData.costPrice) && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-green-800">{t('Foyda', language)}:</span>
-                <span className="text-lg font-bold text-green-600">
+                <span className="text-xs font-medium text-green-800">{t('Foyda', language)}:</span>
+                <span className="text-sm font-bold text-green-600">
                   {formatNumber((Number(formData.sellingPrice) - Number(formData.costPrice)).toString())} {t("so'm", language)}
                 </span>
               </div>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('Miqdor', language)} *
-            </label>
-            <input
-              type="number"
-              name="quantity"
-              required
-              min="0"
-              value={formData.quantity}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
-                errors.quantity 
-                  ? 'border-red-300 focus:border-red-500' 
-                  : 'border-gray-200 focus:border-purple-500'
-              }`}
-              placeholder="0"
-            />
-            {errors.quantity && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {errors.quantity}
-              </p>
-            )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                {t('Miqdor', language)} *
+              </label>
+              <input
+                type="number"
+                name="quantity"
+                required
+                min="0"
+                value={formData.quantity}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                  errors.quantity 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-purple-500'
+                }`}
+                placeholder="0"
+              />
+              {errors.quantity && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.quantity}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                {t('Kimdan olingan', language)} *
+              </label>
+              <input
+                type="text"
+                name="supplier"
+                required
+                value={formData.supplier}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                  errors.supplier 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-purple-500'
+                }`}
+                placeholder={t('Masalan: Avtomag', language)}
+              />
+              {errors.supplier && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.supplier}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('Kimdan olingan', language)} *
-            </label>
-            <input
-              type="text"
-              name="supplier"
-              required
-              value={formData.supplier}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
-                errors.supplier 
-                  ? 'border-red-300 focus:border-red-500' 
-                  : 'border-gray-200 focus:border-purple-500'
-              }`}
-              placeholder={t('Masalan: Avtomag do\'koni', language)}
-            />
-            {errors.supplier && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {errors.supplier}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               {t('Bekor qilish', language)}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg"
+              className="flex-1 px-3 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 transition-all"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {t('Saqlanmoqda...', language)}
-                </span>
-              ) : (
-                t('Saqlash', language)
-              )}
+              {loading ? t('Saqlanmoqda...', language) : t('Saqlash', language)}
             </button>
           </div>
         </form>

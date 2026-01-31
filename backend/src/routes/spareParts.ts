@@ -5,6 +5,7 @@ import {
   getSpareParts,
   getSparePartById,
   createSparePart,
+  createSparePartWithExpense,
   updateSparePart,
   deleteSparePart,
   incrementUsage,
@@ -36,6 +37,16 @@ router.post('/', authenticate, authorize('master'), [
   body('quantity').isInt({ min: 0 }).withMessage('Miqdor 0 dan kichik bo\'lmasligi kerak'),
   body('supplier').trim().isLength({ min: 2 }).withMessage('Kimdan olingani kamida 2 ta belgidan iborat bo\'lishi kerak')
 ], handleValidationErrors, createSparePart);
+
+// Create spare part with expense (master only - from Cashier page)
+router.post('/with-expense', authenticate, authorize('master'), [
+  body('name').trim().isLength({ min: 2 }).withMessage('Zapchast nomi kamida 2 ta belgidan iborat bo\'lishi kerak'),
+  body('costPrice').optional().isFloat({ min: 0 }).withMessage('Tannarx 0 dan katta bo\'lishi kerak'),
+  body('sellingPrice').optional().isFloat({ min: 0 }).withMessage('Sotish narxi 0 dan katta bo\'lishi kerak'),
+  body('quantity').isInt({ min: 0 }).withMessage('Miqdor 0 dan kichik bo\'lmasligi kerak'),
+  body('supplier').trim().isLength({ min: 2 }).withMessage('Kimdan olingani kamida 2 ta belgidan iborat bo\'lishi kerak'),
+  body('paymentMethod').isIn(['cash', 'card']).withMessage('To\'lov usuli noto\'g\'ri')
+], handleValidationErrors, createSparePartWithExpense);
 
 // Update spare part (master only)
 router.put('/:id', authenticate, authorize('master'), [

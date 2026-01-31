@@ -53,149 +53,129 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-0 my-4 sm:my-0">
+      <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-hidden mx-2">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
           <button 
             onClick={onClose} 
-            className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors"
+            className="absolute top-3 right-3 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
           
-          <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-              <Package className="h-8 w-8 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
+              <Package className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-2xl font-bold text-white mb-2 truncate">{sparePart.name}</h2>
-              <div className="flex items-center gap-3 text-blue-100">
-                <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-                  {sparePart.supplier}
-                </span>
-              </div>
+              <h2 className="text-base font-bold text-white truncate">{sparePart.name}</h2>
+              <span className="text-xs text-blue-100">{sparePart.supplier}</span>
             </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(95vh-140px)]">
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500">
-                  <Package className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-blue-600 uppercase">{t('Miqdor', language)}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-100">
+              <div className="flex items-center gap-2 mb-1">
+                <Package className="h-4 w-4 text-blue-600" />
+                <span className="text-xs font-semibold text-blue-600">{t('Miqdor', language)}</span>
               </div>
-              <p className="text-2xl font-bold text-blue-900">
+              <p className="text-lg font-bold text-blue-900">
                 {sparePart.quantity} {t('dona', language)}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-purple-600 uppercase">{t('Ishlatilgan', language)}</span>
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3 border border-purple-100">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <span className="text-xs font-semibold text-purple-600">{t('Ishlatilgan', language)}</span>
               </div>
-              <p className="text-2xl font-bold text-purple-900">
+              <p className="text-lg font-bold text-purple-900">
                 {sparePart.usageCount} {t('marta', language)}
               </p>
             </div>
           </div>
 
           {/* Narxlar Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500">
-                  <DollarSign className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-orange-600 uppercase">{t("O'zini narxi", language)}</span>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 border border-orange-100">
+              <div className="flex items-center gap-1 mb-1">
+                <DollarSign className="h-3 w-3 text-orange-600" />
+                <span className="text-[10px] font-semibold text-orange-600">{t("O'zini", language)}</span>
               </div>
-              <p className="text-2xl font-bold text-orange-900">
-                {(sparePart.costPrice || sparePart.price).toLocaleString()} {t("so'm", language)}
+              <p className="text-sm font-bold text-orange-900">
+                {(sparePart.costPrice || sparePart.price).toLocaleString()}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500">
-                  <DollarSign className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-green-600 uppercase">{t('Sotish narxi', language)}</span>
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-2 border border-green-100">
+              <div className="flex items-center gap-1 mb-1">
+                <DollarSign className="h-3 w-3 text-green-600" />
+                <span className="text-[10px] font-semibold text-green-600">{t('Sotish', language)}</span>
               </div>
-              <p className="text-2xl font-bold text-green-900">
-                {(sparePart.sellingPrice || sparePart.price).toLocaleString()} {t("so'm", language)}
+              <p className="text-sm font-bold text-green-900">
+                {(sparePart.sellingPrice || sparePart.price).toLocaleString()}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500">
-                  <TrendingUp className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-sm font-semibold text-emerald-600 uppercase">{t('Foyda', language)}</span>
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
+              <div className="flex items-center gap-1 mb-1">
+                <TrendingUp className="h-3 w-3 text-emerald-600" />
+                <span className="text-[10px] font-semibold text-emerald-600">{t('Foyda', language)}</span>
               </div>
-              <p className="text-2xl font-bold text-emerald-900">
-                {(sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))).toLocaleString()} {t("so'm", language)}
+              <p className="text-sm font-bold text-emerald-900">
+                {(sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))).toLocaleString()}
               </p>
             </div>
           </div>
 
           {/* Total Value */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-100">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-indigo-600 uppercase">{t('Jami qiymat (sotish)', language)}</span>
-              <span className="text-2xl font-bold text-indigo-900">
+              <span className="text-xs font-semibold text-indigo-600">{t('Jami qiymat', language)}</span>
+              <span className="text-sm font-bold text-indigo-900">
                 {((sparePart.sellingPrice || sparePart.price) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
               </span>
             </div>
           </div>
 
           {/* Total Profit */}
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-emerald-600 uppercase">{t('Jami foyda', language)}</span>
-              <span className="text-2xl font-bold text-emerald-900">
+              <span className="text-xs font-semibold text-emerald-600">{t('Jami foyda', language)}</span>
+              <span className="text-sm font-bold text-emerald-900">
                 {((sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
               </span>
             </div>
           </div>
 
-          {/* Supplier */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-600 uppercase mb-2">{t('Kimdan olingan', language)}</h3>
-            <p className="text-gray-800 leading-relaxed">{sparePart.supplier}</p>
-          </div>
-
           {/* Dates */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-semibold text-blue-600 uppercase">{t('Yaratilgan', language)}</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-blue-50 rounded-lg p-2 border border-blue-100">
+              <div className="flex items-center gap-1 mb-1">
+                <Calendar className="h-3 w-3 text-blue-600" />
+                <span className="text-xs font-semibold text-blue-600">{t('Yaratilgan', language)}</span>
               </div>
-              <p className="text-sm text-blue-800">{formatDate(sparePart.createdAt)}</p>
+              <p className="text-[10px] text-blue-800">{formatDate(sparePart.createdAt)}</p>
             </div>
 
-            <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-semibold text-orange-600 uppercase">{t('Yangilangan', language)}</span>
+            <div className="bg-orange-50 rounded-lg p-2 border border-orange-100">
+              <div className="flex items-center gap-1 mb-1">
+                <Calendar className="h-3 w-3 text-orange-600" />
+                <span className="text-xs font-semibold text-orange-600">{t('Yangilangan', language)}</span>
               </div>
-              <p className="text-sm text-orange-800">{formatDate(sparePart.updatedAt)}</p>
+              <p className="text-[10px] text-orange-800">{formatDate(sparePart.updatedAt)}</p>
             </div>
           </div>
 
           {/* Status */}
-          <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-2 border border-gray-200">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-600 uppercase">{t('Holat', language)}</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              <span className="text-xs font-semibold text-gray-600">{t('Holat', language)}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                 sparePart.isActive 
                   ? 'bg-green-100 text-green-800' 
                   : 'bg-red-100 text-red-800'
@@ -207,11 +187,11 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 pb-6">
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
             >
               {t('Yopish', language)}
             </button>
@@ -219,9 +199,9 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
             {onEdit && (
               <button
                 onClick={onEdit}
-                className="px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2"
+                className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-3 w-3" />
                 {t('Tahrirlash', language)}
               </button>
             )}
@@ -229,9 +209,9 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
             {onDelete && (
               <button
                 onClick={onDelete}
-                className="px-4 py-3 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2"
+                className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
                 {t("O'chirish", language)}
               </button>
             )}

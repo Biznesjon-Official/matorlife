@@ -114,3 +114,27 @@ export const useDeleteDebt = () => {
     },
   });
 };
+
+// Muddati 3 kun ichida yoki o'tgan qarzlar sonini olish (sidebar notification uchun)
+// Faqat master uchun
+export const useOverdueDebtsCount = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['overdue-debts-count'],
+    queryFn: async (): Promise<number> => {
+      try {
+        const response = await api.get('/debts/overdue/count');
+        const count = response.data.count || 0;
+        return count;
+      } catch (error) {
+        console.error('Error fetching debts count:', error);
+        return 0;
+      }
+    },
+    enabled, // Faqat enabled=true bo'lganda ishlaydi
+    staleTime: 10000,
+    refetchInterval: enabled ? 60000 : false, // Faqat enabled bo'lsa yangilanadi
+    retry: 1,
+    refetchOnMount: enabled,
+    refetchOnWindowFocus: enabled,
+  });
+};

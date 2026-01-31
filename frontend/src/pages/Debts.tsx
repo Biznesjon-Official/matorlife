@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useDebts, useDebtSummary, useAddPayment } from '@/hooks/useDebts';
+import { useDebts, useDebtSummary } from '@/hooks/useDebts';
 import EditDebtModal from '@/components/EditDebtModal';
 import DeleteDebtModal from '@/components/DeleteDebtModal';
-import { Plus, DollarSign, TrendingUp, TrendingDown, Calendar, Phone, Eye, Edit, Trash2, X, FileText, User } from 'lucide-react';
-import { formatCurrency, formatNumber, parseFormattedNumber } from '@/lib/utils';
+import { DollarSign, TrendingUp, TrendingDown, Calendar, Phone, Eye, Edit, Trash2, X, FileText } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import { Debt } from '@/types';
 import { t } from '@/lib/transliteration';
 
@@ -11,7 +11,6 @@ const Debts: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -26,7 +25,6 @@ const Debts: React.FC = () => {
     status: statusFilter 
   });
   const { data: debtSummary, isLoading: summaryLoading } = useDebtSummary();
-  const addPaymentMutation = useAddPayment();
 
   // Faqat to'lanmagan va qisman to'langan qarzlarni ko'rsatish
   const debts = ((debtsData as any)?.debts || []).filter((debt: Debt) => debt.status !== 'paid');
@@ -79,232 +77,6 @@ const Debts: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('uz-UZ');
-  };
-
-  const AddPaymentModal: React.FC<{ debt: Debt }> = ({ debt }) => {
-    const [formData, setFormData] = useState({
-      amount: 0,
-      notes: ''
-    });
-    const [amountDisplay, setAmountDisplay] = useState('');
-
-    const remainingAmount = debt.amount - debt.paidAmount;
-
-    const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      const formatted = formatNumber(value);
-      const numericValue = parseFormattedNumber(formatted);
-      
-      setAmountDisplay(formatted);
-      setFormData(prev => ({
-        ...prev,
-        amount: numericValue
-      }));
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const { name, value } = e.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      
-      if (formData.amount <= 0) {
-        alert(t("To'lov summasi 0 dan katta bo'lishi kerak", language));
-        return;
-      }
-
-      try {
-        await addPaymentMutation.mutateAsync({
-          id: debt._id,
-          amount: formData.amount,
-          notes: formData.notes
-        });
-        setFormData({
-          amount: 0,
-          notes: ''
-        });
-        setAmountDisplay('');
-        setIsPaymentModalOpen(false);
-        setSelectedDebt(null);
-      } catch (error) {
-        }
-    };
-
-    const setQuickAmount = (percentage: number) => {
-      const amount = Math.round(remainingAmount * percentage / 100);
-      const formatted = formatNumber(amount.toString());
-      setAmountDisplay(formatted);
-      setFormData(prev => ({ ...prev, amount }));
-    };
-
-    const setFullAmount = () => {
-      const formatted = formatNumber(remainingAmount.toString());
-      setAmountDisplay(formatted);
-      setFormData(prev => ({ ...prev, amount: remainingAmount }));
-    };
-
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-screen items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black bg-opacity-25" onClick={() => setIsPaymentModalOpen(false)} />
-          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">{t("To'lov qo'shish", language)}</h3>
-              <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Debt Info */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center mb-2">
-                <User className="h-4 w-4 text-gray-500 mr-2" />
-                <span className="font-medium text-gray-900">{debt.creditorName}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">{t('Umumiy qarz:', language)}</span>
-                  <p className="font-medium">{formatCurrency(debt.amount)}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">{t("To'langan:", language)}</span>
-                  <p className="font-medium text-blue-600">{formatCurrency(debt.paidAmount)}</p>
-                </div>
-              </div>
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <span className="text-gray-600">{t('Qolgan summa:', language)}</span>
-                <p className="font-bold text-red-600">{formatCurrency(remainingAmount)}</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <DollarSign className="h-4 w-4 inline mr-1" />
-                  {t("To'lov summasi (so'm)", language)} *
-                </label>
-                <input
-                  type="text"
-                  value={amountDisplay}
-                  onChange={handleAmountChange}
-                  className="input"
-                  placeholder="1.000.000"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('Har qanday miqdorni kiritishingiz mumkin', language)}
-                </p>
-              </div>
-
-              {/* Quick Amount Buttons */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("Tezkor to'lov:", language)}
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setQuickAmount(25)}
-                    className="btn-secondary text-xs py-1"
-                  >
-                    25%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickAmount(50)}
-                    className="btn-secondary text-xs py-1"
-                  >
-                    50%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickAmount(75)}
-                    className="btn-secondary text-xs py-1"
-                  >
-                    75%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickAmount(100)}
-                    className="btn-secondary text-xs py-1"
-                  >
-                    100%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={setFullAmount}
-                    className="btn-secondary text-xs py-1 bg-green-50 text-green-700 hover:bg-green-100"
-                  >
-                    {t('Barchasi', language)}
-                  </button>
-                </div>
-              </div>
-
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <FileText className="h-4 w-4 inline mr-1" />
-                  {t('Izoh', language)}
-                </label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  rows={2}
-                  className="input"
-                  placeholder={t("To'lov haqida qo'shimcha ma'lumot...", language)}
-                />
-              </div>
-
-              {/* Payment Preview */}
-              {formData.amount > 0 && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>{t("To'lov ma'lumotlari:", language)}</strong>
-                  </p>
-                  <div className="text-sm text-blue-700 mt-1 space-y-1">
-                    <p>{t("To'lov summasi:", language)} {formatCurrency(formData.amount)}</p>
-                    <p>{t("Hozirgi to'langan:", language)} {formatCurrency(debt.paidAmount)}</p>
-                    <p>{t("To'lovdan keyin:", language)} {formatCurrency(debt.paidAmount + formData.amount)}</p>
-                    <p>{t('Qolgan qarz:', language)} {formatCurrency(Math.max(0, debt.amount - (debt.paidAmount + formData.amount)))}</p>
-                    {formData.amount >= remainingAmount && (
-                      <p className="font-medium text-green-700">✓ {t("Qarz to'liq to'lanadi", language)}</p>
-                    )}
-                    {formData.amount > remainingAmount && (
-                      <p className="font-medium text-orange-700">⚠ {t("Ortiqcha to'lov:", language)} {formatCurrency(formData.amount - remainingAmount)}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setIsPaymentModalOpen(false)}
-                  className="btn-secondary"
-                >
-                  {t('Bekor qilish', language)}
-                </button>
-                <button
-                  type="submit"
-                  disabled={addPaymentMutation.isPending || formData.amount <= 0}
-                  className="btn-primary disabled:opacity-50"
-                >
-                  {addPaymentMutation.isPending ? t('Saqlanmoqda...', language) : t("To'lov qo'shish", language)}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   const DebtDetailModal: React.FC<{ debt: Debt }> = ({ debt }) => {
@@ -503,17 +275,6 @@ const Debts: React.FC = () => {
               >
                 {t('Yopish', language)}
               </button>
-              {debt.status !== 'paid' && (
-                <button
-                  onClick={() => {
-                    setIsPaymentModalOpen(true);
-                  }}
-                  className="px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all flex items-center space-x-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>{t("To'lov qo'shish", language)}</span>
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -814,19 +575,6 @@ const Debts: React.FC = () => {
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                         <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
                       </button>
-                      {debt.status !== 'paid' && (
-                        <button
-                          onClick={() => {
-                            setSelectedDebt(debt);
-                            setIsPaymentModalOpen(true);
-                          }}
-                          className="flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-3 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group shadow-sm"
-                          title={t("To'lov qo'shish", language)}
-                        >
-                          <Plus className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
-                          <span className="text-xs sm:text-sm">{t("To'lov", language)}</span>
-                        </button>
-                      )}
                       <button 
                         onClick={() => {
                           setSelectedDebt(debt);
@@ -858,9 +606,6 @@ const Debts: React.FC = () => {
 
       {/* Modals */}
       {selectedDebt && !isEditModalOpen && !isDeleteModalOpen && <DebtDetailModal debt={selectedDebt} />}
-      {selectedDebt && isPaymentModalOpen && (
-        <AddPaymentModal debt={selectedDebt} />
-      )}
       {selectedDebt && (
         <>
           <EditDebtModal

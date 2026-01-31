@@ -14,7 +14,7 @@ import {
   MapPin,
   Clock,
   Phone,
-  ChevronLeft,
+  ChevronLeft,  
   ChevronRight,
   Heart,
 } from 'lucide-react';

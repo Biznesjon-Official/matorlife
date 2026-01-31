@@ -207,3 +207,24 @@ export const useDeleteTask = () => {
     },
   });
 };
+
+// Completed tasks count hook for notification badge
+export const useCompletedTasksCount = () => {
+  return useQuery({
+    queryKey: ['completed-tasks-count'],
+    queryFn: async (): Promise<number> => {
+      try {
+        const response = await api.get('/tasks?status=completed');
+        return response.data.tasks?.length || 0;
+      } catch (error) {
+        console.error('Error fetching completed tasks count:', error);
+        return 0;
+      }
+    },
+    staleTime: 10000, // 10 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 2,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+};

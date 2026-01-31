@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  X, TrendingDown, AlertCircle, Grid3X3,
+  X, TrendingDown, Grid3X3,
   ShoppingCart, Home, Zap, Users, Truck, Megaphone,
   Monitor, FileText, DollarSign, CreditCard, Wallet,
   Building, Car, Fuel, Wrench, Package, Phone,
@@ -13,7 +13,7 @@ import { useCreateTransaction } from '@/hooks/useTransactions';
 import { useExpenseCategories } from '@/hooks/useExpenseCategories';
 import { Transaction } from '@/types';
 import SalaryExpenseModal from './SalaryExpenseModal';
-import CreateSparePartModal from './CreateSparePartModal';
+import SparePartExpenseModal from './SparePartExpenseModal';
 
 interface ExpenseModalProps {
   isOpen: boolean;
@@ -206,31 +206,21 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
       
       <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-0 my-4 sm:my-0">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-pink-600 px-4 sm:px-6 py-4 sm:py-5">
-          <button onClick={handleClose} className="absolute top-3 sm:top-4 right-3 sm:right-4 text-white/80 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors">
-            <X className="h-4 w-4 sm:h-5 sm:w-5" />
+        <div className="bg-gradient-to-r from-red-600 to-pink-600 px-4 py-3">
+          <button onClick={handleClose} className="absolute top-2 right-2 text-white/80 hover:text-white rounded-lg p-1 transition-colors">
+            <X className="h-4 w-4" />
           </button>
           
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-              <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-white">
-                {step === 'categories' ? t('Xarajat turi', language) : t('Chiqim qo\'shish', language)}
-              </h2>
-              <p className="text-red-100 text-xs sm:text-sm">
-                {step === 'categories' 
-                  ? t("Xarajat turini tanlang", language)
-                  : t("Chiqim ma'lumotlarini kiriting", language)
-                }
-              </p>
-            </div>
+          <div className="flex items-center gap-2">
+            <TrendingDown className="h-5 w-5 text-white" />
+            <h2 className="text-base font-bold text-white">
+              {step === 'categories' ? t('Xarajat turi', language) : t('Chiqim qo\'shish', language)}
+            </h2>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)] overflow-y-auto">
+        <div className="p-4 max-h-[calc(95vh-80px)] overflow-y-auto">
           {step === 'categories' ? (
             // Step 1: Kategoriyalar ro'yxati
             <div className="space-y-4">
@@ -250,18 +240,16 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {categories.map((category: any, index: number) => (
+                <div className="space-y-2">
+                  {categories.map((category: any) => (
                     <button
                       key={category._id}
                       onClick={() => handleCategorySelect(category)}
-                      className={`w-full p-4 bg-gray-100 hover:bg-gray-200 rounded-2xl transition-all text-left ${
-                        index === categories.length - 1 ? 'border-2 border-red-300' : ''
-                      }`}
+                      className="w-full p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all text-left border border-gray-200"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3">
                         <div 
-                          className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-sm"
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
                           style={{ backgroundColor: category.color === 'blue' ? '#3b82f6' : 
                                                    category.color === 'green' ? '#10b981' :
                                                    category.color === 'yellow' ? '#f59e0b' :
@@ -271,13 +259,13 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                                                    category.color === 'pink' ? '#ec4899' :
                                                    category.color === 'gray' ? '#6b7280' : '#ef4444' }}
                         >
-                          {getIconComponent(category.icon)}
+                          {getIconComponent(category.icon, 'sm')}
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-gray-900 mb-1">
+                          <h3 className="text-sm font-bold text-gray-900">
                             {category.nameUz}
                           </h3>
-                          <p className="text-base text-gray-500">
+                          <p className="text-xs text-gray-500">
                             {category.description}
                           </p>
                         </div>
@@ -289,13 +277,13 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
             </div>
           ) : (
             // Step 2: Chiqim formasi
-            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {/* Tanlangan kategoriya */}
-              <div className="p-4 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl">
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
                       style={{ backgroundColor: selectedCategory?.color === 'blue' ? '#3b82f6' : 
                                                selectedCategory?.color === 'green' ? '#10b981' :
                                                selectedCategory?.color === 'yellow' ? '#f59e0b' :
@@ -307,17 +295,14 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                     >
                       {selectedCategory && getIconComponent(selectedCategory.icon, 'sm')}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {selectedCategory?.nameUz}
-                      </h3>
-                      <p className="text-sm text-gray-600">{selectedCategory?.description}</p>
-                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {selectedCategory?.nameUz}
+                    </h3>
                   </div>
                   <button
                     type="button"
                     onClick={() => setStep('categories')}
-                    className="text-red-600 hover:text-red-700 font-medium text-sm"
+                    className="text-red-600 hover:text-red-700 font-medium text-xs"
                   >
                     {t('O\'zgartirish', language)}
                   </button>
@@ -326,8 +311,8 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
 
               {/* Summa */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("Summa", language)} ({t("so'm", language)}) *
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  {t("Summa", language)} *
                 </label>
                 <input
                   type="text"
@@ -336,24 +321,21 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                   value={formData.amountDisplay}
                   onChange={handleChange}
                   autoComplete="off"
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-lg focus:outline-none transition-all text-sm sm:text-base ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none transition-all text-sm ${
                     errors.amount 
                       ? 'border-red-300 focus:border-red-500' 
-                      : 'border-gray-200 focus:border-red-500'
+                      : 'border-gray-300 focus:border-red-500'
                   }`}
                   placeholder="1,000,000"
                 />
                 {errors.amount && (
-                  <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center gap-2">
-                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    {errors.amount}
-                  </p>
+                  <p className="mt-1 text-xs text-red-600">{errors.amount}</p>
                 )}
               </div>
 
               {/* Izoh */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   {t('Izoh', language)} *
                 </label>
                 <textarea
@@ -361,25 +343,22 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                   required
                   value={formData.description}
                   onChange={handleChange}
-                  rows={3}
-                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 rounded-lg focus:outline-none transition-all text-sm sm:text-base resize-none ${
+                  rows={2}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none transition-all text-sm resize-none ${
                     errors.description 
                       ? 'border-red-300 focus:border-red-500' 
-                      : 'border-gray-200 focus:border-red-500'
+                      : 'border-gray-300 focus:border-red-500'
                   }`}
-                  placeholder={t('Chiqim haqida batafsil ma\'lumot...', language)}
+                  placeholder={t('Chiqim haqida...', language)}
                 />
                 {errors.description && (
-                  <p className="mt-2 text-xs sm:text-sm text-red-600 flex items-center gap-2">
-                    <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    {errors.description}
-                  </p>
+                  <p className="mt-1 text-xs text-red-600">{errors.description}</p>
                 )}
               </div>
 
               {/* To'lov usuli */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   {t("To'lov usuli", language)} *
                 </label>
                 <select
@@ -387,7 +366,7 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
                   required
                   value={formData.paymentMethod}
                   onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-500 transition-all text-sm sm:text-base"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500 transition-all text-sm"
                 >
                   <option value="cash">{t('Naqd', language)}</option>
                   <option value="card">{t('Karta', language)}</option>
@@ -396,30 +375,20 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-gray-200">
+              <div className="flex gap-2 pt-3">
                 <button
                   type="button"
                   onClick={() => setStep('categories')}
-                  className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors order-2 sm:order-1"
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   {t('Orqaga', language)}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full sm:flex-1 px-4 py-2.5 sm:py-3 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 disabled:opacity-50 transition-all shadow-md hover:shadow-lg order-1 sm:order-2"
+                  className="flex-1 px-3 py-2 text-xs font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-all"
                 >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      {t('Saqlanmoqda...', language)}
-                    </span>
-                  ) : (
-                    t("Chiqim qo'shish", language)
-                  )}
+                  {loading ? t('Saqlanmoqda...', language) : t("Chiqim qo'shish", language)}
                 </button>
               </div>
             </form>
@@ -443,18 +412,22 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
 
       {/* Spare Part Modal */}
       {isSparePartModalOpen && (
-        <CreateSparePartModal
+        <SparePartExpenseModal
           isOpen={isSparePartModalOpen}
+          createExpense={true}
           onClose={() => {
             setIsSparePartModalOpen(false);
             setSelectedCategory(null);
             setStep('categories');
           }}
-          onSuccess={() => {
+          onSuccess={(_data) => {
+            // Chiqim yaratildi, modal yopiladi
             setIsSparePartModalOpen(false);
             setSelectedCategory(null);
             setStep('categories');
             handleClose();
+            // Sahifani yangilash
+            window.location.reload();
           }}
         />
       )}

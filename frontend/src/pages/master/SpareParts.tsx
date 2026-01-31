@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, AlertTriangle, Edit, Trash2, TrendingUp, Eye, DollarSign, Box } from 'lucide-react';
 import { t } from '@/lib/transliteration';
-import CreateSparePartModal from '../../components/CreateSparePartModal';
+import SparePartExpenseModal from '../../components/SparePartExpenseModal';
 import EditSparePartModal from '../../components/EditSparePartModal';
 import ViewSparePartModal from '../../components/ViewSparePartModal';
 import DeleteSparePartModal from '../../components/DeleteSparePartModal';
@@ -457,11 +457,13 @@ const SpareParts: React.FC = () => {
           )}
       </div>
 
-      <CreateSparePartModal
+      <SparePartExpenseModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        createExpense={false}
         onSuccess={() => {
-          fetchSpareParts();
+          setIsCreateModalOpen(false);
+          window.location.reload();
         }}
       />
 

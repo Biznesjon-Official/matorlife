@@ -159,8 +159,8 @@ const ApprenticeAchievements: React.FC = () => {
       <div className="grid grid-cols-2 gap-2 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card p-3 sm:p-6">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-green-100 mb-2 sm:mb-0">
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-100 mb-2 sm:mb-0">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
             </div>
             <div className="sm:ml-4">
               <p className="text-xs sm:text-sm font-medium text-gray-600">{t('Tasdiqlangan', language)}</p>
@@ -193,40 +193,40 @@ const ApprenticeAchievements: React.FC = () => {
           </div>
         </div>
 
-        <div className="card p-3 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 col-span-2 sm:col-span-2 lg:col-span-1">
+        <div className="card p-3 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 col-span-2 sm:col-span-2 lg:col-span-1">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-green-500 mb-2 sm:mb-0">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-500 mb-2 sm:mb-0">
               <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-green-700">{t('Joriy oylik', language)}</p>
-              <p className="text-xl sm:text-2xl font-bold text-green-900">
+              <p className="text-xs sm:text-sm font-medium text-blue-700">{t('Joriy oylik', language)}</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-900">
                 {new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}
               </p>
-              <p className="text-xs text-green-600">{t('so\'m', language)}</p>
+              <p className="text-xs text-blue-600">{t('so\'m', language)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Jami daromad kartasi - yangi */}
-      <div className="card p-4 sm:p-6 bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-xl">
+      <div className="card p-4 sm:p-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
               <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <div>
-              <p className="text-sm sm:text-base text-emerald-100 mb-1">{t('Jami daromad', language)}</p>
+              <p className="text-sm sm:text-base text-blue-100 mb-1">{t('Jami daromad', language)}</p>
               <p className="text-3xl sm:text-4xl font-bold">
                 {new Intl.NumberFormat('uz-UZ').format(user?.totalEarnings || 0)}
               </p>
-              <p className="text-xs sm:text-sm text-emerald-100 mt-1">{t('so\'m (barcha vaqt)', language)}</p>
+              <p className="text-xs sm:text-sm text-blue-100 mt-1">{t('so\'m (barcha vaqt)', language)}</p>
             </div>
           </div>
           <div className="text-right hidden sm:block">
             <div className="text-2xl font-bold">{approvedTasks.length}</div>
-            <div className="text-sm text-emerald-100">{t('ta vazifa', language)}</div>
+            <div className="text-sm text-blue-100">{t('ta vazifa', language)}</div>
           </div>
         </div>
       </div>
@@ -235,7 +235,7 @@ const ApprenticeAchievements: React.FC = () => {
       <div className="card p-3 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Award className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+            <Award className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
             {t('Daromad tarixi', language)}
           </h3>
           
@@ -243,7 +243,7 @@ const ApprenticeAchievements: React.FC = () => {
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value as any)}
-            className="px-3 sm:px-4 py-2 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm w-full sm:w-auto"
+            className="px-3 sm:px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm w-full sm:w-auto"
           >
             <option value="yesterday">{t('Kecha', language)}</option>
             <option value="today">{t('Bugun', language)}</option>
@@ -256,19 +256,19 @@ const ApprenticeAchievements: React.FC = () => {
 
         {/* Mobile-Optimized Earnings Summary */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-4 sm:mb-6">
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
-            <p className="text-xs sm:text-sm text-green-700 mb-1">{t('Tanlangan davr', language)}</p>
-            <p className="text-2xl sm:text-3xl font-bold text-green-900">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+            <p className="text-xs sm:text-sm text-blue-700 mb-1">{t('Tanlangan davr', language)}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-900">
               {new Intl.NumberFormat('uz-UZ').format(filteredEarnings)}
             </p>
-            <p className="text-xs text-green-600 mt-1">{t('so\'m', language)}</p>
+            <p className="text-xs text-blue-600 mt-1">{t('so\'m', language)}</p>
           </div>
-          <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-            <p className="text-xs sm:text-sm text-blue-700 mb-1">{t('Vazifalar soni', language)}</p>
-            <p className="text-2xl sm:text-3xl font-bold text-blue-900">
+          <div className="p-3 sm:p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200">
+            <p className="text-xs sm:text-sm text-indigo-700 mb-1">{t('Vazifalar soni', language)}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-indigo-900">
               {filteredTasks.length}
             </p>
-            <p className="text-xs text-blue-600 mt-1">{t('ta vazifa', language)}</p>
+            <p className="text-xs text-indigo-600 mt-1">{t('ta vazifa', language)}</p>
           </div>
           <div className="p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
             <p className="text-xs sm:text-sm text-purple-700 mb-1">{t('O\'rtacha to\'lov', language)}</p>
@@ -328,9 +328,9 @@ const ApprenticeAchievements: React.FC = () => {
                 if (taskEarning === 0) return null;
                 
                 return (
-                  <div key={task._id} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200 hover:shadow-md transition-shadow gap-3">
+                  <div key={task._id} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow gap-3">
                     <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                      <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-green-500 text-white font-bold text-sm sm:text-lg flex-shrink-0">
+                      <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-500 text-white font-bold text-sm sm:text-lg flex-shrink-0">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -355,10 +355,10 @@ const ApprenticeAchievements: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg sm:text-2xl font-bold text-green-600">
+                      <p className="text-lg sm:text-2xl font-bold text-blue-600">
                         +{new Intl.NumberFormat('uz-UZ').format(taskEarning)}
                       </p>
-                      <p className="text-xs text-green-700">so'm</p>
+                      <p className="text-xs text-blue-700">so'm</p>
                       {taskPercentage && (
                         <p className="text-xs text-gray-600">({taskPercentage}%)</p>
                       )}
@@ -405,7 +405,7 @@ const ApprenticeAchievements: React.FC = () => {
                 <span className="text-xs sm:text-sm text-gray-600 w-16 sm:w-24 flex-shrink-0">{day.day}</span>
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
                   <div 
-                    className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
                     style={{ width: `${day.percentage}%` }}
                   ></div>
                 </div>

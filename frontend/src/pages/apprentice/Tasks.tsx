@@ -178,8 +178,8 @@ const ApprenticeTasks: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-8">
-      {/* Responsive Header with Green Theme */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 p-4 sm:p-6 md:p-8 text-white shadow-2xl">
+      {/* Responsive Header with Blue Theme */}
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-4 sm:p-6 md:p-8 text-white shadow-2xl">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative z-10">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-3">
@@ -188,7 +188,7 @@ const ApprenticeTasks: React.FC = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold truncate">{t('Mening vazifalarim', language)}</h1>
-              <p className="text-green-100 mt-1 text-xs sm:text-sm md:text-base">
+              <p className="text-blue-100 mt-1 text-xs sm:text-sm md:text-base">
                 {t('Sizga berilgan', language)} {myTasks.length} {t('ta vazifani boshqaring', language)}
               </p>
             </div>
@@ -269,7 +269,7 @@ const ApprenticeTasks: React.FC = () => {
               onClick={() => setActiveTab('active')}
               className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'active'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -279,7 +279,7 @@ const ApprenticeTasks: React.FC = () => {
               onClick={() => setActiveTab('all')}
               className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'all'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -289,7 +289,7 @@ const ApprenticeTasks: React.FC = () => {
               onClick={() => setActiveTab('completed')}
               className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'completed'
-                  ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -307,7 +307,7 @@ const ApprenticeTasks: React.FC = () => {
                 placeholder={t('Qidirish...', language)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-48 md:w-64 text-sm"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-48 md:w-64 text-sm"
               />
             </div>
 
@@ -317,7 +317,7 @@ const ApprenticeTasks: React.FC = () => {
               <select
                 value={filterPriority}
                 onChange={(e) => setFilterPriority(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent appearance-none bg-white w-full sm:w-40 md:w-48 text-sm"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white w-full sm:w-40 md:w-48 text-sm"
               >
                 <option value="all">{t('Barcha muhimlik', language)}</option>
                 <option value="urgent">{t('Shoshilinch', language)}</option>
@@ -352,11 +352,11 @@ const ApprenticeTasks: React.FC = () => {
               <div 
                 key={task._id}
                 className={`group card p-4 sm:p-6 hover:shadow-xl transition-all duration-300 border-l-4 ${
-                  task.status === 'approved' ? 'border-l-green-500 bg-gradient-to-r from-green-50/50 to-transparent' :
-                  task.status === 'completed' ? 'border-l-orange-500 bg-gradient-to-r from-orange-50/50 to-transparent' :
+                  task.status === 'approved' ? 'border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent' :
+                  task.status === 'completed' ? 'border-l-indigo-500 bg-gradient-to-r from-indigo-50/50 to-transparent' :
                   task.status === 'rejected' ? 'border-l-red-500 bg-gradient-to-r from-red-50/50 to-transparent' :
                   task.status === 'in-progress' ? 'border-l-yellow-500 bg-gradient-to-r from-yellow-50/50 to-transparent' :
-                  'border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-transparent'
+                  'border-l-cyan-500 bg-gradient-to-r from-cyan-50/50 to-transparent'
                 }`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
@@ -366,7 +366,7 @@ const ApprenticeTasks: React.FC = () => {
                     {/* Title and Status */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-lg sm:text-xl font-semibold text-gray-900 group-hover:text-green-600 transition-colors mb-2 truncate">
+                        <h4 className="text-lg sm:text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-2 truncate">
                           {task.title}
                         </h4>
                         <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-2">{task.description}</p>
@@ -442,11 +442,11 @@ const ApprenticeTasks: React.FC = () => {
                           
                           if (myAssignment && myAssignment.earning > 0) {
                             return (
-                              <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
+                              <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-blue-100 text-blue-700">
                                 💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(myAssignment.earning)}</span>
                                 <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
                                 {myAssignment.percentage && (
-                                  <span className="ml-1 text-green-600">({myAssignment.percentage}%)</span>
+                                  <span className="ml-1 text-blue-600">({myAssignment.percentage}%)</span>
                                 )}
                               </span>
                             );
@@ -456,11 +456,11 @@ const ApprenticeTasks: React.FC = () => {
                         // Eski tizim: apprenticeEarning
                         if (task.apprenticeEarning && task.apprenticeEarning > 0) {
                           return (
-                            <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-green-100 text-green-700">
+                            <span className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-bold rounded-lg bg-blue-100 text-blue-700">
                               💰 <span className="ml-1">{new Intl.NumberFormat('uz-UZ').format(task.apprenticeEarning)}</span>
                               <span className="hidden sm:inline ml-1">{t('so\'m', language)}</span>
                               {task.apprenticePercentage && (
-                                <span className="ml-1 text-green-600">({task.apprenticePercentage}%)</span>
+                                <span className="ml-1 text-blue-600">({task.apprenticePercentage}%)</span>
                               )}
                             </span>
                           );
@@ -479,7 +479,7 @@ const ApprenticeTasks: React.FC = () => {
                     {/* Car Info */}
                     {task.car && (
                       <div className="flex items-center space-x-3 p-3 sm:p-4 bg-white/80 rounded-xl border border-gray-200">
-                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg">
+                        <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-lg">
                           {task.car.make?.charAt(0) || '?'}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -509,7 +509,7 @@ const ApprenticeTasks: React.FC = () => {
                     )}
                     {isCompleted && task.completedAt && (
                       <div className="flex items-center text-sm text-gray-500">
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                        <CheckCircle className="h-4 w-4 mr-2 text-blue-600" />
                         Bajarildi: {new Date(task.completedAt).toLocaleDateString('uz-UZ', { 
                           year: 'numeric', 
                           month: 'long', 
@@ -527,7 +527,7 @@ const ApprenticeTasks: React.FC = () => {
                       <button 
                         onClick={() => handleStartTask(task._id)}
                         disabled={processingTaskId === task._id}
-                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
+                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
                       >
                         {processingTaskId === task._id ? (
                           <>
@@ -546,7 +546,7 @@ const ApprenticeTasks: React.FC = () => {
                       <button 
                         onClick={() => handleCompleteTask(task._id)}
                         disabled={processingTaskId === task._id}
-                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
+                        className="flex-1 lg:flex-none btn bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap text-sm px-3 py-2 sm:px-4 sm:py-2"
                       >
                         {processingTaskId === task._id ? (
                           <>
