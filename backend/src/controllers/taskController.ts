@@ -255,7 +255,19 @@ export const getTaskById = async (req: AuthRequest, res: Response) => {
 
 export const updateTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, assignedTo, car, service, priority, dueDate, estimatedHours, payment } = req.body;
+    const { 
+      title, 
+      description, 
+      assignedTo, 
+      assignments, // Ko'p shogirdlar
+      car, 
+      service, 
+      priority, 
+      dueDate, 
+      estimatedHours, 
+      payment 
+    } = req.body;
+    
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -274,10 +286,9 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Update task fields
+    // Update basic fields
     if (title) task.title = title;
     if (description) task.description = description;
-    if (assignedTo) task.assignedTo = assignedTo;
     if (car) task.car = car;
     if (service) task.service = service;
     if (priority) task.priority = priority;
@@ -285,14 +296,116 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     if (estimatedHours) task.estimatedHours = estimatedHours;
     if (payment !== undefined) task.payment = payment;
 
+    const User = require('../models/User').default;
+
+    // Yangi tizim: Ko'p shogirdlar
+    if (assignments && Array.isArray(assignments) && assignments.length > 0) {
+      const totalPayment = payment !== undefined ? payment : task.payment;
+      const apprenticeCount = assignments.length;
+      const allocatedAmount = totalPayment / apprenticeCount;
+
+      // Har bir shogird uchun hisoblash
+      const assignmentsWithPercentage = await Promise.all(
+        assignments.map(async (assignment: any) => {
+          // Agar apprenticeId berilgan bo'lsa, User modelidan foizni olish
+          const apprentice = await User.findById(assignment.apprenticeId);
+          const percentage = assignment.percentage || apprentice?.percentage || 50;
+          
+          const earning = (allocatedAmount * percentage) / 100;
+          const masterShare = allocatedAmount - earning;
+
+          console.log(`💰 UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+
+          return {
+            apprentice: assignment.apprenticeId,
+            percentage,
+            allocatedAmount,
+            earning,
+            masterShare
+          };
+        })
+      );
+
+      task.assignments = assignmentsWithPercentage;
+      task.assignedTo = assignments[0].apprenticeId; // Backward compatibility
+      
+      console.log('✅ Assignments yangilandi:', assignmentsWithPercentage);
+    } 
+    // Eski tizim: Bitta shogird
+    else if (assignedTo) {
+      const apprentice = await User.findById(assignedTo);
+      const percentage = apprentice?.percentage || 50;
+      const totalPayment = payment !== undefined ? payment : task.payment;
+      
+      const apprenticeEarning = (totalPayment * percentage) / 100;
+      const masterEarning = totalPayment - apprenticeEarning;
+
+      console.log(`💰 UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${apprenticeEarning} so'm (jami: ${totalPayment})`);
+
+      task.assignedTo = assignedTo;
+      task.apprenticePercentage = percentage;
+      task.apprenticeEarning = apprenticeEarning;
+      task.masterEarning = masterEarning;
+      
+      console.log('✅ Bitta shogird yangilandi');
+    }
+    // Agar faqat payment o'zgargan bo'lsa va assignments mavjud bo'lsa
+    else if (payment !== undefined && task.assignments && task.assignments.length > 0) {
+      const apprenticeCount = task.assignments.length;
+      const allocatedAmount = payment / apprenticeCount;
+
+      // Mavjud assignments'ni yangilash
+      const updatedAssignments = await Promise.all(
+        task.assignments.map(async (assignment: any) => {
+          const apprentice = await User.findById(assignment.apprentice);
+          const percentage = assignment.percentage || apprentice?.percentage || 50;
+          
+          const earning = (allocatedAmount * percentage) / 100;
+          const masterShare = allocatedAmount - earning;
+
+          console.log(`💰 PAYMENT UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+
+          return {
+            apprentice: assignment.apprentice,
+            percentage,
+            allocatedAmount,
+            earning,
+            masterShare
+          };
+        })
+      );
+
+      task.assignments = updatedAssignments;
+      console.log('✅ Payment o\'zgarganda assignments yangilandi');
+    }
+    // Agar faqat payment o'zgargan bo'lsa va bitta shogird bo'lsa
+    else if (payment !== undefined && task.assignedTo) {
+      const apprentice = await User.findById(task.assignedTo);
+      const percentage = task.apprenticePercentage || apprentice?.percentage || 50;
+      
+      const apprenticeEarning = (payment * percentage) / 100;
+      const masterEarning = payment - apprenticeEarning;
+
+      console.log(`💰 PAYMENT UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${apprenticeEarning} so'm (jami: ${payment})`);
+
+      task.apprenticePercentage = percentage;
+      task.apprenticeEarning = apprenticeEarning;
+      task.masterEarning = masterEarning;
+      
+      console.log('✅ Payment o\'zgarganda bitta shogird yangilandi');
+    }
+
     await task.save();
-    await task.populate(['assignedTo', 'assignedBy', 'car', 'service']);
+    await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
+
+    console.log('✅ Task muvaffaqiyatli yangilandi');
 
     res.json({
       message: 'Task updated successfully',
       task
     });
   } catch (error: any) {
+    console.error('❌ Task yangilashda xatolik:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

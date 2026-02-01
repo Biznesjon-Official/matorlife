@@ -118,17 +118,19 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
           ...task,
           assignments: task.assignments.map(assignment => {
             if (assignment.id === assignmentId) {
-              // Agar shogird tanlansa, uning foizini avtomatik o'rnatish
+              // Faqat shogird tanlaganda ishlaydi, foiz o'zgartirilmaydi
               if (field === 'apprenticeId' && value) {
                 const selectedApprentice = apprenticesData?.users?.find((a: any) => a._id === value);
                 const apprenticePercentage = selectedApprentice?.percentage || 50;
+                console.log(`✅ Shogird tanlandi: ${selectedApprentice?.name}, Foiz: ${apprenticePercentage}%`);
                 return { 
                   ...assignment, 
                   apprenticeId: value,
                   percentage: apprenticePercentage 
                 };
               }
-              return { ...assignment, [field]: value };
+              // Foiz o'zgartirishni rad etish
+              return assignment;
             }
             return assignment;
           })

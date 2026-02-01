@@ -4,7 +4,7 @@ import CreateApprenticeModal from '@/components/CreateApprenticeModal';
 import ViewApprenticeModal from '@/components/ViewApprenticeModal';
 import EditApprenticeModal from '@/components/EditApprenticeModal';
 import DeleteApprenticeModal from '@/components/DeleteApprenticeModal';
-import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail } from 'lucide-react';
+import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail, Wallet } from 'lucide-react';
 import { User } from '@/types';
 import { t } from '@/lib/transliteration';
 
@@ -316,18 +316,16 @@ const Apprentices: React.FC = () => {
                   </div>
 
                   {/* Earnings Display */}
-                  <div className="mb-4 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border-2 border-emerald-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
-                          <span className="text-white text-lg font-bold">💰</span>
-                        </div>
-                        <div>
-                          <p className="text-xs text-emerald-600 font-medium">{t("Jami daromad", language)}</p>
-                          <p className="text-base sm:text-lg font-bold text-emerald-900">
-                            {(apprentice.totalEarnings || 0).toLocaleString()} {t("so'm", language)}
-                          </p>
-                        </div>
+                  <div className="mb-4 p-2.5 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
+                        <Wallet className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-emerald-600 font-medium">{t("Jami daromad", language)}</p>
+                        <p className="text-sm sm:text-base font-bold text-emerald-900 truncate">
+                          {(apprentice.totalEarnings || 0).toLocaleString()} {t("so'm", language)}
+                        </p>
                       </div>
                     </div>
                   </div>

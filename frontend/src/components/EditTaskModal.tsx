@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, AlertTriangle, User, Car, FileText, Wrench } from 'lucide-react';
+import { X, Calendar, Clock, AlertTriangle, User, Car, FileText, Wrench, DollarSign, Plus, Trash2 } from 'lucide-react';
 import { useUpdateTask } from '@/hooks/useTasks';
 import { useCars } from '@/hooks/useCars';
 import { useApprentices } from '@/hooks/useUsers';
@@ -10,9 +10,10 @@ interface EditTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   task: Task | null;
+  onUpdate?: () => void;
 }
 
-const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) => {
+const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, onUpdate }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -128,16 +129,23 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
   const handleApprenticeChange = (index: number, field: 'apprenticeId' | 'percentage', value: string | number) => {
     setAssignments(prev => {
       const updated = [...prev];
-      if (field === 'percentage') {
-        updated[index].percentage = Number(value);
-        // Foiz o'zgarganda pulni qayta hisoblash
+      if (field === 'apprenticeId') {
+        // Shogird tanlaganda uning foizini User modelidan olish
+        const selectedApprentice = (apprenticesData as any)?.users?.find((u: any) => u._id === value);
+        const apprenticePercentage = selectedApprentice?.percentage || 50;
+        
+        updated[index].apprenticeId = value as string;
+        updated[index].percentage = apprenticePercentage;
+        
+        // Pulni qayta hisoblash
         const totalPayment = formData.payment;
         const apprenticeCount = assignments.length;
         const allocatedAmount = totalPayment / apprenticeCount;
-        updated[index].earning = (allocatedAmount * Number(value)) / 100;
-      } else {
-        updated[index].apprenticeId = value as string;
+        updated[index].earning = (allocatedAmount * apprenticePercentage) / 100;
+        
+        console.log(`✅ Shogird tanlandi: ${selectedApprentice?.name}, Foiz: ${apprenticePercentage}%`);
       }
+      // Foizni o'zgartirish imkoniyatini olib tashladik
       return updated;
     });
   };
@@ -180,6 +188,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
         id: task!._id,
         data: submitData
       });
+      if (onUpdate) {
+        onUpdate();
+      }
       onClose();
     } catch (error: any) {
       alert('Vazifani yangilashda xatolik yuz berdi');
@@ -198,52 +209,56 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="flex min-h-screen items-center justify-center p-3 sm:p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
         
-        <div className="relative bg-white rounded-lg sm:rounded-xl shadow-2xl max-w-lg w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-white rounded-xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[90vh] overflow-hidden animate-fade-in">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-3 sm:p-4 rounded-t-lg sm:rounded-t-xl sticky top-0 z-10">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 p-3 sm:p-3.5 sticky top-0 z-10 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="bg-white/20 p-1.5 rounded-lg">
+                <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
                   <FileText className="h-4 w-4 text-white" />
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-white">Vazifani tahrirlash</h3>
               </div>
-              <button onClick={onClose} className="text-white/80 hover:text-white p-1">
+              <button onClick={onClose} className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all">
                 <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <form onSubmit={handleSubmit} className="p-3 sm:p-4 space-y-2.5">
             {/* Shogirdlar - Ko'p shogirdli tizim */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border-2 border-blue-200">
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-xs sm:text-sm font-semibold text-blue-900">
-                  <User className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+            <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-50 p-3 rounded-xl border-2 border-blue-200 shadow-sm">
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="block text-xs sm:text-sm font-bold text-blue-900 flex items-center gap-1.5">
+                  <div className="bg-blue-600 p-1 rounded">
+                    <User className="h-3 w-3 text-white" />
+                  </div>
                   Shogirdlar *
                 </label>
                 <button
                   type="button"
                   onClick={handleAddApprentice}
-                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                  className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center gap-1 shadow-sm hover:shadow transition-all"
                 >
-                  + Qo'shish
+                  <Plus className="h-3 w-3" />
+                  Qo'shish
                 </button>
               </div>
 
               {assignments.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {assignments.map((assignment, index) => (
-                    <div key={index} className="bg-white p-2 rounded-lg border border-blue-200">
-                      <div className="grid grid-cols-12 gap-2 items-center">
+                    <div key={index} className="bg-white p-1.5 rounded border border-blue-200">
+                      <div className="grid grid-cols-12 gap-1.5 items-center">
                         <div className="col-span-6">
                           <select
                             value={assignment.apprenticeId}
                             onChange={(e) => handleApprenticeChange(index, 'apprenticeId', e.target.value)}
-                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-1.5 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
                             required
                           >
                             <option value="">Tanlang</option>
@@ -255,41 +270,37 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                           </select>
                         </div>
                         <div className="col-span-3">
-                          <input
-                            type="number"
-                            value={assignment.percentage}
-                            onChange={(e) => handleApprenticeChange(index, 'percentage', e.target.value)}
-                            min="0"
-                            max="100"
-                            className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                            placeholder="%"
-                          />
+                          <div className="w-full px-1.5 py-1 text-xs border border-gray-200 rounded bg-gray-50 text-gray-700 font-semibold text-center">
+                            {assignment.percentage}%
+                          </div>
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-3">
                           <button
                             type="button"
                             onClick={() => handleRemoveApprentice(index)}
-                            className="w-full px-2 py-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-bold"
+                            className="w-full p-1 bg-red-100 text-red-600 rounded hover:bg-red-200 flex items-center justify-center"
                           >
-                            ✕
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
                       </div>
                       {assignment.earning > 0 && (
-                        <p className="text-xs text-green-600 font-semibold mt-1 text-center">
-                          💰 {assignment.earning.toLocaleString()} so'm
-                        </p>
+                        <div className="flex items-center justify-center gap-1 text-xs text-green-600 font-semibold mt-1">
+                          <DollarSign className="h-3 w-3" />
+                          {assignment.earning.toLocaleString()} so'm
+                        </div>
                       )}
                     </div>
                   ))}
                   
                   {/* Umumiy pul */}
                   {formData.payment > 0 && (
-                    <div className="bg-green-100 p-2 rounded-lg border-2 border-green-300">
+                    <div className="bg-green-100 p-1.5 rounded border border-green-300">
                       <p className="text-xs font-semibold text-green-800">Jami shogirdlar ulushi:</p>
-                      <p className="text-base font-bold text-green-900">
-                        💰 {assignments.reduce((sum, a) => sum + a.earning, 0).toLocaleString()} so'm
-                      </p>
+                      <div className="flex items-center gap-1 text-sm font-bold text-green-900">
+                        <DollarSign className="h-3.5 w-3.5" />
+                        {assignments.reduce((sum, a) => sum + a.earning, 0).toLocaleString()} so'm
+                      </div>
                     </div>
                   )}
                 </div>
@@ -299,7 +310,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                     name="assignedTo"
                     value={formData.assignedTo}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                    className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 bg-white"
                     required
                   >
                     <option value="">Bitta shogird tanlang</option>
@@ -309,8 +320,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-blue-700 mt-2">
-                    💡 Ko'p shogird qo'shish uchun "+ Qo'shish" tugmasini bosing
+                  <p className="text-xs text-blue-700 mt-1.5 flex items-center gap-1">
+                    <Plus className="h-3 w-3" />
+                    Ko'p shogird qo'shish uchun "Qo'shish" tugmasini bosing
                   </p>
                 </div>
               )}
@@ -318,7 +330,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
 
             {/* Title */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                 Vazifa nomi *
               </label>
               <input
@@ -327,14 +339,14 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="Masalan: Moy almashtirish"
-                className="w-full px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 required
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                 Tavsif *
               </label>
               <textarea
@@ -343,53 +355,51 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                 onChange={handleChange}
                 rows={2}
                 placeholder="Qisqacha tavsif..."
-                className="w-full px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all"
                 required
               />
             </div>
 
             {/* Apprentice and Car */}
-            <div className="grid grid-cols-1 sm:grid-cols-1 gap-2 sm:gap-3">
-              <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <Car className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
-                  Mashina *
-                </label>
-                <select
-                  name="car"
-                  value={formData.car}
-                  onChange={handleChange}
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  required
-                >
-                  <option value="">Tanlang</option>
-                  {(carsData as any)?.cars
-                    ?.filter((car: any) => 
-                      !car.isDeleted && 
-                      car.status !== 'completed' && 
-                      car.status !== 'delivered'
-                    )
-                    ?.map((car: any) => (
-                    <option key={car._id} value={car._id}>
-                      {car.make} {car.carModel}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                <Car className="h-3 w-3" />
+                Mashina *
+              </label>
+              <select
+                name="car"
+                value={formData.car}
+                onChange={handleChange}
+                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
+                required
+              >
+                <option value="">Tanlang</option>
+                {(carsData as any)?.cars
+                  ?.filter((car: any) => 
+                    !car.isDeleted && 
+                    car.status !== 'completed' && 
+                    car.status !== 'delivered'
+                  )
+                  ?.map((car: any) => (
+                  <option key={car._id} value={car._id}>
+                    {car.make} {car.carModel}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Work Selection - faqat mashina tanlanganda ko'rinadi */}
             {formData.car && (
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <Wrench className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                  <Wrench className="h-3 w-3" />
                   Ish nomi
                 </label>
                 <select
                   name="service"
                   value={formData.service}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent bg-white"
                   disabled={loadingServices}
                 >
                   <option value="">
@@ -410,17 +420,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
             )}
 
             {/* Priority, Due Date, Hours, Payment */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1">
+                  <AlertTriangle className="h-3.5 w-3.5 text-orange-600" />
                   Muhimlik
                 </label>
                 <select
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
                 >
                   <option value="low">Past</option>
                   <option value="medium">O'rta</option>
@@ -430,8 +440,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5 text-purple-600" />
                   Muddat *
                 </label>
                 <input
@@ -440,16 +450,16 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                   value={formData.dueDate}
                   onChange={handleChange}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   required
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 inline mr-1" />
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5 text-blue-600" />
                   Soat *
                 </label>
                 <input
@@ -459,14 +469,15 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                   onChange={handleChange}
                   min="0.5"
                   step="0.5"
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1 sm:mb-2">
-                  💰 To'lov (so'm)
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1">
+                  <DollarSign className="h-3.5 w-3.5 text-green-600" />
+                  To'lov
                 </label>
                 <input
                   type="number"
@@ -474,30 +485,31 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task }) 
                   value={formData.payment}
                   onChange={handleChange}
                   min="0"
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   placeholder="Avtomatik"
                 />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-3 sm:pt-4 border-t">
+            <div className="flex gap-2 pt-3 border-t border-gray-200 mt-3 sticky bottom-0 bg-white">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 sm:py-2.5 text-sm bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 order-2 sm:order-1"
+                className="flex-1 px-4 py-2.5 text-sm font-semibold bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all"
               >
                 Bekor qilish
               </button>
               <button
                 type="submit"
                 disabled={updateTaskMutation.isPending}
-                className="px-4 py-2 sm:py-2.5 text-sm bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
+                className="flex-1 px-4 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
               >
                 {updateTaskMutation.isPending ? 'Saqlanmoqda...' : 'Saqlash'}
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
     </div>

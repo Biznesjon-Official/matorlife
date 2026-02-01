@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 const MasterTasks: React.FC = () => {
-  const { data: tasks, isLoading } = useTasks();
+  const { data: tasks, isLoading, refetch } = useTasks();
   const deleteTaskMutation = useDeleteTask();
   const approveTaskMutation = useApproveTask();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -487,6 +487,7 @@ const MasterTasks: React.FC = () => {
           setSelectedTask(null);
         }}
         task={selectedTask}
+        onUpdate={() => refetch()}
       />
 
       {/* View Task Modal */}

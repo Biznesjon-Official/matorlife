@@ -41,8 +41,8 @@ const Cars: React.FC = () => {
   
   // Faqat to'lanmagan va qisman to'langan qarzlarni filtrlash
   const activeDebts = allDebts.filter((debt: any) => {
-    const remaining = debt.amount - (debt.paidAmount || 0);
-    return remaining > 0; // Faqat qarzi qolgan mashinalar
+    // Status ham tekshiriladi - faqat pending va partial qarzlar
+    return debt.status === 'pending' || debt.status === 'partial';
   });
   
   // Haqiqatan ham qarzi bor mashina ID larini ajratib olish
