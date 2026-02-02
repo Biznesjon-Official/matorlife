@@ -18,9 +18,28 @@ export const searchSpareParts = async (req: AuthRequest, res: Response) => {
       ]
     };
 
-    const spareParts = await SparePart.find(searchQuery)
+    const spareParts: any = await SparePart.find(searchQuery)
       .sort({ usageCount: -1, name: 1 })
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
+
+    // ✨ Shogirt uchun foyda ma'lumotlarini yashirish
+    const isApprentice = req.user?.role === 'apprentice';
+    
+    if (isApprentice) {
+      const filteredParts: any = spareParts.map((part: any) => ({
+        _id: part._id,
+        name: part.name,
+        price: part.sellingPrice || part.price,
+        sellingPrice: part.sellingPrice || part.price,
+        quantity: part.quantity,
+        supplier: part.supplier,
+        usageCount: part.usageCount,
+        isActive: part.isActive
+        // costPrice va profit yashiriladi
+      }));
+      return res.json({ spareParts: filteredParts });
+    }
 
     res.json({ spareParts });
   } catch (error: any) {
@@ -81,6 +100,27 @@ export const getSpareParts = async (req: AuthRequest, res: Response) => {
       SparePart.countDocuments(filter)
     ]);
 
+    // ✨ YANGI: Shogirt uchun foyda ma'lumotlarini yashirish
+    const isApprentice = req.user?.role === 'apprentice';
+    let filteredSpareParts: any = spareParts;
+    
+    if (isApprentice) {
+      // Shogirt uchun faqat sotish narxi va miqdorni ko'rsatish
+      filteredSpareParts = spareParts.map((part: any) => ({
+        _id: part._id,
+        name: part.name,
+        price: part.sellingPrice || part.price, // Faqat sotish narxi
+        sellingPrice: part.sellingPrice || part.price,
+        quantity: part.quantity,
+        supplier: part.supplier,
+        usageCount: part.usageCount,
+        isActive: part.isActive,
+        createdAt: part.createdAt,
+        updatedAt: part.updatedAt
+        // costPrice va profit yashiriladi
+      }));
+    }
+
     // Calculate statistics
     const stats = await SparePart.aggregate([
       { $match: { isActive: true } },
@@ -108,8 +148,14 @@ export const getSpareParts = async (req: AuthRequest, res: Response) => {
       lowStockCount: 0
     };
 
+    // ✨ Shogirt uchun foyda statistikasini yashirish
+    if (isApprentice) {
+      delete statistics.totalProfit;
+      delete statistics.totalValue;
+    }
+
     res.json({
-      spareParts,
+      spareParts: filteredSpareParts,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -137,10 +183,31 @@ export const getSpareParts = async (req: AuthRequest, res: Response) => {
 
 export const getSparePartById = async (req: AuthRequest, res: Response) => {
   try {
-    const sparePart = await SparePart.findById(req.params.id);
+    const sparePart: any = await SparePart.findById(req.params.id).lean();
     
     if (!sparePart) {
       return res.status(404).json({ message: 'Spare part not found' });
+    }
+
+    // ✨ Shogirt uchun foyda ma'lumotlarini yashirish
+    const isApprentice = req.user?.role === 'apprentice';
+    
+    if (isApprentice) {
+      // Shogirt uchun faqat sotish narxi
+      const filteredPart: any = {
+        _id: sparePart._id,
+        name: sparePart.name,
+        price: sparePart.sellingPrice || sparePart.price,
+        sellingPrice: sparePart.sellingPrice || sparePart.price,
+        quantity: sparePart.quantity,
+        supplier: sparePart.supplier,
+        usageCount: sparePart.usageCount,
+        isActive: sparePart.isActive,
+        createdAt: sparePart.createdAt,
+        updatedAt: sparePart.updatedAt
+        // costPrice va profit yashiriladi
+      };
+      return res.json({ sparePart: filteredPart });
     }
 
     res.json({ sparePart });

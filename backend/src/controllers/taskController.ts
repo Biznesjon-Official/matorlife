@@ -118,37 +118,71 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       payment: payment || 0
     };
 
-    // Yangi tizim: Ko'p shogirdlar
+    // Yangi tizim: Ko'p shogirdlar (TO'G'RI KASKAD TIZIMI)
     if (assignments && Array.isArray(assignments) && assignments.length > 0) {
       const totalPayment = payment || 0;
-      const apprenticeCount = assignments.length;
-      const allocatedAmount = totalPayment / apprenticeCount; // Har biriga teng bo'lish
+      
+      console.log(`\n🔄 TO'G'RI KASKAD TIZIMI - Umumiy to'lov: ${totalPayment} so'm`);
+      console.log(`👥 Shogirdlar soni: ${assignments.length}`);
 
-      // Har bir shogird uchun hisoblash
-      const assignmentsWithPercentage = await Promise.all(
-        assignments.map(async (assignment: any) => {
-          // Shogirtning foizini User modelidan olish
-          const apprentice = await User.findById(assignment.apprenticeId);
-          const percentage = apprentice?.percentage || 50; // Agar foiz yo'q bo'lsa, default 50%
-          
-          const earning = (allocatedAmount * percentage) / 100;
-          const masterShare = allocatedAmount - earning;
+      const assignmentsWithPercentage: any[] = [];
+      
+      // 1-shogird: Umumiy to'lovdan o'z foizini oladi
+      const firstApprentice = await User.findById(assignments[0].apprenticeId);
+      const firstPercentage = firstApprentice?.percentage || 50;
+      const firstEarning = (totalPayment * firstPercentage) / 100;
+      let firstApprenticeRemaining = firstEarning; // 1-shogirtda qolgan pul
+      
+      console.log(`\n👤 1-shogird: ${firstApprentice?.name}`);
+      console.log(`   📊 Foiz: ${firstPercentage}%`);
+      console.log(`   💵 Umumiy to'lovdan: ${totalPayment.toFixed(2)} so'm`);
+      console.log(`   💰 Oladi: ${firstEarning.toFixed(2)} so'm`);
+      
+      // Ustoz ulushi - faqat 1-shogirtdan
+      const masterShare = totalPayment - firstEarning;
+      console.log(`\n👨‍🏫 Ustoz ulushi (faqat 1-shogirtdan): ${masterShare.toFixed(2)} so'm`);
 
-          console.log(`💰 Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+      assignmentsWithPercentage.push({
+        apprentice: assignments[0].apprenticeId,
+        percentage: firstPercentage,
+        allocatedAmount: totalPayment,
+        earning: firstEarning, // Bu keyinchalik kamayadi
+        masterShare: masterShare
+      });
 
-          return {
-            apprentice: assignment.apprenticeId,
-            percentage,
-            allocatedAmount,
-            earning,
-            masterShare
-          };
-        })
-      );
+      // 2, 3, 4... shogirdlar: HAMMASI 1-shogirtning pulidan oladi
+      for (let i = 1; i < assignments.length; i++) {
+        const assignment = assignments[i];
+        const apprentice = await User.findById(assignment.apprenticeId);
+        const percentage = apprentice?.percentage || 50;
+        
+        // 1-shogirtning QOLGAN pulidan foiz olish
+        const earning = (firstApprenticeRemaining * percentage) / 100;
+        
+        console.log(`\n👤 ${i + 1}-shogird: ${apprentice?.name}`);
+        console.log(`   📊 Foiz: ${percentage}%`);
+        console.log(`   💵 1-shogirtda qolgan: ${firstApprenticeRemaining.toFixed(2)} so'm`);
+        console.log(`   💰 Oladi: ${earning.toFixed(2)} so'm`);
+        
+        // 1-shogirtning pulini kamaytirish
+        assignmentsWithPercentage[0].earning -= earning;
+        firstApprenticeRemaining -= earning;
+        
+        console.log(`   ↩️  1-shogirtda qoladi: ${firstApprenticeRemaining.toFixed(2)} so'm`);
+
+        assignmentsWithPercentage.push({
+          apprentice: assignment.apprenticeId,
+          percentage,
+          allocatedAmount: firstApprenticeRemaining + earning, // Olishdan oldingi 1-shogirt puli
+          earning: earning,
+          masterShare: 0 // Faqat 1-shogirtda masterShare bor
+        });
+      }
+
+      console.log(`\n✅ FINAL - 1-shogirtda qoldi: ${assignmentsWithPercentage[0].earning.toFixed(2)} so'm`);
+      console.log(`✅ TO'G'RI KASKAD HISOBLASH TUGADI\n`);
 
       taskData.assignments = assignmentsWithPercentage;
-
-      // Birinchi shogirdni assignedTo ga ham qo'yish (backward compatibility)
       taskData.assignedTo = assignments[0].apprenticeId;
     } 
     // Eski tizim: Bitta shogird
@@ -298,38 +332,58 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 
     const User = require('../models/User').default;
 
-    // Yangi tizim: Ko'p shogirdlar
+    // Yangi tizim: Ko'p shogirdlar (TO'G'RI KASKAD TIZIMI)
     if (assignments && Array.isArray(assignments) && assignments.length > 0) {
       const totalPayment = payment !== undefined ? payment : task.payment;
-      const apprenticeCount = assignments.length;
-      const allocatedAmount = totalPayment / apprenticeCount;
+      
+      console.log(`\n🔄 TO'G'RI KASKAD (UPDATE) - Umumiy to'lov: ${totalPayment} so'm`);
 
-      // Har bir shogird uchun hisoblash
-      const assignmentsWithPercentage = await Promise.all(
-        assignments.map(async (assignment: any) => {
-          // Agar apprenticeId berilgan bo'lsa, User modelidan foizni olish
-          const apprentice = await User.findById(assignment.apprenticeId);
-          const percentage = assignment.percentage || apprentice?.percentage || 50;
-          
-          const earning = (allocatedAmount * percentage) / 100;
-          const masterShare = allocatedAmount - earning;
+      const assignmentsWithPercentage: any[] = [];
+      
+      // 1-shogird
+      const firstApprentice = await User.findById(assignments[0].apprenticeId);
+      const firstPercentage = assignments[0].percentage || firstApprentice?.percentage || 50;
+      const firstEarning = (totalPayment * firstPercentage) / 100;
+      let firstApprenticeRemaining = firstEarning;
+      
+      const masterShare = totalPayment - firstEarning;
+      console.log(`👤 1-shogird: ${firstApprentice?.name} - ${firstPercentage}% = ${firstEarning.toFixed(2)} so'm`);
+      console.log(`👨‍🏫 Ustoz: ${masterShare.toFixed(2)} so'm`);
 
-          console.log(`💰 UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+      assignmentsWithPercentage.push({
+        apprentice: assignments[0].apprenticeId,
+        percentage: firstPercentage,
+        allocatedAmount: totalPayment,
+        earning: firstEarning,
+        masterShare: masterShare
+      });
 
-          return {
-            apprentice: assignment.apprenticeId,
-            percentage,
-            allocatedAmount,
-            earning,
-            masterShare
-          };
-        })
-      );
+      // Qolgan shogirdlar - 1-shogirtdan oladi
+      for (let i = 1; i < assignments.length; i++) {
+        const assignment = assignments[i];
+        const apprentice = await User.findById(assignment.apprenticeId);
+        const percentage = assignment.percentage || apprentice?.percentage || 50;
+        
+        const earning = (firstApprenticeRemaining * percentage) / 100;
+        
+        console.log(`👤 ${i + 1}-shogird: ${apprentice?.name} - ${percentage}% = ${earning.toFixed(2)} so'm (1-shogirtdan)`);
+        
+        assignmentsWithPercentage[0].earning -= earning;
+        firstApprenticeRemaining -= earning;
+
+        assignmentsWithPercentage.push({
+          apprentice: assignment.apprenticeId,
+          percentage,
+          allocatedAmount: firstApprenticeRemaining + earning,
+          earning: earning,
+          masterShare: 0
+        });
+      }
+
+      console.log(`✅ 1-shogirtda qoldi: ${assignmentsWithPercentage[0].earning.toFixed(2)} so'm\n`);
 
       task.assignments = assignmentsWithPercentage;
-      task.assignedTo = assignments[0].apprenticeId; // Backward compatibility
-      
-      console.log('✅ Assignments yangilandi:', assignmentsWithPercentage);
+      task.assignedTo = assignments[0].apprenticeId;
     } 
     // Eski tizim: Bitta shogird
     else if (assignedTo) {
@@ -349,34 +403,54 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
       
       console.log('✅ Bitta shogird yangilandi');
     }
-    // Agar faqat payment o'zgargan bo'lsa va assignments mavjud bo'lsa
+    // Agar faqat payment o'zgargan bo'lsa va assignments mavjud bo'lsa (TO'G'RI KASKAD)
     else if (payment !== undefined && task.assignments && task.assignments.length > 0) {
-      const apprenticeCount = task.assignments.length;
-      const allocatedAmount = payment / apprenticeCount;
+      console.log(`\n🔄 PAYMENT UPDATE (TO'G'RI KASKAD) - Yangi to'lov: ${payment} so'm`);
 
-      // Mavjud assignments'ni yangilash
-      const updatedAssignments = await Promise.all(
-        task.assignments.map(async (assignment: any) => {
-          const apprentice = await User.findById(assignment.apprentice);
-          const percentage = assignment.percentage || apprentice?.percentage || 50;
-          
-          const earning = (allocatedAmount * percentage) / 100;
-          const masterShare = allocatedAmount - earning;
+      const updatedAssignments: any[] = [];
+      
+      // 1-shogird
+      const firstApprentice = await User.findById(task.assignments[0].apprentice);
+      const firstPercentage = task.assignments[0].percentage || firstApprentice?.percentage || 50;
+      const firstEarning = (payment * firstPercentage) / 100;
+      let firstApprenticeRemaining = firstEarning;
+      
+      const masterShare = payment - firstEarning;
+      console.log(`👤 1-shogird: ${firstApprentice?.name} - ${firstPercentage}% = ${firstEarning.toFixed(2)} so'm`);
 
-          console.log(`💰 PAYMENT UPDATE: Shogird ${apprentice?.name}: ${percentage}% = ${earning} so'm (jami: ${allocatedAmount})`);
+      updatedAssignments.push({
+        apprentice: task.assignments[0].apprentice,
+        percentage: firstPercentage,
+        allocatedAmount: payment,
+        earning: firstEarning,
+        masterShare: masterShare
+      });
 
-          return {
-            apprentice: assignment.apprentice,
-            percentage,
-            allocatedAmount,
-            earning,
-            masterShare
-          };
-        })
-      );
+      // Qolgan shogirdlar
+      for (let i = 1; i < task.assignments.length; i++) {
+        const assignment = task.assignments[i];
+        const apprentice = await User.findById(assignment.apprentice);
+        const percentage = assignment.percentage || apprentice?.percentage || 50;
+        
+        const earning = (firstApprenticeRemaining * percentage) / 100;
+        
+        console.log(`👤 ${i + 1}-shogird: ${apprentice?.name} - ${percentage}% = ${earning.toFixed(2)} so'm`);
+        
+        updatedAssignments[0].earning -= earning;
+        firstApprenticeRemaining -= earning;
+
+        updatedAssignments.push({
+          apprentice: assignment.apprentice,
+          percentage,
+          allocatedAmount: firstApprenticeRemaining + earning,
+          earning: earning,
+          masterShare: 0
+        });
+      }
+
+      console.log(`✅ 1-shogirtda qoldi: ${updatedAssignments[0].earning.toFixed(2)} so'm\n`);
 
       task.assignments = updatedAssignments;
-      console.log('✅ Payment o\'zgarganda assignments yangilandi');
     }
     // Agar faqat payment o'zgargan bo'lsa va bitta shogird bo'lsa
     else if (payment !== undefined && task.assignedTo) {
@@ -515,19 +589,29 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
       
       const User = require('../models/User').default;
       
-      // Yangi tizim: Ko'p shogirdlar
+      // Yangi tizim: Ko'p shogirdlar (KASKAD)
       if (task.assignments && task.assignments.length > 0) {
-        console.log('💰 Ko\'p shogirdli tizim - Pul qo\'shilmoqda...');
+        console.log('\n💰 KASKAD TIZIMI - Pul qo\'shilmoqda...');
+        console.log(`📋 Jami shogirdlar: ${task.assignments.length}`);
+        
         // Har bir shogirdga o'z ulushini qo'shish
-        for (const assignment of task.assignments) {
-          console.log(`  → Shogird ${assignment.apprentice} ga ${assignment.earning} so'm qo'shilmoqda`);
+        for (let i = 0; i < task.assignments.length; i++) {
+          const assignment = task.assignments[i];
+          const apprentice = await User.findById(assignment.apprentice);
+          
+          console.log(`\n👤 ${i + 1}-shogird: ${apprentice?.name}`);
+          console.log(`   💵 Olgan pul: ${assignment.earning.toFixed(2)} so'm`);
+          
           const updatedUser = await User.findByIdAndUpdate(
             assignment.apprentice,
             { $inc: { earnings: assignment.earning } },
             { new: true }
           );
-          console.log(`  ✅ Yangilandi! Yangi balans: ${updatedUser?.earnings}`);
+          
+          console.log(`   ✅ Yangi balans: ${updatedUser?.earnings.toFixed(2)} so'm`);
         }
+        
+        console.log('\n✅ Barcha shogirdlarga pul qo\'shildi (KASKAD)\n');
       } 
       // Eski tizim: Bitta shogird
       else if (task.assignedTo && task.apprenticeEarning) {

@@ -104,6 +104,7 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
         amount: salaryData.amount,
         description: salaryData.description,
         paymentMethod: salaryData.paymentMethod,
+        apprenticeId: salaryData.apprenticeId, // ✅ Shogird ID sini qo'shish
         relatedTo: {
           type: 'expense_category',
           id: selectedCategory._id

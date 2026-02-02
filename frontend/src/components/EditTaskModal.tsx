@@ -100,17 +100,38 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
     }
   }, [formData.service, carServices]);
 
-  // Payment o'zgarganda shogirdlar ulushini qayta hisoblash
+  // Payment o'zgarganda shogirdlar ulushini qayta hisoblash (TO'G'RI KASKAD)
   useEffect(() => {
     if (assignments.length > 0 && formData.payment > 0) {
       const totalPayment = formData.payment;
-      const apprenticeCount = assignments.length;
-      const allocatedAmount = totalPayment / apprenticeCount;
-
-      setAssignments(prev => prev.map(a => ({
-        ...a,
-        earning: (allocatedAmount * a.percentage) / 100
-      })));
+      
+      // 1-shogirt
+      const firstPercentage = assignments[0].percentage;
+      const firstEarning = (totalPayment * firstPercentage) / 100;
+      
+      // Qolgan shogirdlarning pulini hisoblash
+      const updatedAssignments = assignments.map((a, idx) => {
+        if (idx === 0) {
+          // 1-shogirt uchun qolgan pulni hisoblash
+          let remaining = firstEarning;
+          for (let i = 1; i < assignments.length; i++) {
+            const nextEarning = (remaining * assignments[i].percentage) / 100;
+            remaining -= nextEarning;
+          }
+          return { ...a, earning: remaining };
+        } else {
+          // Keyingi shogirdlar - 1-shogirtdan oladi
+          let firstRem = firstEarning;
+          for (let i = 1; i < idx; i++) {
+            const prevEarning = (firstRem * assignments[i].percentage) / 100;
+            firstRem -= prevEarning;
+          }
+          const earning = (firstRem * a.percentage) / 100;
+          return { ...a, earning };
+        }
+      });
+      
+      setAssignments(updatedAssignments);
     }
   }, [formData.payment]);
 
@@ -137,15 +158,43 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
         updated[index].apprenticeId = value as string;
         updated[index].percentage = apprenticePercentage;
         
-        // Pulni qayta hisoblash
+        // TO'G'RI KASKAD: Pulni qayta hisoblash
         const totalPayment = formData.payment;
-        const apprenticeCount = assignments.length;
-        const allocatedAmount = totalPayment / apprenticeCount;
-        updated[index].earning = (allocatedAmount * apprenticePercentage) / 100;
+        
+        if (index === 0) {
+          // 1-shogirt
+          const firstEarning = (totalPayment * apprenticePercentage) / 100;
+          let firstRemaining = firstEarning;
+          
+          // Qolgan shogirdlarning pulini ayirish
+          for (let i = 1; i < updated.length; i++) {
+            const nextEarning = (firstRemaining * updated[i].percentage) / 100;
+            firstRemaining -= nextEarning;
+          }
+          updated[0].earning = firstRemaining;
+        } else {
+          // Keyingi shogirdlar - 1-shogirtdan oladi
+          const firstEarning = (totalPayment * updated[0].percentage) / 100;
+          let firstRem = firstEarning;
+          
+          for (let i = 1; i < index; i++) {
+            const prevEarning = (firstRem * updated[i].percentage) / 100;
+            firstRem -= prevEarning;
+          }
+          
+          updated[index].earning = (firstRem * apprenticePercentage) / 100;
+          
+          // 1-shogirtning pulini qayta hisoblash
+          let firstRemaining = firstEarning;
+          for (let i = 1; i < updated.length; i++) {
+            const nextEarning = (firstRemaining * updated[i].percentage) / 100;
+            firstRemaining -= nextEarning;
+          }
+          updated[0].earning = firstRemaining;
+        }
         
         console.log(`✅ Shogird tanlandi: ${selectedApprentice?.name}, Foiz: ${apprenticePercentage}%`);
       }
-      // Foizni o'zgartirish imkoniyatini olib tashladik
       return updated;
     });
   };
@@ -293,13 +342,33 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                     </div>
                   ))}
                   
-                  {/* Umumiy pul */}
-                  {formData.payment > 0 && (
-                    <div className="bg-green-100 p-1.5 rounded border border-green-300">
-                      <p className="text-xs font-semibold text-green-800">Jami shogirdlar ulushi:</p>
-                      <div className="flex items-center gap-1 text-sm font-bold text-green-900">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        {assignments.reduce((sum, a) => sum + a.earning, 0).toLocaleString()} so'm
+                  {/* Umumiy hisob - TO'G'RI KASKAD */}
+                  {formData.payment > 0 && assignments.length > 0 && (
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 p-2 rounded border-2 border-green-300">
+                      <p className="text-xs font-bold text-gray-700 mb-1">📊 To'g'ri Kaskad hisob:</p>
+                      <div className="space-y-0.5 text-xs">
+                        <div className="flex justify-between">
+                          <span>Umumiy:</span>
+                          <span className="font-bold">{formData.payment.toLocaleString()} so'm</span>
+                        </div>
+                        {assignments.map((a, idx) => {
+                          const apprentice = (apprenticesData as any)?.users?.find((u: any) => u._id === a.apprenticeId);
+                          return (
+                            <div key={idx} className="flex justify-between">
+                              <span>{idx + 1}-shogird ({apprentice?.name || '?'}):</span>
+                              <span className="font-bold text-green-700">{a.earning.toLocaleString()} so'm</span>
+                            </div>
+                          );
+                        })}
+                        <div className="flex justify-between pt-0.5 border-t border-gray-300">
+                          <span>Ustoz:</span>
+                          <span className="font-bold text-blue-700">
+                            {(() => {
+                              const firstEarning = (formData.payment * assignments[0].percentage) / 100;
+                              return (formData.payment - firstEarning).toLocaleString();
+                            })()} so'm
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}

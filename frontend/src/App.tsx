@@ -25,6 +25,7 @@ import ApprenticeTasks from '@/pages/apprentice/Tasks';
 import ApprenticeAllTasks from '@/pages/apprentice/AllTasks';
 import ApprenticeAchievements from '@/pages/apprentice/Achievements';
 import ApprenticeAIDiagnostic from '@/pages/apprentice/AIDiagnostic';
+import ApprenticeSpareParts from '@/pages/apprentice/SpareParts';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -223,6 +224,11 @@ function AppRoutes() {
         <Route path="apprentice/cars" element={
           <ApprenticeRoute>
             <Cars />
+          </ApprenticeRoute>
+        } />
+        <Route path="apprentice/spare-parts" element={
+          <ApprenticeRoute>
+            <ApprenticeSpareParts />
           </ApprenticeRoute>
         } />
         <Route path="apprentice/ai-diagnostic" element={

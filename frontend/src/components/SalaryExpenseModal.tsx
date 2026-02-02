@@ -100,6 +100,17 @@ ${t('Maosh', language)}: ${formatCurrency(employee.totalSalary)}`;
       paymentMethod: paymentMethod,
       apprenticeId: employee.userId // Shogird ID sini yuborish
     });
+    
+    // ✅ Modal yopilganda ma'lumotlarni tozalash
+    setEmployee({
+      id: '1',
+      userId: '',
+      name: '',
+      baseSalary: 0,
+      baseSalaryDisplay: '',
+      totalSalary: 0
+    });
+    setPaymentMethod('cash');
   };
 
   return (

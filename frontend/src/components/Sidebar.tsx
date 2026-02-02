@@ -66,7 +66,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: t('Shogird paneli', language), href: '/app/dashboard', icon: LayoutDashboard },
     { name: t('Mening vazifalarim', language), href: '/app/apprentice/tasks', icon: CheckSquare },
     { name: t('Vazifalar', language), href: '/app/apprentice/all-tasks', icon: ListTodo },
-    { name: t('Zapchastlar', language), href: '/app/master/spare-parts', icon: Package },
+    { name: t('Zapchastlar', language), href: '/app/apprentice/spare-parts', icon: Package },
     { name: t('Avtomobillar', language), href: '/app/apprentice/cars', icon: Car },
     { name: t('Mening daromadim', language), href: '/app/apprentice/achievements', icon: Award },
   ];

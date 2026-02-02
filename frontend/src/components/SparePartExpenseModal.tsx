@@ -148,7 +148,10 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
       setFormData(prev => ({
         ...prev,
         costPrice: numericValue.toString(),
-        costPriceDisplay: formatted
+        costPriceDisplay: formatted,
+        // ✨ YANGI: O'zini narxi o'zgarganda sotish narxi ham o'zgaradi
+        sellingPrice: numericValue.toString(),
+        sellingPriceDisplay: formatted
       }));
     } else if (name === 'sellingPrice') {
       const formatted = formatNumber(value);
@@ -233,11 +236,11 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
               </div>
 
               {/* O'zini narxi va Sotish narxi */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* O'zini narxi */}
+              <div className="grid grid-cols-1 gap-4">
+                {/* O'zini narxi (Sotish narxi bilan bir xil) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t("O'zini narxi", language)} ({t("so'm", language)})
+                    {t("Narx", language)} ({t("so'm", language)}) *
                   </label>
                   <input
                     type="text"
@@ -245,6 +248,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
                     value={formData.costPriceDisplay}
                     onChange={handleChange}
                     autoComplete="off"
+                    required
                     className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
                       errors.costPrice 
                         ? 'border-red-300 focus:border-red-500' 
@@ -252,6 +256,9 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
                     }`}
                     placeholder="800,000"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t("Bu narx mijozga sotish narxi sifatida ishlatiladi", language)}
+                  </p>
                   {errors.costPrice && (
                     <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
@@ -259,45 +266,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
                     </p>
                   )}
                 </div>
-
-                {/* Sotish narxi */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('Sotish narxi', language)} ({t("so'm", language)})
-                  </label>
-                  <input
-                    type="text"
-                    name="sellingPrice"
-                    value={formData.sellingPriceDisplay}
-                    onChange={handleChange}
-                    autoComplete="off"
-                    className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
-                      errors.sellingPrice 
-                        ? 'border-red-300 focus:border-red-500' 
-                        : 'border-gray-200 focus:border-blue-500'
-                    }`}
-                    placeholder="1,000,000"
-                  />
-                  {errors.sellingPrice && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4" />
-                      {errors.sellingPrice}
-                    </p>
-                  )}
-                </div>
               </div>
-
-              {/* Foyda ko'rsatish */}
-              {formData.costPrice && formData.sellingPrice && Number(formData.sellingPrice) >= Number(formData.costPrice) && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-green-800">{t('Foyda', language)}:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      {formatNumber((Number(formData.sellingPrice) - Number(formData.costPrice)).toString())} {t("so'm", language)}
-                    </span>
-                  </div>
-                </div>
-              )}
 
               {/* Miqdor */}
               <div>

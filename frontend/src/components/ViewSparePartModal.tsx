@@ -23,6 +23,7 @@ interface ViewSparePartModalProps {
   sparePart: SparePart;
   onEdit?: () => void;
   onDelete?: () => void;
+  isApprentice?: boolean; // Shogirt uchun maxsus rejim
 }
 
 const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({ 
@@ -30,7 +31,8 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
   onClose, 
   sparePart, 
   onEdit, 
-  onDelete 
+  onDelete,
+  isApprentice = false // Default: ustoz rejimi
 }) => {
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -99,58 +101,74 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
             </div>
           </div>
 
-          {/* Narxlar Grid */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 border border-orange-100">
-              <div className="flex items-center gap-1 mb-1">
-                <DollarSign className="h-3 w-3 text-orange-600" />
-                <span className="text-[10px] font-semibold text-orange-600">{t("O'zini", language)}</span>
+          {/* Narxlar Grid - Shogirt uchun faqat sotish narxi */}
+          {isApprentice ? (
+            // SHOGIRT REJIMI - Faqat sotish narxi
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-100">
+              <div className="flex items-center gap-2 mb-1">
+                <DollarSign className="h-4 w-4 text-green-600" />
+                <span className="text-xs font-semibold text-green-600">{t('Sotish narxi', language)}</span>
               </div>
-              <p className="text-sm font-bold text-orange-900">
-                {(sparePart.costPrice || sparePart.price).toLocaleString()}
+              <p className="text-lg font-bold text-green-900">
+                {(sparePart.sellingPrice || sparePart.price).toLocaleString()} {t("so'm", language)}
               </p>
             </div>
+          ) : (
+            // USTOZ REJIMI - Barcha narxlar
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-2 border border-orange-100">
+                  <div className="flex items-center gap-1 mb-1">
+                    <DollarSign className="h-3 w-3 text-orange-600" />
+                    <span className="text-[10px] font-semibold text-orange-600">{t("O'zini", language)}</span>
+                  </div>
+                  <p className="text-sm font-bold text-orange-900">
+                    {(sparePart.costPrice || sparePart.price).toLocaleString()}
+                  </p>
+                </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-2 border border-green-100">
-              <div className="flex items-center gap-1 mb-1">
-                <DollarSign className="h-3 w-3 text-green-600" />
-                <span className="text-[10px] font-semibold text-green-600">{t('Sotish', language)}</span>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-2 border border-green-100">
+                  <div className="flex items-center gap-1 mb-1">
+                    <DollarSign className="h-3 w-3 text-green-600" />
+                    <span className="text-[10px] font-semibold text-green-600">{t('Sotish', language)}</span>
+                  </div>
+                  <p className="text-sm font-bold text-green-900">
+                    {(sparePart.sellingPrice || sparePart.price).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
+                  <div className="flex items-center gap-1 mb-1">
+                    <TrendingUp className="h-3 w-3 text-emerald-600" />
+                    <span className="text-[10px] font-semibold text-emerald-600">{t('Foyda', language)}</span>
+                  </div>
+                  <p className="text-sm font-bold text-emerald-900">
+                    {(sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))).toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm font-bold text-green-900">
-                {(sparePart.sellingPrice || sparePart.price).toLocaleString()}
-              </p>
-            </div>
 
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
-              <div className="flex items-center gap-1 mb-1">
-                <TrendingUp className="h-3 w-3 text-emerald-600" />
-                <span className="text-[10px] font-semibold text-emerald-600">{t('Foyda', language)}</span>
+              {/* Total Value */}
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-indigo-600">{t('Jami qiymat', language)}</span>
+                  <span className="text-sm font-bold text-indigo-900">
+                    {((sparePart.sellingPrice || sparePart.price) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm font-bold text-emerald-900">
-                {(sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))).toLocaleString()}
-              </p>
-            </div>
-          </div>
 
-          {/* Total Value */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-2 border border-indigo-100">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-indigo-600">{t('Jami qiymat', language)}</span>
-              <span className="text-sm font-bold text-indigo-900">
-                {((sparePart.sellingPrice || sparePart.price) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
-              </span>
-            </div>
-          </div>
-
-          {/* Total Profit */}
-          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-emerald-600">{t('Jami foyda', language)}</span>
-              <span className="text-sm font-bold text-emerald-900">
-                {((sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
-              </span>
-            </div>
-          </div>
+              {/* Total Profit */}
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg p-2 border border-emerald-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-emerald-600">{t('Jami foyda', language)}</span>
+                  <span className="text-sm font-bold text-emerald-900">
+                    {((sparePart.profit || ((sparePart.sellingPrice || sparePart.price) - (sparePart.costPrice || sparePart.price))) * sparePart.quantity).toLocaleString()} {t("so'm", language)}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-2">

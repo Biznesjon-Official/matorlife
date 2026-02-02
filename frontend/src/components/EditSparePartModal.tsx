@@ -22,9 +22,16 @@ interface EditSparePartModalProps {
   onClose: () => void;
   sparePart: SparePart;
   onSuccess: () => void;
+  isApprentice?: boolean; // Shogirt uchun maxsus rejim
 }
 
-const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose, sparePart, onSuccess }) => {
+const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  sparePart, 
+  onSuccess,
+  isApprentice = false // Default: ustoz rejimi
+}) => {
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
     return (savedLanguage as 'latin' | 'cyrillic') || 'latin';
@@ -150,7 +157,12 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
       setFormData(prev => ({
         ...prev,
         costPrice: numericValue.toString(),
-        costPriceDisplay: formatted
+        costPriceDisplay: formatted,
+        // ✨ Shogirt uchun: O'zini narxi o'zgarganda sotish narxi ham o'zgaradi
+        ...(isApprentice && {
+          sellingPrice: numericValue.toString(),
+          sellingPriceDisplay: formatted
+        })
       }));
     } else if (name === 'sellingPrice') {
       // Sotish narxi formatini boshqarish
@@ -219,14 +231,22 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
               required
               value={formData.name}
               onChange={handleChange}
+              disabled={isApprentice} // Shogirt o'zgartira olmaydi
               className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
-                errors.name 
-                  ? 'border-red-300 focus:border-red-500' 
-                  : 'border-gray-200 focus:border-purple-500'
+                isApprentice 
+                  ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+                  : errors.name 
+                    ? 'border-red-300 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-purple-500'
               }`}
               placeholder={t('Masalan: Tormoz kolodkasi', language)}
             />
-            {errors.name && (
+            {isApprentice && (
+              <p className="mt-1 text-xs text-gray-500">
+                {t("Nomni faqat ustoz o'zgartirishi mumkin", language)}
+              </p>
+            )}
+            {errors.name && !isApprentice && (
               <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 {errors.name}
@@ -234,10 +254,11 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {isApprentice ? (
+            // SHOGIRT REJIMI - Faqat bitta narx maydoni
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">
-                {t("O'zini narxi", language)} ({t("so'm", language)})
+                {t("Narx", language)} ({t("so'm", language)}) *
               </label>
               <input
                 type="text"
@@ -245,6 +266,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 value={formData.costPriceDisplay}
                 onChange={handleChange}
                 autoComplete="off"
+                required
                 className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
                   errors.costPrice 
                     ? 'border-red-300 focus:border-red-500' 
@@ -252,6 +274,9 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 }`}
                 placeholder="800,000"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                {t("Bu narx mijozga sotish narxi sifatida ishlatiladi", language)}
+              </p>
               {errors.costPrice && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
@@ -259,42 +284,72 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 </p>
               )}
             </div>
+          ) : (
+            // USTOZ REJIMI - Ikkita narx maydoni
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t("O'zini narxi", language)} ({t("so'm", language)})
+                  </label>
+                  <input
+                    type="text"
+                    name="costPrice"
+                    value={formData.costPriceDisplay}
+                    onChange={handleChange}
+                    autoComplete="off"
+                    className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                      errors.costPrice 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-gray-200 focus:border-purple-500'
+                    }`}
+                    placeholder="800,000"
+                  />
+                  {errors.costPrice && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.costPrice}
+                    </p>
+                  )}
+                </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                {t('Sotish narxi', language)} ({t("so'm", language)})
-              </label>
-              <input
-                type="text"
-                name="sellingPrice"
-                value={formData.sellingPriceDisplay}
-                onChange={handleChange}
-                autoComplete="off"
-                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
-                  errors.sellingPrice 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-gray-200 focus:border-purple-500'
-                }`}
-                placeholder="1,000,000"
-              />
-              {errors.sellingPrice && (
-                <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.sellingPrice}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {formData.costPrice && formData.sellingPrice && Number(formData.sellingPrice) >= Number(formData.costPrice) && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-green-800">{t('Foyda', language)}:</span>
-                <span className="text-sm font-bold text-green-600">
-                  {formatNumber((Number(formData.sellingPrice) - Number(formData.costPrice)).toString())} {t("so'm", language)}
-                </span>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    {t('Sotish narxi', language)} ({t("so'm", language)})
+                  </label>
+                  <input
+                    type="text"
+                    name="sellingPrice"
+                    value={formData.sellingPriceDisplay}
+                    onChange={handleChange}
+                    autoComplete="off"
+                    className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                      errors.sellingPrice 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-gray-200 focus:border-purple-500'
+                    }`}
+                    placeholder="1,000,000"
+                  />
+                  {errors.sellingPrice && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {errors.sellingPrice}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+
+              {formData.costPrice && formData.sellingPrice && Number(formData.sellingPrice) >= Number(formData.costPrice) && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-green-800">{t('Foyda', language)}:</span>
+                    <span className="text-sm font-bold text-green-600">
+                      {formatNumber((Number(formData.sellingPrice) - Number(formData.costPrice)).toString())} {t("so'm", language)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -334,14 +389,22 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({ isOpen, onClose
                 required
                 value={formData.supplier}
                 onChange={handleChange}
+                disabled={isApprentice} // Shogirt o'zgartira olmaydi
                 className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
-                  errors.supplier 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-gray-200 focus:border-purple-500'
+                  isApprentice 
+                    ? 'bg-gray-100 cursor-not-allowed text-gray-600' 
+                    : errors.supplier 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-gray-200 focus:border-purple-500'
                 }`}
                 placeholder={t('Masalan: Avtomag', language)}
               />
-              {errors.supplier && (
+              {isApprentice && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {t("Yetkazib beruvchini faqat ustoz o'zgartirishi mumkin", language)}
+                </p>
+              )}
+              {errors.supplier && !isApprentice && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
                   {errors.supplier}

@@ -30,10 +30,12 @@ router.get('/required/list', authenticate, getRequiredParts);
 // Get spare part by ID
 router.get('/:id', authenticate, getSparePartById);
 
-// Create spare part (master only)
-router.post('/', authenticate, authorize('master'), [
+// Create spare part (master and apprentice can create)
+router.post('/', authenticate, [
   body('name').trim().isLength({ min: 2 }).withMessage('Zapchast nomi kamida 2 ta belgidan iborat bo\'lishi kerak'),
-  body('price').isFloat({ min: 0 }).withMessage('Narx 0 dan katta bo\'lishi kerak'),
+  body('price').optional().isFloat({ min: 0 }).withMessage('Narx 0 dan katta bo\'lishi kerak'),
+  body('costPrice').optional().isFloat({ min: 0 }).withMessage('Tannarx 0 dan katta bo\'lishi kerak'),
+  body('sellingPrice').optional().isFloat({ min: 0 }).withMessage('Sotish narxi 0 dan katta bo\'lishi kerak'),
   body('quantity').isInt({ min: 0 }).withMessage('Miqdor 0 dan kichik bo\'lmasligi kerak'),
   body('supplier').trim().isLength({ min: 2 }).withMessage('Kimdan olingani kamida 2 ta belgidan iborat bo\'lishi kerak')
 ], handleValidationErrors, createSparePart);
@@ -48,16 +50,18 @@ router.post('/with-expense', authenticate, authorize('master'), [
   body('paymentMethod').isIn(['cash', 'card']).withMessage('To\'lov usuli noto\'g\'ri')
 ], handleValidationErrors, createSparePartWithExpense);
 
-// Update spare part (master only)
-router.put('/:id', authenticate, authorize('master'), [
+// Update spare part (master and apprentice can update)
+router.put('/:id', authenticate, [
   body('name').optional().trim().isLength({ min: 2 }).withMessage('Zapchast nomi kamida 2 ta belgidan iborat bo\'lishi kerak'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Narx 0 dan katta bo\'lishi kerak'),
+  body('costPrice').optional().isFloat({ min: 0 }).withMessage('Tannarx 0 dan katta bo\'lishi kerak'),
+  body('sellingPrice').optional().isFloat({ min: 0 }).withMessage('Sotish narxi 0 dan katta bo\'lishi kerak'),
   body('quantity').optional().isInt({ min: 0 }).withMessage('Miqdor 0 dan kichik bo\'lmasligi kerak'),
   body('supplier').optional().trim().isLength({ min: 2 }).withMessage('Kimdan olingani kamida 2 ta belgidan iborat bo\'lishi kerak')
 ], handleValidationErrors, updateSparePart);
 
-// Delete spare part (master only)
-router.delete('/:id', authenticate, authorize('master'), deleteSparePart);
+// Delete spare part (master and apprentice can delete)
+router.delete('/:id', authenticate, deleteSparePart);
 
 // Increment usage count (internal use)
 router.patch('/:id/increment-usage', authenticate, incrementUsage);

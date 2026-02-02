@@ -26,6 +26,7 @@ export interface Transaction {
   amount: number;
   description: string;
   paymentMethod: 'cash' | 'card' | 'click';
+  apprenticeId?: string; // ✅ Shogird ID'si (maosh to'lash uchun)
   relatedTo?: {
     type: 'debt' | 'car' | 'task' | 'expense_category' | 'other';
     id: string | null;

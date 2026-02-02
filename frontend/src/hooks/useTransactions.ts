@@ -63,10 +63,17 @@ export const useCreateTransaction = () => {
       const response = await api.post('/transactions', transactionData);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
       queryClient.invalidateQueries({ queryKey: ['transactionStats'] });
+      
+      // ✅ Agar maosh to'lansa, shogirdlar ma'lumotlarini yangilash
+      if (variables.apprenticeId) {
+        queryClient.invalidateQueries({ queryKey: ['apprentices'] });
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+      }
+      
       toast.success('Tranzaksiya muvaffaqiyatli qo\'shildi');
     },
     onError: (error: any) => {
