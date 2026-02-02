@@ -65,6 +65,47 @@
     @apply block text-sm font-semibold text-gray-700 mb-2;
   }
   
+  /* iOS Safari Compatible Select Styles */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: white;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.25em 1.25em;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    /* iOS specific fixes */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Ensure select options are visible on iOS */
+  select option {
+    background-color: white;
+    color: #111827;
+    padding: 0.5rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Focus state for select on iOS */
+  select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* Disabled select styling */
+  select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f3f4f6;
+  }
+  
   /* Card Styles */
   .card {
     @apply bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 sm:rounded-2xl;
@@ -652,6 +693,14 @@
     min-height: 44px;
   }
   
+  /* iOS Safari specific fixes for select */
+  select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+    min-height: 44px;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+  
   /* Prevent text size adjustment on orientation change */
   html {
     -webkit-text-size-adjust: 100%;
@@ -662,6 +711,11 @@
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Fix for iOS Safari select dropdown */
+  select:focus {
+    font-size: 16px !important;
   }
 }
 

@@ -446,7 +446,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                     <select
                                       value={assignment.apprenticeId}
                                       onChange={(e) => updateApprentice(task.id, assignment.id, 'apprenticeId', e.target.value)}
-                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
+                                      className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
                                       required
                                     >
                                       <option value="">Tanlang</option>
