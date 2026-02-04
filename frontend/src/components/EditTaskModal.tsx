@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, AlertTriangle, User, Car, FileText, Wrench, DollarSign, Plus, Trash2 } from 'lucide-react';
-import { useUpdateTask } from '@/hooks/useTasks';
+import { X, Calendar, Clock, AlertTriangle, User, Car, FileText, Wrench, DollarSign, Plus, Trash2, CheckCircle } from 'lucide-react';
+import { useUpdateTask, useApprovePendingAssignment, useRejectPendingAssignment } from '@/hooks/useTasks';
 import { useCars } from '@/hooks/useCars';
-import { useApprentices } from '@/hooks/useUsers';
+import { useAvailableApprentices } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
 import { Task } from '@/types';
 import api from '@/lib/api';
 
@@ -14,6 +15,7 @@ interface EditTaskModalProps {
 }
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, onUpdate }) => {
+  const { user } = useAuth(); // Hozirgi foydalanuvchi
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -36,8 +38,23 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
   const [loadingServices, setLoadingServices] = useState(false);
 
   const updateTaskMutation = useUpdateTask();
+  const approvePendingMutation = useApprovePendingAssignment();
+  const rejectPendingMutation = useRejectPendingAssignment();
   const { data: carsData } = useCars();
-  const { data: apprenticesData } = useApprentices();
+  const { data: apprenticesData } = useAvailableApprentices(); // Dinamik shogirdlar
+
+  // Dinamik foydalanuvchilar ro'yxati - backend'dan keladi
+  // Backend allaqachon to'g'ri logikani amalga oshiradi:
+  // - Ustoz: o'zi + barcha shogirdlar
+  // - Shogird: o'zi + o'zidan kam foizli shogirdlar
+  const availableApprentices = apprenticesData?.users || [];
+  const allAvailableUsers = availableApprentices;
+
+  // Debug: Mavjud foydalanuvchilarni tekshirish
+  useEffect(() => {
+    console.log('🔍 EditTaskModal - Hozirgi foydalanuvchi:', user?.name, `(${user?.percentage || 0}%)`, user?.role);
+    console.log('🔍 EditTaskModal - Backend dan kelgan foydalanuvchilar:', allAvailableUsers?.map((a: any) => `${a.name} (${a.percentage || 0}%) - ${a.role || 'apprentice'}`));
+  }, [allAvailableUsers, user]);
 
   // Task ma'lumotlarini formga yuklash
   useEffect(() => {
@@ -151,19 +168,19 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
     setAssignments(prev => {
       const updated = [...prev];
       if (field === 'apprenticeId') {
-        // Shogird tanlaganda uning foizini User modelidan olish
-        const selectedApprentice = (apprenticesData as any)?.users?.find((u: any) => u._id === value);
-        const apprenticePercentage = selectedApprentice?.percentage || 50;
+        // Foydalanuvchi tanlaganda uning foizini User modelidan olish
+        const selectedUser = allAvailableUsers?.find((u: any) => u._id === value || u.id === value);
+        const userPercentage = selectedUser?.percentage || (selectedUser?.role === 'master' ? 100 : 50);
         
         updated[index].apprenticeId = value as string;
-        updated[index].percentage = apprenticePercentage;
+        updated[index].percentage = userPercentage;
         
         // TO'G'RI KASKAD: Pulni qayta hisoblash
         const totalPayment = formData.payment;
         
         if (index === 0) {
-          // 1-shogirt
-          const firstEarning = (totalPayment * apprenticePercentage) / 100;
+          // 1-foydalanuvchi (ustoz yoki shogird)
+          const firstEarning = (totalPayment * userPercentage) / 100;
           let firstRemaining = firstEarning;
           
           // Qolgan shogirdlarning pulini ayirish
@@ -173,7 +190,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
           }
           updated[0].earning = firstRemaining;
         } else {
-          // Keyingi shogirdlar - 1-shogirtdan oladi
+          // Keyingi shogirdlar - 1-foydalanuvchidan oladi
           const firstEarning = (totalPayment * updated[0].percentage) / 100;
           let firstRem = firstEarning;
           
@@ -182,9 +199,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
             firstRem -= prevEarning;
           }
           
-          updated[index].earning = (firstRem * apprenticePercentage) / 100;
+          updated[index].earning = (firstRem * userPercentage) / 100;
           
-          // 1-shogirtning pulini qayta hisoblash
+          // 1-foydalanuvchining pulini qayta hisoblash
           let firstRemaining = firstEarning;
           for (let i = 1; i < updated.length; i++) {
             const nextEarning = (firstRemaining * updated[i].percentage) / 100;
@@ -193,7 +210,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
           updated[0].earning = firstRemaining;
         }
         
-        console.log(`✅ Shogird tanlandi: ${selectedApprentice?.name}, Foiz: ${apprenticePercentage}%`);
+        console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Rol: ${selectedUser?.role || 'apprentice'}`);
       }
       return updated;
     });
@@ -216,11 +233,11 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
     if (assignments.length > 0) {
       const hasEmptyApprentice = assignments.some(a => !a.apprenticeId);
       if (hasEmptyApprentice) {
-        alert('Barcha shogirdlarni tanlang yoki bo\'sh qatorlarni o\'chiring');
+        alert('Barcha foydalanuvchilarni tanlang yoki bo\'sh qatorlarni o\'chiring');
         return;
       }
     } else if (!formData.assignedTo) {
-      alert('Kamida bitta shogird tanlang');
+      alert('Kamida bitta foydalanuvchi tanlang');
       return;
     }
     
@@ -286,7 +303,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                   <div className="bg-blue-600 p-1 rounded">
                     <User className="h-3 w-3 text-white" />
                   </div>
-                  Shogirdlar *
+                  Foydalanuvchilar *
                 </label>
                 <button
                   type="button"
@@ -311,9 +328,12 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                             required
                           >
                             <option value="">Tanlang</option>
-                            {(apprenticesData as any)?.users?.map((apprentice: any) => (
-                              <option key={apprentice._id} value={apprentice._id}>
-                                {apprentice.name}
+                            {allAvailableUsers?.map((userOption: any) => (
+                              <option key={userOption._id || userOption.id} value={userOption._id || userOption.id}>
+                                {(userOption._id === user?.id || userOption.id === user?.id) ? 
+                                  `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%) - O'zim` : 
+                                  `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%)`
+                                }
                               </option>
                             ))}
                           </select>
@@ -352,10 +372,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                           <span className="font-bold">{formData.payment.toLocaleString()} so'm</span>
                         </div>
                         {assignments.map((a, idx) => {
-                          const apprentice = (apprenticesData as any)?.users?.find((u: any) => u._id === a.apprenticeId);
+                          const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
                           return (
                             <div key={idx} className="flex justify-between">
-                              <span>{idx + 1}-shogird ({apprentice?.name || '?'}):</span>
+                              <span>{idx + 1}-foydalanuvchi ({selectedUser?.name || '?'}):</span>
                               <span className="font-bold text-green-700">{a.earning.toLocaleString()} so'm</span>
                             </div>
                           );
@@ -364,7 +384,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                           <span>Ustoz:</span>
                           <span className="font-bold text-blue-700">
                             {(() => {
-                              const firstEarning = (formData.payment * assignments[0].percentage) / 100;
+                              const firstUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === assignments[0]?.apprenticeId);
+                              const firstPercentage = firstUser?.percentage || (firstUser?.role === 'master' ? 100 : 50);
+                              const firstEarning = (formData.payment * firstPercentage) / 100;
                               return (formData.payment - firstEarning).toLocaleString();
                             })()} so'm
                           </span>
@@ -382,20 +404,131 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                     className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded focus:ring-1 focus:ring-blue-500 bg-white"
                     required
                   >
-                    <option value="">Bitta shogird tanlang</option>
-                    {(apprenticesData as any)?.users?.map((apprentice: any) => (
-                      <option key={apprentice._id} value={apprentice._id}>
-                        {apprentice.name}
+                    <option value="">Bitta foydalanuvchi tanlang</option>
+                    {allAvailableUsers?.map((userOption: any) => (
+                      <option key={userOption._id || userOption.id} value={userOption._id || userOption.id}>
+                        {(userOption._id === user?.id || userOption.id === user?.id) ? 
+                          `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%) - O'zim` : 
+                          `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%)`
+                        }
                       </option>
                     ))}
                   </select>
                   <p className="text-xs text-blue-700 mt-1.5 flex items-center gap-1">
                     <Plus className="h-3 w-3" />
-                    Ko'p shogird qo'shish uchun "Qo'shish" tugmasini bosing
+                    Ko'p foydalanuvchi qo'shish uchun "Qo'shish" tugmasini bosing
                   </p>
                 </div>
               )}
             </div>
+
+            {/* Pending Assignments - Chiroyli dizayn */}
+            {task && (task as any).pendingAssignments && (task as any).pendingAssignments.length > 0 && (
+              <div className="relative">
+                {/* Gradient background with glow effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-100 via-yellow-50 to-orange-100 rounded-xl blur-sm opacity-70"></div>
+                
+                <div className="relative bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+                  {/* Header with icon and badge */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1.5 rounded-lg shadow-sm">
+                        <AlertTriangle className="h-4 w-4 text-white" />
+                      </div>
+                      <h4 className="text-sm font-bold text-amber-800">Tasdiq kutilmoqda</h4>
+                    </div>
+                    <div className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                      {(task as any).pendingAssignments.length}
+                    </div>
+                  </div>
+
+                  {/* Pending items */}
+                  <div className="space-y-3">
+                    {(task as any).pendingAssignments.map((pending: any, idx: number) => (
+                      <div key={idx} className="bg-white/80 backdrop-blur-sm border border-amber-200/50 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200">
+                        {/* User info */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                              {pending.apprentice?.name?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">
+                                {pending.apprentice?.name}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {pending.addedByName} tomonidan qo'shildi
+                              </p>
+                            </div>
+                          </div>
+                          <div className="ml-auto bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                            {pending.percentage}%
+                          </div>
+                        </div>
+
+                        {/* Action buttons - faqat ustoz uchun */}
+                        {user?.role === 'master' && (
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await approvePendingMutation.mutateAsync({ 
+                                    taskId: task._id, 
+                                    apprenticeId: pending.apprentice._id 
+                                  });
+                                  if (onUpdate) onUpdate();
+                                } catch (error) {
+                                  console.error('Tasdiqlashda xatolik:', error);
+                                }
+                              }}
+                              disabled={approvePendingMutation.isPending}
+                              className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all duration-200"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              {approvePendingMutation.isPending ? 'Tasdiqlanmoqda...' : 'Tasdiqlash'}
+                            </button>
+                            <button 
+                              onClick={async () => {
+                                try {
+                                  await rejectPendingMutation.mutateAsync({ 
+                                    taskId: task._id, 
+                                    apprenticeId: pending.apprentice._id 
+                                  });
+                                  if (onUpdate) onUpdate();
+                                } catch (error) {
+                                  console.error('Rad etishda xatolik:', error);
+                                }
+                              }}
+                              disabled={rejectPendingMutation.isPending}
+                              className="flex-1 px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-semibold rounded-lg hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all duration-200"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              {rejectPendingMutation.isPending ? 'Rad etilmoqda...' : 'Rad etish'}
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Shogird uchun faqat ko'rsatish */}
+                        {user?.role === 'apprentice' && (
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                            <p className="text-xs text-blue-700 text-center font-medium">
+                              ⏳ Ustoz tasdiqlashini kutmoqda
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer note */}
+                  <div className="mt-3 pt-3 border-t border-amber-200/50">
+                    <p className="text-xs text-amber-700 text-center font-medium">
+                      💡 {user?.role === 'master' ? 'Shogirdlar qo\'shilishi uchun sizning tasdiqlashingiz kerak' : 'Ustoz tasdiqlashini kutmoqda'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Title */}
             <div>

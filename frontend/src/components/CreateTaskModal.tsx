@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, AlertTriangle, User, Car, FileText, Wrench, Plus, Trash2 } from 'lucide-react';
+import { X, User, Car, FileText, Wrench, Plus, Trash2 } from 'lucide-react';
 import { useCreateTask } from '@/hooks/useTasks';
 import { useCars } from '@/hooks/useCars';
-import { useApprentices } from '@/hooks/useUsers';
+import { useAvailableApprentices } from '@/hooks/useUsers';
+import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 
 interface CreateTaskModalProps {
@@ -29,6 +30,7 @@ interface TaskItem {
 }
 
 const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth(); // Hozirgi foydalanuvchi
   const [selectedCar, setSelectedCar] = useState('');
   const [carServices, setCarServices] = useState<any[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -36,7 +38,20 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
 
   const createTaskMutation = useCreateTask();
   const { data: carsData } = useCars();
-  const { data: apprenticesData } = useApprentices();
+  const { data: apprenticesData } = useAvailableApprentices(); // Yangi hook
+
+  // Dinamik foydalanuvchilar ro'yxati - backend'dan keladi
+  // Backend allaqachon to'g'ri logikani amalga oshiradi:
+  // - Ustoz: o'zi + barcha shogirdlar  
+  // - Shogird: o'zi + o'zidan kam foizli shogirdlar
+  const availableApprentices = apprenticesData?.users || [];
+  const allAvailableUsers = availableApprentices;
+
+  // Debug: Mavjud foydalanuvchilarni tekshirish
+  useEffect(() => {
+    console.log('🔍 CreateTaskModal - Hozirgi foydalanuvchi:', user?.name, `(${user?.percentage || 0}%)`, user?.role);
+    console.log('🔍 CreateTaskModal - Backend dan kelgan foydalanuvchilar:', allAvailableUsers?.map((a: any) => `${a.name} (${a.percentage || 0}%) - ${a.role || 'apprentice'}`));
+  }, [allAvailableUsers, user]);
 
   // Mashina tanlanganda ishlarni yuklash
   useEffect(() => {
@@ -70,8 +85,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
       title: '',
       description: '',
       priority: 'medium',
-      dueDate: '',
-      estimatedHours: 1,
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 kun keyingi sana
+      estimatedHours: 8,
       payment: 0
     };
     setTasks([...tasks, newTask]);
@@ -118,15 +133,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
           ...task,
           assignments: task.assignments.map(assignment => {
             if (assignment.id === assignmentId) {
-              // Faqat shogird tanlaganda ishlaydi, foiz o'zgartirilmaydi
+              // Faqat foydalanuvchi tanlaganda ishlaydi, foiz o'zgartirilmaydi
               if (field === 'apprenticeId' && value) {
-                const selectedApprentice = apprenticesData?.users?.find((a: any) => a._id === value);
-                const apprenticePercentage = selectedApprentice?.percentage || 50;
-                console.log(`✅ Shogird tanlandi: ${selectedApprentice?.name}, Foiz: ${apprenticePercentage}%`);
+                const selectedUser = allAvailableUsers?.find((a: any) => (a._id || a.id) === value);
+                const userPercentage = selectedUser?.percentage || (selectedUser?.role === 'master' ? 100 : 50);
+                console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Rol: ${selectedUser?.role || 'apprentice'}`);
                 return { 
                   ...assignment, 
                   apprenticeId: value,
-                  percentage: apprenticePercentage 
+                  percentage: userPercentage 
                 };
               }
               // Foiz o'zgartirishni rad etish
@@ -222,8 +237,16 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
       onClose();
     } catch (error: any) {
       console.error('❌ Frontend xatolik:', error);
+      console.error('❌ Response status:', error.response?.status);
       console.error('❌ Response data:', error.response?.data);
-      console.error('❌ Request data:', error.config?.data);
+      console.error('❌ Request data:', JSON.stringify({
+        title: tasks[0]?.title,
+        description: tasks[0]?.description,
+        assignments: tasks[0]?.assignments,
+        car: selectedCar,
+        service: tasks[0]?.service,
+        payment: tasks[0]?.payment
+      }, null, 2));
       
       const errorMessage = error.response?.data?.message || error.message || 'Vazifalarni yaratishda xatolik yuz berdi';
       const errorDetails = error.response?.data?.errors 
@@ -397,40 +420,39 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                       ) : (
                         <div className="space-y-2">
                           {task.assignments.map((assignment, idx) => {
-                            // 🔄 TO'G'RI KASKAD: Barcha keyingi shogirdlar 1-shogirtdan oladi
+                            // 🔄 YANGI LOGIKA: Barcha shogirdlar 1-shogirtning DASTLABKI pulidan oladi
                             let baseAmount = task.payment;
                             let earning = 0;
+                            let firstApprenticeInitialAmount = 0;
                             let firstApprenticeRemaining = 0;
                             
                             if (idx === 0) {
                               // 1-shogirt: Umumiy to'lovdan o'z foizini oladi
-                              earning = (task.payment * assignment.percentage) / 100;
-                              firstApprenticeRemaining = earning;
+                              firstApprenticeInitialAmount = (task.payment * assignment.percentage) / 100;
+                              earning = firstApprenticeInitialAmount;
                               
-                              // Qolgan shogirdlarning pulini ayirish
+                              // Qolgan shogirdlarning pulini ayirish (DASTLABKI puldan)
+                              let totalDeductions = 0;
                               for (let i = 1; i < task.assignments.length; i++) {
-                                const nextEarning = (firstApprenticeRemaining * task.assignments[i].percentage) / 100;
-                                firstApprenticeRemaining -= nextEarning;
+                                const nextEarning = (firstApprenticeInitialAmount * task.assignments[i].percentage) / 100;
+                                totalDeductions += nextEarning;
                               }
+                              
+                              firstApprenticeRemaining = firstApprenticeInitialAmount - totalDeductions;
+                              earning = firstApprenticeRemaining; // 1-shogirtga qolgan pul
+                              baseAmount = firstApprenticeInitialAmount; // Ko'rsatish uchun dastlabki pul
                             } else {
-                              // Keyingi shogirtlar: 1-shogirtning qolgan pulidan oladi
-                              let firstEarning = (task.payment * task.assignments[0].percentage) / 100;
-                              
-                              // 1-shogirtda qolgan pulni hisoblash (hozirgi shogirtgacha)
-                              for (let i = 1; i < idx; i++) {
-                                const prevEarning = (firstEarning * task.assignments[i].percentage) / 100;
-                                firstEarning -= prevEarning;
-                              }
-                              
-                              baseAmount = firstEarning;
-                              earning = (baseAmount * assignment.percentage) / 100;
+                              // Keyingi shogirtlar: 1-shogirtning DASTLABKI pulidan oladi
+                              const firstApprenticeInitial = (task.payment * task.assignments[0].percentage) / 100;
+                              baseAmount = firstApprenticeInitial;
+                              earning = (firstApprenticeInitial * assignment.percentage) / 100;
                             }
 
                             return (
                               <div key={assignment.id} className="p-2 bg-blue-50 rounded-lg border border-blue-200">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-semibold text-blue-700">
-                                    {idx + 1}-shogird {idx > 0 && `(1-shogirtdan oladi)`}
+                                    {idx + 1}-shogird {idx > 0 && `(1-shogirtning dastlabki pulidan)`}
                                   </span>
                                   <button
                                     type="button"
@@ -450,9 +472,12 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                       required
                                     >
                                       <option value="">Tanlang</option>
-                                      {apprenticesData?.users?.map((apprentice: any) => (
-                                        <option key={apprentice._id} value={apprentice._id}>
-                                          {apprentice.name} ({apprentice.percentage || 50}%)
+                                      {allAvailableUsers?.map((userOption: any) => (
+                                        <option key={userOption._id || userOption.id} value={userOption._id || userOption.id}>
+                                          {(userOption._id === user?.id || userOption.id === user?.id) ? 
+                                            `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%) - O'zim` : 
+                                            `${userOption.name} (${userOption.percentage || (userOption.role === 'master' ? 100 : 50)}%)`
+                                          }
                                         </option>
                                       ))}
                                     </select>
@@ -471,12 +496,12 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   </div>
                                 </div>
 
-                                {/* Hisoblash ko'rsatkichi - TO'G'RI KASKAD */}
+                                {/* Hisoblash ko'rsatkichi - YANGI LOGIKA */}
                                 {task.payment > 0 && assignment.percentage > 0 && (
                                   <div className="mt-2 p-2 bg-white rounded text-xs space-y-1">
                                     <div className="flex justify-between">
                                       <span className="text-gray-600">
-                                        {idx === 0 ? 'Umumiy to\'lov:' : '1-shogirtda qolgan:'}
+                                        {idx === 0 ? 'Umumiy to\'lov:' : '1-shogirtning dastlabki puli:'}
                                       </span>
                                       <span className="font-bold">{baseAmount.toLocaleString()} so'm</span>
                                     </div>
@@ -487,13 +512,13 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                     {idx === 0 && (
                                       <div className="flex justify-between">
                                         <span className="text-blue-600">Ustoz:</span>
-                                        <span className="font-bold text-blue-700">{(task.payment - earning).toLocaleString()} so'm</span>
+                                        <span className="font-bold text-blue-700">{(task.payment - baseAmount).toLocaleString()} so'm</span>
                                       </div>
                                     )}
                                     {idx === 0 && task.assignments.length > 1 && (
                                       <div className="flex justify-between">
-                                        <span className="text-orange-600">1-shogirtda qoladi:</span>
-                                        <span className="font-bold text-orange-700">{firstApprenticeRemaining.toLocaleString()} so'm</span>
+                                        <span className="text-orange-600">1-shogirtga qoladi:</span>
+                                        <span className="font-bold text-orange-700">{earning.toLocaleString()} so'm</span>
                                       </div>
                                     )}
                                   </div>
@@ -502,10 +527,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                             );
                           })}
 
-                          {/* Jami hisob - TO'G'RI KASKAD */}
+                          {/* Jami hisob - YANGI LOGIKA */}
                           {task.payment > 0 && task.assignments.length > 0 && (
                             <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                              <div className="text-xs font-bold text-gray-700 mb-2">📊 To'g'ri Kaskad hisob:</div>
+                              <div className="text-xs font-bold text-gray-700 mb-2">📊 Yangi Logika hisob:</div>
                               <div className="space-y-1 text-xs">
                                 <div className="flex justify-between">
                                   <span>Umumiy pul:</span>
@@ -514,40 +539,35 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                 
                                 {/* 1-shogirt */}
                                 {task.assignments.length > 0 && (() => {
-                                  const firstEarning = (task.payment * task.assignments[0].percentage) / 100;
-                                  let firstRemaining = firstEarning;
+                                  const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
                                   
-                                  // Qolgan shogirdlarning pulini ayirish
+                                  // Qolgan shogirdlarning jami pulini hisoblash
+                                  let totalDeductions = 0;
                                   for (let i = 1; i < task.assignments.length; i++) {
-                                    const nextEarning = (firstRemaining * task.assignments[i].percentage) / 100;
-                                    firstRemaining -= nextEarning;
+                                    const deduction = (firstInitialAmount * task.assignments[i].percentage) / 100;
+                                    totalDeductions += deduction;
                                   }
                                   
-                                  const apprentice = apprenticesData?.users?.find((u: any) => u._id === task.assignments[0].apprenticeId);
+                                  const firstFinalAmount = firstInitialAmount - totalDeductions;
+                                  const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === task.assignments[0].apprenticeId);
+                                  
                                   return (
                                     <div className="flex justify-between">
-                                      <span>1-shogird ({apprentice?.name}):</span>
-                                      <span className="font-bold text-green-700">{firstRemaining.toLocaleString()} so'm</span>
+                                      <span>1-foydalanuvchi ({selectedUser?.name}):</span>
+                                      <span className="font-bold text-green-700">{firstFinalAmount.toLocaleString()} so'm</span>
                                     </div>
                                   );
                                 })()}
                                 
                                 {/* Qolgan shogirdlar */}
                                 {task.assignments.slice(1).map((a, idx) => {
-                                  let firstEarning = (task.payment * task.assignments[0].percentage) / 100;
-                                  
-                                  // 1-shogirtda qolgan pulni hisoblash (hozirgi shogirtgacha)
-                                  for (let i = 1; i <= idx; i++) {
-                                    const prevEarning = (firstEarning * task.assignments[i].percentage) / 100;
-                                    firstEarning -= prevEarning;
-                                  }
-                                  
-                                  const earning = (firstEarning * a.percentage) / 100;
-                                  const apprentice = apprenticesData?.users?.find((u: any) => u._id === a.apprenticeId);
+                                  const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
+                                  const earning = (firstInitialAmount * a.percentage) / 100;
+                                  const selectedUser2 = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
                                   
                                   return (
                                     <div key={idx} className="flex justify-between">
-                                      <span>{idx + 2}-shogird ({apprentice?.name}):</span>
+                                      <span>{idx + 2}-foydalanuvchi ({selectedUser2?.name}):</span>
                                       <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
                                     </div>
                                   );
@@ -557,8 +577,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   <span>Ustoz ulushi:</span>
                                   <span className="font-bold text-blue-700">
                                     {(() => {
-                                      const firstEarning = (task.payment * task.assignments[0].percentage) / 100;
-                                      const masterShare = task.payment - firstEarning;
+                                      const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
+                                      const masterShare = task.payment - firstInitialAmount;
                                       return masterShare.toLocaleString();
                                     })()} so'm
                                   </span>
@@ -581,69 +601,6 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                         className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                         required
                       />
-                    </div>
-
-                    {/* Mobile-Optimized Priority, Due Date, Hours, Payment */}
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          <AlertTriangle className="h-3 w-3 inline mr-1" />
-                          <span className="hidden sm:inline">Muhimlik</span>
-                          <span className="sm:hidden">Muhim</span>
-                        </label>
-                        <select
-                          value={task.priority}
-                          onChange={(e) => updateTask(task.id, 'priority', e.target.value)}
-                          className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 bg-white"
-                        >
-                          <option value="low">Past</option>
-                          <option value="medium">O'rta</option>
-                          <option value="high">Yuqori</option>
-                          <option value="urgent">Shosh.</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          <Calendar className="h-3 w-3 inline mr-1" />
-                          Muddat *
-                        </label>
-                        <input
-                          type="date"
-                          value={task.dueDate}
-                          onChange={(e) => updateTask(task.id, 'dueDate', e.target.value)}
-                          min={new Date().toISOString().split('T')[0]}
-                          className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          Soat
-                        </label>
-                        <input
-                          type="number"
-                          value={task.estimatedHours}
-                          onChange={(e) => updateTask(task.id, 'estimatedHours', Number(e.target.value))}
-                          min="0.5"
-                          step="0.5"
-                          className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-600 mb-1">💰 To'lov</label>
-                        <input
-                          type="number"
-                          value={task.payment}
-                          onChange={(e) => updateTask(task.id, 'payment', Number(e.target.value))}
-                          min="0"
-                          className="w-full px-1 sm:px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
-                          placeholder="Avto"
-                        />
-                      </div>
                     </div>
                   </div>
                 ))}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks, useUpdateTaskStatus, useRestartTask } from '@/hooks/useTasks';
+import CreateTaskModal from '@/components/CreateTaskModal';
 import { 
   CheckSquare, 
   Clock, 
@@ -18,7 +19,8 @@ import {
   FileText,
   Sparkles,
   XCircle,
-  Circle
+  Circle,
+  Plus
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 
@@ -39,6 +41,7 @@ const ApprenticeTasks: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'active' | 'all' | 'completed'>('active'); // Default: faqat faol vazifalar
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // Yangi vazifa modal
 
   // Shogird uchun vazifalarni filtrlash
   const allTasks = tasks?.tasks || [];
@@ -191,6 +194,16 @@ const ApprenticeTasks: React.FC = () => {
               <p className="text-blue-100 mt-1 text-xs sm:text-sm md:text-base">
                 {t('Sizga berilgan', language)} {myTasks.length} {t('ta vazifani boshqaring', language)}
               </p>
+            </div>
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-all duration-200 flex items-center gap-2 text-sm sm:text-base font-medium"
+              >
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">{t('Yangi vazifa', language)}</span>
+                <span className="sm:hidden">{t('Yangi', language)}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -603,6 +616,12 @@ const ApprenticeTasks: React.FC = () => {
           })
         )}
       </div>
+      
+      {/* Create Task Modal */}
+      <CreateTaskModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+      />
     </div>
   );
 };

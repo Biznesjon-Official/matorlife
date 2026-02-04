@@ -67,21 +67,17 @@
   
   /* iOS Safari Compatible Select Styles */
   select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
+    /* CRITICAL: Use menulist for iOS Safari compatibility */
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    appearance: menulist;
     background-color: white;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.5rem center;
-    background-size: 1.25em 1.25em;
-    padding-right: 2.5rem;
     cursor: pointer;
     /* iOS specific fixes */
-    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
     -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
+    font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 44px; /* iOS touch target minimum */
   }
   
   /* Ensure select options are visible on iOS */
@@ -90,6 +86,7 @@
     color: #111827;
     padding: 0.5rem;
     font-size: 16px; /* Prevents zoom on iOS */
+    min-height: 44px;
   }
   
   /* Focus state for select on iOS */
@@ -97,6 +94,7 @@
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    font-size: 16px; /* Maintain size on focus to prevent zoom */
   }
   
   /* Disabled select styling */
@@ -104,6 +102,15 @@
     opacity: 0.6;
     cursor: not-allowed;
     background-color: #f3f4f6;
+  }
+  
+  /* iOS Safari specific - force native select appearance */
+  @supports (-webkit-touch-callout: none) {
+    select {
+      -webkit-appearance: menulist-button !important;
+      appearance: menulist-button !important;
+      padding-right: 1.5rem;
+    }
   }
   
   /* Card Styles */
@@ -699,6 +706,14 @@
     min-height: 44px;
     padding-top: 0.625rem;
     padding-bottom: 0.625rem;
+    -webkit-appearance: menulist-button !important;
+    appearance: menulist-button !important;
+  }
+  
+  /* Force native select on iOS for better compatibility */
+  select option {
+    font-size: 16px !important;
+    padding: 12px 8px !important;
   }
   
   /* Prevent text size adjustment on orientation change */

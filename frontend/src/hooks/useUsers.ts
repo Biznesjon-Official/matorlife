@@ -25,6 +25,17 @@ export const useApprentices = () => {
   });
 };
 
+// Dinamik shogirdlar ro'yxati - har kim o'zini va kichikларni ko'radi
+export const useAvailableApprentices = () => {
+  return useQuery({
+    queryKey: ['available-apprentices'],
+    queryFn: async () => {
+      const response = await api.get('/auth/available-apprentices');
+      return response.data;
+    },
+  });
+};
+
 export const useCreateApprentice = () => {
   const queryClient = useQueryClient();
   

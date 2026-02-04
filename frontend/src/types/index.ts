@@ -242,6 +242,14 @@ export interface Task {
     apprentice: User;
     earning: number;
   }>;
+  pendingAssignments?: Array<{
+    apprentice: User;
+    percentage: number;
+    addedBy: string;
+    addedByName: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

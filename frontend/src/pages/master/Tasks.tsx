@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTasks, useDeleteTask, useApproveTask } from '@/hooks/useTasks';
+import { useTasks, useDeleteTask, useApproveTask, useApprovePendingAssignment, useRejectPendingAssignment } from '@/hooks/useTasks';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import EditTaskModal from '@/components/EditTaskModal';
 import ViewTaskModal from '@/components/ViewTaskModal';
@@ -21,13 +21,16 @@ import {
   Award,
   Zap,
   X,
-  DollarSign
+  DollarSign,
+  AlertTriangle
 } from 'lucide-react';
 
 const MasterTasks: React.FC = () => {
   const { data: tasks, isLoading, refetch } = useTasks();
   const deleteTaskMutation = useDeleteTask();
   const approveTaskMutation = useApproveTask();
+  const approvePendingMutation = useApprovePendingAssignment();
+  const rejectPendingMutation = useRejectPendingAssignment();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -360,6 +363,89 @@ const MasterTasks: React.FC = () => {
                         {task.assignedTo?.name?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <span className="font-semibold text-gray-900 text-sm truncate">{task.assignedTo?.name || 'Noma\'lum'}</span>
+                    </div>
+                  )}
+                  
+                  {/* Pending Assignments - Chiroyli dizayn */}
+                  {task.pendingAssignments && task.pendingAssignments.length > 0 && (
+                    <div className="mt-3 relative">
+                      {/* Gradient background with glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-amber-100 via-yellow-50 to-orange-100 rounded-xl blur-sm opacity-70"></div>
+                      
+                      <div className="relative bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+                        {/* Header with icon and badge */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-1.5 rounded-lg shadow-sm">
+                              <AlertTriangle className="h-4 w-4 text-white" />
+                            </div>
+                            <h4 className="text-sm font-bold text-amber-800">Tasdiq kutilmoqda</h4>
+                          </div>
+                          <div className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                            {task.pendingAssignments.length}
+                          </div>
+                        </div>
+
+                        {/* Pending items */}
+                        <div className="space-y-3">
+                          {task.pendingAssignments.map((pending: any, idx: number) => (
+                            <div key={idx} className="bg-white/80 backdrop-blur-sm border border-amber-200/50 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200">
+                              {/* User info */}
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                                    {pending.apprentice?.name?.charAt(0).toUpperCase() || '?'}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {pending.apprentice?.name}
+                                    </p>
+                                    <p className="text-xs text-gray-600">
+                                      {pending.addedByName} tomonidan qo'shildi
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="ml-auto bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                  {pending.percentage}%
+                                </div>
+                              </div>
+
+                              {/* Action buttons */}
+                              <div className="flex gap-2">
+                                <button 
+                                  onClick={() => approvePendingMutation.mutate({ 
+                                    taskId: task._id, 
+                                    apprenticeId: pending.apprentice._id 
+                                  })}
+                                  disabled={approvePendingMutation.isPending}
+                                  className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all duration-200"
+                                >
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                  {approvePendingMutation.isPending ? 'Tasdiqlanmoqda...' : 'Tasdiqlash'}
+                                </button>
+                                <button 
+                                  onClick={() => rejectPendingMutation.mutate({ 
+                                    taskId: task._id, 
+                                    apprenticeId: pending.apprentice._id 
+                                  })}
+                                  disabled={rejectPendingMutation.isPending}
+                                  className="flex-1 px-3 py-2 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-semibold rounded-lg hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all duration-200"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  {rejectPendingMutation.isPending ? 'Rad etilmoqda...' : 'Rad etish'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Footer note */}
+                        <div className="mt-3 pt-3 border-t border-amber-200/50">
+                          <p className="text-xs text-amber-700 text-center font-medium">
+                            💡 Shogirdlar qo'shilishi uchun sizning tasdiqlashingiz kerak
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
                   

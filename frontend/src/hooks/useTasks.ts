@@ -208,6 +208,46 @@ export const useDeleteTask = () => {
   });
 };
 
+// Pending assignment'ni tasdiqlash
+export const useApprovePendingAssignment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ taskId, apprenticeId }: { taskId: string; apprenticeId: string }) => {
+      const response = await api.patch(`/tasks/${taskId}/pending/${apprenticeId}/approve`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task'] });
+      toast.success('Shogird vazifaga qo\'shildi');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Shogirdni qo\'shishda xatolik');
+    },
+  });
+};
+
+// Pending assignment'ni rad etish
+export const useRejectPendingAssignment = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ taskId, apprenticeId }: { taskId: string; apprenticeId: string }) => {
+      const response = await api.patch(`/tasks/${taskId}/pending/${apprenticeId}/reject`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task'] });
+      toast.success('Shogird rad etildi');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Shogirdni rad etishda xatolik');
+    },
+  });
+};
+
 // Completed tasks count hook for notification badge
 export const useCompletedTasksCount = () => {
   return useQuery({
