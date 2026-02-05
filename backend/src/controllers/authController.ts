@@ -353,6 +353,8 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
     
     const apprentices = await User.find({ role: 'apprentice' }).select('-password').lean();
     
+    console.log('\n📊 SHOGIRTLAR STATISTIKASI:');
+    
     // Get task statistics for each apprentice
     const apprenticesWithStats = await Promise.all(
       apprentices.map(async (apprentice) => {
@@ -377,12 +379,19 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
           awards: tasks.filter((t: any) => t.status === 'approved').length // Mukofotlar = tasdiqlangan vazifalar
         };
         
+        console.log(`👤 ${apprentice.name}:`);
+        console.log(`   💰 Joriy oylik: ${apprentice.earnings} so'm`);
+        console.log(`   💎 Jami daromad: ${apprentice.totalEarnings} so'm`);
+        console.log(`   ✅ Tasdiqlangan: ${stats.approvedTasks} ta`);
+        
         return {
           ...apprentice,
           stats
         };
       })
     );
+    
+    console.log('✅ Statistika yuborildi\n');
     
     res.json({ users: apprenticesWithStats });
   } catch (error: any) {

@@ -724,11 +724,17 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
           
           const updatedUser = await User.findByIdAndUpdate(
             assignment.apprentice,
-            { $inc: { earnings: assignment.earning } },
+            { 
+              $inc: { 
+                earnings: assignment.earning,
+                totalEarnings: assignment.earning 
+              } 
+            },
             { new: true }
           );
           
-          console.log(`   ✅ Yangi balans: ${updatedUser?.earnings.toFixed(2)} so'm`);
+          console.log(`   ✅ Joriy oylik: ${updatedUser?.earnings.toFixed(2)} so'm`);
+          console.log(`   ✅ Jami daromad: ${updatedUser?.totalEarnings.toFixed(2)} so'm`);
         }
         
         console.log('\n✅ Barcha shogirdlarga pul qo\'shildi (YANGI LOGIKA)\n');
@@ -739,10 +745,16 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
         console.log(`  → Shogird ${task.assignedTo} ga ${task.apprenticeEarning} so'm qo'shilmoqda`);
         const updatedUser = await User.findByIdAndUpdate(
           task.assignedTo,
-          { $inc: { earnings: task.apprenticeEarning } },
+          { 
+            $inc: { 
+              earnings: task.apprenticeEarning,
+              totalEarnings: task.apprenticeEarning 
+            } 
+          },
           { new: true }
         );
-        console.log(`  ✅ Yangilandi! Yangi balans: ${updatedUser?.earnings}`);
+        console.log(`  ✅ Joriy oylik: ${updatedUser?.earnings}`);
+        console.log(`  ✅ Jami daromad: ${updatedUser?.totalEarnings}`);
       } else {
         console.log('⚠️ Hech qanday shogird topilmadi yoki earning 0!');
       }

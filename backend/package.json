@@ -25,7 +25,8 @@
     "seed-master": "ts-node src/scripts/seedMaster.ts",
     "add-total-earnings": "ts-node src/scripts/addTotalEarnings.ts",
     "test-salary": "ts-node src/scripts/testSalaryPayment.ts",
-    "reset-apprentice-data": "ts-node src/scripts/resetApprenticeData.ts"
+    "reset-apprentice-data": "ts-node src/scripts/resetApprenticeData.ts",
+    "check-total-earnings": "ts-node src/scripts/checkTotalEarnings.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
