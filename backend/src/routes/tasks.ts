@@ -9,7 +9,9 @@ import {
   approveTask,
   getTaskStats,
   restartTask,
-  deleteTask
+  deleteTask,
+  approvePendingAssignment,
+  rejectPendingAssignment
 } from '../controllers/taskController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -71,5 +73,11 @@ router.patch('/:id/restart', authenticate, restartTask);
 
 // Delete task (master can delete any task, apprentice can delete their own tasks)
 router.delete('/:id', authenticate, deleteTask);
+
+// Approve pending assignment (master only)
+router.patch('/:taskId/pending/:apprenticeId/approve', authenticate, authorize('master'), approvePendingAssignment);
+
+// Reject pending assignment (master only)
+router.patch('/:taskId/pending/:apprenticeId/reject', authenticate, authorize('master'), rejectPendingAssignment);
 
 export default router;

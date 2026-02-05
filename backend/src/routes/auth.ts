@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getProfile, getApprentices, getUsers, getApprenticesWithStats, updateUser, deleteUser } from '../controllers/authController';
+import { register, login, getProfile, getApprentices, getAvailableApprentices, getUsers, getApprenticesWithStats, updateUser, deleteUser } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
 import { upload } from '../middleware/upload';
@@ -84,6 +84,9 @@ router.get('/apprentices/stats', authenticate, authorize('master'), getApprentic
 
 // Get apprentices (master only)
 router.get('/apprentices', authenticate, authorize('master'), getApprentices);
+
+// Get available apprentices (dinamik - har kim o'zini va kichikларni ko'radi)
+router.get('/available-apprentices', authenticate, getAvailableApprentices);
 
 // Update user (master only)
 router.patch('/users/:id', authenticate, authorize('master'), [

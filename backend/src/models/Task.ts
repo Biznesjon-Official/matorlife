@@ -1,5 +1,15 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+// Kutilayotgan tayinlash ma'lumotlari
+export interface IPendingAssignment {
+  apprentice: mongoose.Types.ObjectId;
+  percentage: number;
+  addedBy: mongoose.Types.ObjectId; // Kim qo'shgan
+  addedByName: string; // Qo'shuvchining ismi
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: Date;
+}
+
 // Har bir shogird uchun tayinlash ma'lumotlari
 export interface ITaskAssignment {
   apprentice: mongoose.Types.ObjectId;
@@ -14,7 +24,10 @@ export interface ITask extends Document {
   description: string;
   assignedTo: mongoose.Types.ObjectId; // Bitta shogird (eski vazifalar uchun)
   assignments: ITaskAssignment[]; // Ko'p shogirdlar (yangi tizim)
+  pendingAssignments: IPendingAssignment[]; // Tasdiq kutayotgan shogirdlar
   assignedBy: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId; // Kim yaratgan (ustoz yoki shogirt)
+  createdByRole: 'master' | 'apprentice'; // Yaratuvchining roli
   car: mongoose.Types.ObjectId;
   service?: mongoose.Types.ObjectId;
   serviceItemId?: string;
@@ -34,6 +47,39 @@ export interface ITask extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Kutilayotgan tayinlash schemasi
+const pendingAssignmentSchema = new Schema<IPendingAssignment>({
+  apprentice: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  percentage: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
+  },
+  addedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  addedByName: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: false });
 
 // Shogird tayinlash schemasi
 const taskAssignmentSchema = new Schema<ITaskAssignment>({
@@ -85,9 +131,23 @@ const taskSchema = new Schema<ITask>({
     type: [taskAssignmentSchema],
     default: []
   },
+  pendingAssignments: {
+    type: [pendingAssignmentSchema],
+    default: []
+  },
   assignedBy: {
     type: Schema.Types.ObjectId,
     ref: 'User',
+    required: true
+  },
+  createdBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  createdByRole: {
+    type: String,
+    enum: ['master', 'apprentice'],
     required: true
   },
   car: {

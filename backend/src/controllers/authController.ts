@@ -243,6 +243,50 @@ export const getApprentices = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Dinamik shogirdlar ro'yxati - har kim o'zini va o'zidan kichikларni ko'radi
+export const getAvailableApprentices = async (req: AuthRequest, res: Response) => {
+  try {
+    const currentUser = req.user!;
+    const currentUserPercentage = currentUser.percentage || 0;
+    
+    console.log(`🔍 ${currentUser.name} (${currentUserPercentage}%) - ${currentUser.role} uchun foydalanuvchilar ro'yxati so'ralmoqda`);
+    
+    let allUsers;
+    
+    if (currentUser.role === 'master') {
+      // USTOZ: Hammani ko'radi (o'zi + barcha shogirdlar)
+      allUsers = await User.find({
+        $or: [
+          { _id: currentUser._id }, // O'zini qo'shish
+          { role: 'apprentice' } // Barcha shogirdlar
+        ]
+      }).select('-password').lean();
+      
+      console.log(`✅ USTOZ: Barcha foydalanuvchilar ko'rsatildi (${allUsers.length})`);
+    } else {
+      // SHOGIRD: Faqat o'zi va o'zidan kam foizlilarni ko'radi
+      allUsers = await User.find({
+        $or: [
+          { _id: currentUser._id }, // O'zini qo'shish
+          { 
+            role: 'apprentice',
+            percentage: { $lt: currentUserPercentage } // Faqat kichik foizlilar
+          }
+        ]
+      }).select('-password').lean();
+      
+      console.log(`✅ SHOGIRD: Faqat o'zi va kam foizlilar ko'rsatildi (${allUsers.length})`);
+    }
+    
+    console.log(`📋 Topilgan foydalanuvchilar: ${allUsers.map(u => `${u.name} (${u.percentage || 0}%) - ${u.role}`).join(', ')}`);
+    
+    res.json({ users: allUsers });
+  } catch (error: any) {
+    console.error('❌ getAvailableApprentices xatolik:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Ustoz o'zi qo'shgan shogirdlarni olish
 export const getMyApprentices = async (req: AuthRequest, res: Response) => {
   try {
