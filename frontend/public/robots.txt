@@ -1,0 +1,12 @@
+# Robots.txt for Mator Life
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://matorlife.uz/sitemap.xml
+
+# Disallow private pages
+Disallow: /login
+Disallow: /master/*
+Disallow: /apprentice/*
+Disallow: /api/*
