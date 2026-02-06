@@ -1,61 +1,48 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import path from 'path';
 import User from '../models/User';
 import Task from '../models/Task';
-import dotenv from 'dotenv';
+import Transaction from '../models/Transaction';
 
-dotenv.config();
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const deleteAllTasksAndResetEarnings = async () => {
   try {
-    // MongoDB ga ulanish
+    // Connect to MongoDB
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/avtoservis';
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB ga ulandi');
 
     // 1. Barcha vazifalarni o'chirish
-    console.log('\n🗑️  Barcha vazifalarni o\'chirish...');
-    const taskDeleteResult = await Task.deleteMany({});
-    console.log(`✅ ${taskDeleteResult.deletedCount} ta vazifa o'chirildi`);
+    const tasksResult = await Task.deleteMany({});
+    console.log(`🗑️ ${tasksResult.deletedCount} ta vazifa o'chirildi`);
 
-    // 2. Barcha shogirtlarning daromadini 0 ga qaytarish
-    console.log('\n💰 Shogirtlar daromadini 0 ga qaytarish...');
-    const apprentices = await User.find({ role: 'apprentice' });
-    console.log(`📊 Jami shogirtlar soni: ${apprentices.length}`);
+    // 2. Barcha transaksiyalarni o'chirish
+    const transactionsResult = await Transaction.deleteMany({});
+    console.log(`🗑️ ${transactionsResult.deletedCount} ta transaksiya o'chirildi`);
 
-    if (apprentices.length > 0) {
-      console.log('\n📋 Shogirtlarning hozirgi daromadlari:');
-      apprentices.forEach((apprentice, index) => {
-        console.log(`${index + 1}. ${apprentice.name} (${apprentice.username}):`);
-        console.log(`   💰 Joriy oylik (earnings): ${apprentice.earnings.toLocaleString()} so'm`);
-        console.log(`   💎 Jami daromad (totalEarnings): ${apprentice.totalEarnings.toLocaleString()} so'm`);
-      });
+    // 3. Barcha foydalanuvchilarning earnings va totalEarnings ni 0 ga qaytarish
+    const users = await User.find({});
+    let resetCount = 0;
 
-      // Barcha shogirtlarning earnings va totalEarnings ni 0 ga o'zgartirish
-      const userUpdateResult = await User.updateMany(
-        { role: 'apprentice' },
-        { $set: { earnings: 0, totalEarnings: 0 } }
-      );
+    for (const user of users) {
+      const oldEarnings = user.earnings;
+      const oldTotalEarnings = user.totalEarnings;
 
-      console.log(`\n✅ ${userUpdateResult.modifiedCount} ta shogirtning daromadi 0 so'mga qaytarildi`);
+      user.earnings = 0;
+      user.totalEarnings = 0;
+      await user.save();
 
-      // Yangilangan ma'lumotlarni ko'rsatish
-      const updatedApprentices = await User.find({ role: 'apprentice' });
-      console.log('\n📋 Yangilangan daromadlar:');
-      updatedApprentices.forEach((apprentice, index) => {
-        console.log(`${index + 1}. ${apprentice.name} (${apprentice.username}):`);
-        console.log(`   💰 Joriy oylik (earnings): ${apprentice.earnings.toLocaleString()} so'm`);
-        console.log(`   💎 Jami daromad (totalEarnings): ${apprentice.totalEarnings.toLocaleString()} so'm`);
-      });
+      console.log(`✅ ${user.name}: earnings ${oldEarnings} → 0, totalEarnings ${oldTotalEarnings} → 0`);
+      resetCount++;
     }
 
-    console.log('\n✅ Barcha vazifalar va daromadlar tozalandi!');
-    console.log('📝 Natija:');
-    console.log(`   - O'chirilgan vazifalar: ${taskDeleteResult.deletedCount} ta`);
-    console.log(`   - Yangilangan shogirtlar: ${apprentices.length} ta`);
+    console.log(`\n✅ Jami ${resetCount} ta foydalanuvchi yangilandi`);
+    console.log('✅ Barcha vazifalar va pullar o\'chirildi!');
 
-    // Ulanishni yopish
-    await mongoose.connection.close();
-    console.log('\n✅ MongoDB ulanishi yopildi');
+    process.exit(0);
   } catch (error) {
     console.error('❌ Xatolik:', error);
     process.exit(1);
