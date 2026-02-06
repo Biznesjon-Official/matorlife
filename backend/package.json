@@ -26,7 +26,8 @@
     "add-total-earnings": "ts-node src/scripts/addTotalEarnings.ts",
     "test-salary": "ts-node src/scripts/testSalaryPayment.ts",
     "reset-apprentice-data": "ts-node src/scripts/resetApprenticeData.ts",
-    "check-total-earnings": "ts-node src/scripts/checkTotalEarnings.ts"
+    "check-total-earnings": "ts-node src/scripts/checkTotalEarnings.ts",
+    "reset-apprentice-earnings": "ts-node src/scripts/resetApprenticeEarnings.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

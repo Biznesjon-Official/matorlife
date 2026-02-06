@@ -52,16 +52,24 @@ const SalaryExpenseModal: React.FC<SalaryExpenseModalProps> = ({
     const selectedApprentice = apprentices.find((app: any) => app._id === userId);
     
     if (selectedApprentice) {
+      // Barcha tasdiqlangan ishlarning jami summasi (faqat ma'lumot uchun)
       const earnings = selectedApprentice.earnings || 0;
-      const formatted = formatNumber(earnings.toString());
+      const totalEarnings = selectedApprentice.totalEarnings || 0;
+      const totalFromTasks = earnings + totalEarnings; // Jami daromad
       
+      console.log(`📊 Shogird tanlandi: ${selectedApprentice.name}`);
+      console.log(`   💰 Joriy oylik: ${earnings} so'm`);
+      console.log(`   💎 To'langan maoshlar: ${totalEarnings} so'm`);
+      console.log(`   🎯 Jami daromad: ${totalFromTasks} so'm`);
+      
+      // Faqat ism va ID to'ldiriladi, summa bo'sh qoladi
       setEmployee({
         id: '1',
         userId: selectedApprentice._id,
         name: selectedApprentice.name,
-        baseSalary: earnings,
-        baseSalaryDisplay: formatted,
-        totalSalary: earnings
+        baseSalary: 0, // Bo'sh
+        baseSalaryDisplay: '', // Bo'sh
+        totalSalary: 0 // Bo'sh
       });
     }
   };
@@ -159,7 +167,7 @@ ${t('Maosh', language)}: ${formatCurrency(employee.totalSalary)}`;
                   <option value="">{t('Tanlang...', language)}</option>
                   {apprentices.map((apprentice: any) => (
                     <option key={apprentice._id} value={apprentice._id}>
-                      {apprentice.name} - {formatCurrency(apprentice.earnings || 0)}
+                      {apprentice.name}
                     </option>
                   ))}
                 </select>
@@ -193,19 +201,19 @@ ${t('Maosh', language)}: ${formatCurrency(employee.totalSalary)}`;
                   type="text"
                   value={employee.baseSalaryDisplay}
                   onChange={(e) => updateEmployeeAmount(e.target.value)}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all text-lg font-semibold ${
-                    employee.userId 
-                      ? 'bg-green-50 border-green-300 text-green-700' 
-                      : 'border-gray-200 focus:border-purple-500'
-                  }`}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-all text-lg font-semibold"
                   placeholder="1,000,000"
                   required
-                  readOnly={!!employee.userId}
                 />
                 {employee.userId && (
-                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                  <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    {t('Shogirdning daromadi avtomatik yuklandi', language)}
+                    {t('Maosh summasini qo\'lda kiriting', language)}
+                  </p>
+                )}
+                {!employee.userId && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    {t('Shogird tanlanmagan, summani qo\'lda kiriting', language)}
                   </p>
                 )}
               </div>

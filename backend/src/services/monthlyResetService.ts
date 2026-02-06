@@ -77,11 +77,38 @@ async function saveMonthlyHistoryAndReset(resetBy: any) {
   
   // 2. Barcha foydalanuvchilarning daromadlarini olish
   const users = await User.find({});
-  const userEarnings = users.map(user => ({
-    userId: user._id,
-    name: user.name,
-    role: user.role,
-    earnings: user.earnings
+  
+  // Shu oydagi maosh to'lovlarini olish
+  const salaryTransactions = transactions.filter(t => {
+    if (t.type !== 'expense') return false;
+    const categoryLower = t.category.toLowerCase();
+    return categoryLower.includes('maosh') || 
+           categoryLower.includes('oylik') || 
+           categoryLower.includes('salary') ||
+           t.category === 'Oyliklar' ||
+           t.category === 'Maosh' ||
+           t.category === 'Oylik';
+  });
+  
+  // Har bir foydalanuvchi uchun shu oydagi tasdiqlangan vazifalardan daromadni hisoblash
+  const userEarnings = await Promise.all(users.map(async (user) => {
+    // Shu oydagi shu foydalanuvchiga to'langan maoshlarni hisoblash
+    const paidSalaryThisMonth = salaryTransactions
+      .filter(t => t.apprenticeId && t.apprenticeId.toString() === user._id.toString())
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    console.log(`💰 ${user.name}: Shu oyda to'langan maosh = ${paidSalaryThisMonth} so'm`);
+    console.log(`   - Jami maosh transaksiyalari: ${salaryTransactions.length}`);
+    console.log(`   - Shu shogirtga to'langan: ${salaryTransactions.filter(t => t.apprenticeId && t.apprenticeId.toString() === user._id.toString()).length}`);
+    
+    return {
+      userId: user._id,
+      name: user.name,
+      role: user.role,
+      earnings: user.earnings, // Joriy oylik (to'lanmagan)
+      totalEarnings: user.totalEarnings || 0, // Jami to'langan maoshlar (barcha oylar)
+      totalFromTasks: paidSalaryThisMonth // FAQAT shu oydagi to'langan maoshlar
+    };
   }));
   
   // 3. Tarixga saqlash

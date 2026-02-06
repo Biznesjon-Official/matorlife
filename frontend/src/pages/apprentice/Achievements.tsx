@@ -12,7 +12,8 @@ import { t } from '@/lib/transliteration';
 const ApprenticeAchievements: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks } = useTasks();
-  const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all'>('all');
+  const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' yoki 'YYYY-MM' format
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -42,6 +43,30 @@ const ApprenticeAchievements: React.FC = () => {
   const approvedTasks = myTasks.filter((task: any) => task.status === 'approved');
   const completedTasks = myTasks.filter((task: any) => task.status === 'completed' || task.status === 'approved');
 
+  // Mavjud oylarni olish (tasdiqlangan vazifalar bo'lgan oylar)
+  const getAvailableMonths = () => {
+    const months = new Set<string>();
+    approvedTasks.forEach((task: any) => {
+      if (task.approvedAt) {
+        const date = new Date(task.approvedAt);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        months.add(monthKey);
+      }
+    });
+    return Array.from(months).sort().reverse(); // Eng yangi oylar birinchi
+  };
+
+  const availableMonths = getAvailableMonths();
+
+  // Oy nomini olish
+  const getMonthName = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    const monthNames = language === 'latin' 
+      ? ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
+      : ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  };
+
   // Vaqt bo'yicha filtrlash
   const getFilteredTasks = () => {
     const now = new Date();
@@ -59,6 +84,13 @@ const ApprenticeAchievements: React.FC = () => {
       if (!task.approvedAt) return false;
       const approvedDate = new Date(task.approvedAt);
 
+      // Agar oylik filter tanlangan bo'lsa
+      if (monthFilter !== 'all') {
+        const taskMonthKey = `${approvedDate.getFullYear()}-${String(approvedDate.getMonth() + 1).padStart(2, '0')}`;
+        return taskMonthKey === monthFilter;
+      }
+
+      // Aks holda vaqt filtri
       switch (timeFilter) {
         case 'today':
           return approvedDate >= today;
@@ -81,6 +113,25 @@ const ApprenticeAchievements: React.FC = () => {
   
   // Shogird daromadini hisoblash - faqat foizga hisoblangan pul
   const filteredEarnings = filteredTasks.reduce((total: number, task: any) => {
+    // Yangi tizim: assignments orqali
+    if (task.assignments && task.assignments.length > 0) {
+      const myAssignment = task.assignments.find((a: any) => {
+        const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+        return apprenticeId === user?.id;
+      });
+      if (myAssignment) {
+        return total + (myAssignment.earning || 0);
+      }
+    }
+    // Eski tizim: apprenticeEarning
+    if (task.apprenticeEarning) {
+      return total + task.apprenticeEarning;
+    }
+    return total;
+  }, 0);
+
+  // Barcha tasdiqlangan ishlarning jami daromadi
+  const totalEarningsFromTasks = approvedTasks.reduce((total: number, task: any) => {
     // Yangi tizim: assignments orqali
     if (task.assignments && task.assignments.length > 0) {
       const myAssignment = task.assignments.find((a: any) => {
@@ -199,9 +250,9 @@ const ApprenticeAchievements: React.FC = () => {
               <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-blue-700">{t('Joriy oylik', language)}</p>
+              <p className="text-xs sm:text-sm font-medium text-blue-700">{t('Jami daromad', language)}</p>
               <p className="text-xl sm:text-2xl font-bold text-blue-900">
-                {new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}
+                {new Intl.NumberFormat('uz-UZ').format(totalEarningsFromTasks)}
               </p>
               <p className="text-xs text-blue-600">{t('so\'m', language)}</p>
             </div>
@@ -219,9 +270,9 @@ const ApprenticeAchievements: React.FC = () => {
             <div>
               <p className="text-sm sm:text-base text-blue-100 mb-1">{t('Jami daromad', language)}</p>
               <p className="text-3xl sm:text-4xl font-bold">
-                {new Intl.NumberFormat('uz-UZ').format(user?.totalEarnings || 0)}
+                {new Intl.NumberFormat('uz-UZ').format(totalEarningsFromTasks)}
               </p>
-              <p className="text-xs sm:text-sm text-blue-100 mt-1">{t('so\'m (barcha vaqt)', language)}</p>
+              <p className="text-xs sm:text-sm text-blue-100 mt-1">{t('so\'m (tasdiqlangan ishlar)', language)}</p>
             </div>
           </div>
           <div className="text-right hidden sm:block">
@@ -239,19 +290,41 @@ const ApprenticeAchievements: React.FC = () => {
             {t('Daromad tarixi', language)}
           </h3>
           
-          {/* Time Filter Select */}
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value as any)}
-            className="px-3 sm:px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm w-full sm:w-auto"
-          >
-            <option value="yesterday">{t('Kecha', language)}</option>
-            <option value="today">{t('Bugun', language)}</option>
-            <option value="week">{t('1 hafta', language)}</option>
-            <option value="month">{t('1 oy', language)}</option>
-            <option value="year">{t('1 yil', language)}</option>
-            <option value="all">{t('Hammasi', language)}</option>
-          </select>
+          {/* Month Filter Select */}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <select
+              value={monthFilter}
+              onChange={(e) => {
+                setMonthFilter(e.target.value);
+                if (e.target.value !== 'all') {
+                  setTimeFilter('all'); // Oylik filter tanlanganda vaqt filtrini o'chirish
+                }
+              }}
+              className="px-3 sm:px-4 py-2 border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm"
+            >
+              <option value="all">{t('Barcha oylar', language)}</option>
+              {availableMonths.map((monthKey) => (
+                <option key={monthKey} value={monthKey}>
+                  {getMonthName(monthKey)}
+                </option>
+              ))}
+            </select>
+            
+            {monthFilter === 'all' && (
+              <select
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value as any)}
+                className="px-3 sm:px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm"
+              >
+                <option value="yesterday">{t('Kecha', language)}</option>
+                <option value="today">{t('Bugun', language)}</option>
+                <option value="week">{t('1 hafta', language)}</option>
+                <option value="month">{t('1 oy', language)}</option>
+                <option value="year">{t('1 yil', language)}</option>
+                <option value="all">{t('Hammasi', language)}</option>
+              </select>
+            )}
+          </div>
         </div>
 
         {/* Mobile-Optimized Earnings Summary */}

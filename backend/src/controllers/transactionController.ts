@@ -9,6 +9,12 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
   try {
     const { type, category, amount, description, paymentMethod, relatedTo, apprenticeId, sparePartName } = req.body;
 
+    console.log('\n🔍 CREATE TRANSACTION:');
+    console.log('   Type:', type);
+    console.log('   Category:', category);
+    console.log('   Amount:', amount);
+    console.log('   ApprenticeId:', apprenticeId);
+
     const transaction = new Transaction({
       type,
       category,
@@ -16,34 +22,58 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
       description,
       paymentMethod,
       relatedTo,
+      apprenticeId: apprenticeId || undefined, // Maosh to'langan shogirt
       createdBy: req.user!._id
     });
 
     await transaction.save();
 
+    // Maosh kategoriyasini aniqlash (keng tekshiruv)
+    const categoryLower = category.toLowerCase();
+    const isSalaryCategory = categoryLower.includes('maosh') || 
+                            categoryLower.includes('oylik') || 
+                            categoryLower.includes('salary') ||
+                            category === 'Oyliklar' ||
+                            category === 'Maosh' ||
+                            category === 'Oylik';
+
+    console.log('   Is Salary Category:', isSalaryCategory);
+
     // Update user earnings
     const user = req.user!;
-    if (type === 'income') {
-      user.earnings += amount;
-    } else {
-      user.earnings = Math.max(0, user.earnings - amount);
-    }
     
-    // Agar oylik maosh to'lansa (salary category)
-    if (type === 'expense' && category === 'salary' && apprenticeId) {
+    // Agar oylik maosh to'lansa va apprenticeId berilgan bo'lsa
+    if (type === 'expense' && isSalaryCategory && apprenticeId) {
       const apprentice = await User.findById(apprenticeId);
       if (apprentice) {
-        // 1. Joriy daromadni jami daromadga qo'shish
-        apprentice.totalEarnings += apprentice.earnings;
+        console.log(`\n💰 MAOSH TO'LOVI BOSHLANDI:`);
+        console.log(`   Shogird: ${apprentice.name}`);
+        console.log(`   Joriy oylik (oldin): ${apprentice.earnings} so'm`);
+        console.log(`   Jami daromad (oldin): ${apprentice.totalEarnings} so'm`);
+        console.log(`   To'lanayotgan summa: ${amount} so'm`);
         
-        // 2. Joriy daromadni 0 ga qaytarish
-        apprentice.earnings = 0;
+        // YANGI LOGIKA: 
+        // - Joriy oylikdan (earnings) ayriladi (chunki pul berildi)
+        // - Jami daromadga (totalEarnings) qo'shiladi (berilgan maoshlar yig'indisi)
+        apprentice.earnings = Math.max(0, apprentice.earnings - amount);
+        apprentice.totalEarnings += amount;
         
         await apprentice.save();
         
-        console.log(`✅ Oylik to'landi: ${apprentice.name}`);
-        console.log(`   Jami daromad: ${apprentice.totalEarnings} so'm`);
-        console.log(`   Joriy daromad: ${apprentice.earnings} so'm (0 ga qaytarildi)`);
+        console.log(`   ✅ Joriy oylik (keyin): ${apprentice.earnings} so'm`);
+        console.log(`   ✅ Jami daromad (keyin): ${apprentice.totalEarnings} so'm`);
+        console.log(`   📊 Shogirdga ${amount} so'm maosh to'landi\n`);
+        
+        // Master daromadidan ayirish (chunki bu chiqim)
+        user.earnings = Math.max(0, user.earnings - amount);
+      }
+    } else {
+      // Oddiy kirim/chiqim logikasi
+      if (type === 'income') {
+        user.earnings += amount;
+      } else {
+        // Oddiy chiqimlar uchun master daromadidan ayirish
+        user.earnings = Math.max(0, user.earnings - amount);
       }
     }
     

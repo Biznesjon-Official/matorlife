@@ -726,8 +726,7 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
             assignment.apprentice,
             { 
               $inc: { 
-                earnings: assignment.earning,
-                totalEarnings: assignment.earning 
+                earnings: assignment.earning  // Faqat joriy oylikka qo'shish
               } 
             },
             { new: true }
@@ -747,8 +746,7 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
           task.assignedTo,
           { 
             $inc: { 
-              earnings: task.apprenticeEarning,
-              totalEarnings: task.apprenticeEarning 
+              earnings: task.apprenticeEarning  // Faqat joriy oylikka qo'shish
             } 
           },
           { new: true }

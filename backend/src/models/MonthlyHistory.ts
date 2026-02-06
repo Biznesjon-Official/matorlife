@@ -20,6 +20,8 @@ export interface IMonthlyHistory extends Document {
     name: string;
     role: string;
     earnings: number;
+    totalEarnings?: number; // Jami to'langan maoshlar
+    totalFromTasks?: number; // Jami daromad (earnings + totalEarnings)
   }[];
   resetDate: Date;
   resetBy: mongoose.Types.ObjectId;
@@ -101,6 +103,14 @@ const monthlyHistorySchema = new Schema<IMonthlyHistory>({
       required: true
     },
     earnings: {
+      type: Number,
+      default: 0
+    },
+    totalEarnings: {
+      type: Number,
+      default: 0
+    },
+    totalFromTasks: {
       type: Number,
       default: 0
     }

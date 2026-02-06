@@ -81,15 +81,20 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
   const handleCategorySelect = (category: any) => {
     setSelectedCategory(category);
     
-    // Agar "Maosh" kategoriyasi bo'lsa, maxsus modal ochish
-    if (category.nameUz === 'Oyliklar' || category.nameUz.toLowerCase().includes('maosh') || category.nameUz.toLowerCase().includes('oylik')) {
+    // Agar "Maosh/Oyliklar" kategoriyasi bo'lsa, maxsus maosh modali ochish
+    if (category.nameUz === 'Oyliklar' || 
+        category.nameUz.toLowerCase().includes('maosh') || 
+        category.nameUz.toLowerCase().includes('oylik')) {
       setIsSalaryModalOpen(true);
     } 
     // Agar "Zapchastlar" kategoriyasi bo'lsa, zapchast qo'shish modali ochish
-    else if (category.nameUz === 'Zapchastlar' || category.nameUz.toLowerCase().includes('zapchast') || category.nameUz.toLowerCase().includes('ehtiyot qism')) {
+    else if (category.nameUz === 'Zapchastlar' || 
+             category.nameUz.toLowerCase().includes('zapchast') || 
+             category.nameUz.toLowerCase().includes('ehtiyot qism')) {
       setIsSparePartModalOpen(true);
     } 
     else {
+      // Barcha boshqa kategoriyalar uchun oddiy forma ochish
       setStep('form');
     }
   };
