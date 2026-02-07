@@ -7,8 +7,8 @@
     
     <!-- SEO Meta Tags -->
     <title>Mator Life - Avtomobil Servisi Boshqaruv Tizimi | O'zbekiston</title>
-    <meta name="description" content="Mator Life - O'zbekistondagi eng zamonaviy avtomobil servisi boshqaruv tizimi. Avtomobil ta'mirlash, ehtiyot qismlar, xizmatlar va moliyaviy hisobotlarni boshqaring." />
-    <meta name="keywords" content="avtomobil servisi, mator life, avtoservis, avtomobil ta'mirlash, ehtiyot qismlar, o'zbekiston, toshkent, car service, auto repair" />
+    <meta name="description" content="Mator Life (Matorlayf, Motor Life, Motorlife) - O'zbekistondagi eng zamonaviy avtomobil servisi boshqaruv tizimi. Avtomobil ta'mirlash, ehtiyot qismlar, xizmatlar va moliyaviy hisobotlarni boshqaring." />
+    <meta name="keywords" content="mator life, matorlife, matorlayf, motor life, motorlife, motorlayf, avtomobil servisi, avtoservis, avtomobil ta'mirlash, ehtiyot qismlar, o'zbekiston, toshkent, car service, auto repair, avto servis, mashina ta'mirlash" />
     <meta name="author" content="Mator Life" />
     <meta name="robots" content="index, follow" />
     <meta name="language" content="Uzbek" />
@@ -17,7 +17,7 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://matorlife.uz/" />
-    <meta property="og:title" content="Mator Life - Avtomobil Servisi Boshqaruv Tizimi" />
+    <meta property="og:title" content="Mator Life (Matorlayf, Motor Life) - Avtomobil Servisi Boshqaruv Tizimi" />
     <meta property="og:description" content="O'zbekistondagi eng zamonaviy avtomobil servisi boshqaruv tizimi. Professional xizmatlar va moliyaviy boshqaruv." />
     <meta property="og:image" content="https://matorlife.uz/logo.jpg" />
     <meta property="og:locale" content="uz_UZ" />
@@ -61,7 +61,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Structured Data / JSON-LD -->
+    <!-- Structured Data / JSON-LD for Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Mator Life",
+      "alternateName": ["Matorlayf", "Motor Life", "Motorlife", "Matorlife"],
+      "url": "https://matorlife.uz",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://matorlife.uz/logo.jpg",
+        "width": "600",
+        "height": "600"
+      },
+      "description": "O'zbekistondagi eng zamonaviy avtomobil servisi boshqaruv tizimi",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "UZ",
+        "addressLocality": "Toshkent"
+      },
+      "sameAs": [
+        "https://matorlife.uz"
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data / JSON-LD for AutoRepair -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -70,12 +96,13 @@
       "description": "Professional avtomobil servisi boshqaruv tizimi",
       "url": "https://matorlife.uz",
       "logo": "https://matorlife.uz/logo.jpg",
+      "image": "https://matorlife.uz/logo.jpg",
       "address": {
         "@type": "PostalAddress",
         "addressCountry": "UZ",
         "addressLocality": "Toshkent"
       },
-      "priceRange": "$$",
+      "priceRange": "$",
       "openingHours": "Mo-Su 09:00-18:00"
     }
     </script>
