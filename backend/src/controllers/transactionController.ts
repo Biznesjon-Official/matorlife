@@ -219,62 +219,63 @@ export const getTransactionById = async (req: AuthRequest, res: Response) => {
 
 export const getTransactionSummary = async (req: AuthRequest, res: Response) => {
   try {
-    // Barcha transaksiyalarni olish (reset qilinganda eski transaksiyalar o'chiriladi)
-    const summary = await Transaction.aggregate([
+    // OPTIMIZED: Bitta aggregation pipeline bilan barcha ma'lumotlarni olish
+    const result = await Transaction.aggregate([
       {
-        $group: {
-          _id: '$type',
-          totalAmount: { $sum: '$amount' },
-          count: { $sum: 1 }
+        $facet: {
+          // Type bo'yicha summary
+          typeSummary: [
+            {
+              $group: {
+                _id: '$type',
+                totalAmount: { $sum: '$amount' },
+                count: { $sum: 1 }
+              }
+            }
+          ],
+          // Payment method breakdown
+          paymentMethodBreakdown: [
+            {
+              $group: {
+                _id: {
+                  type: '$type',
+                  paymentMethod: '$paymentMethod'
+                },
+                totalAmount: { $sum: '$amount' }
+              }
+            }
+          ]
         }
       }
     ]);
 
-    // Get payment method breakdown
-    const paymentMethodBreakdown = await Transaction.aggregate([
-      {
-        $group: {
-          _id: {
-            type: '$type',
-            paymentMethod: '$paymentMethod'
-          },
-          totalAmount: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      }
-    ]);
+    const { typeSummary, paymentMethodBreakdown } = result[0];
 
-    const income = summary.find(s => s._id === 'income') || { totalAmount: 0, count: 0 };
-    const expense = summary.find(s => s._id === 'expense') || { totalAmount: 0, count: 0 };
+    const income = typeSummary.find((s: any) => s._id === 'income') || { totalAmount: 0, count: 0 };
+    const expense = typeSummary.find((s: any) => s._id === 'expense') || { totalAmount: 0, count: 0 };
     const balance = income.totalAmount - expense.totalAmount;
 
     // Calculate payment method totals for income
     const incomeCash = paymentMethodBreakdown
-      .filter(p => p._id.type === 'income' && p._id.paymentMethod === 'cash')
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+      .filter((p: any) => p._id.type === 'income' && p._id.paymentMethod === 'cash')
+      .reduce((sum: number, p: any) => sum + p.totalAmount, 0);
     
     const incomeCard = paymentMethodBreakdown
-      .filter(p => p._id.type === 'income' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+      .filter((p: any) => p._id.type === 'income' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum: number, p: any) => sum + p.totalAmount, 0);
 
     // Calculate payment method totals for expense
     const expenseCash = paymentMethodBreakdown
-      .filter(p => p._id.type === 'expense' && p._id.paymentMethod === 'cash')
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+      .filter((p: any) => p._id.type === 'expense' && p._id.paymentMethod === 'cash')
+      .reduce((sum: number, p: any) => sum + p.totalAmount, 0);
     
     const expenseCard = paymentMethodBreakdown
-      .filter(p => p._id.type === 'expense' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
-      .reduce((sum, p) => sum + p.totalAmount, 0);
+      .filter((p: any) => p._id.type === 'expense' && (p._id.paymentMethod === 'card' || p._id.paymentMethod === 'click'))
+      .reduce((sum: number, p: any) => sum + p.totalAmount, 0);
 
     // Calculate balance by payment method
     const balanceCash = incomeCash - expenseCash;
     const balanceCard = incomeCard - expenseCard;
-
-    console.log('📊 Transaction Summary:', {
-      income: income.totalAmount,
-      expense: expense.totalAmount,
-      balance: balance
-    });
 
     res.json({
       summary: {

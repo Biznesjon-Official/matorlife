@@ -420,39 +420,48 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                       ) : (
                         <div className="space-y-2">
                           {task.assignments.map((assignment, idx) => {
-                            // 🔄 YANGI LOGIKA: Barcha shogirdlar 1-shogirtning DASTLABKI pulidan oladi
+                            // 🔄 YANGI LOGIKA: Ustoz pulini olish, keyin 50%dan yuqori shogirdlarga bo'lish
                             let baseAmount = task.payment;
                             let earning = 0;
-                            let firstApprenticeInitialAmount = 0;
-                            let firstApprenticeRemaining = 0;
+                            let masterShare = 0;
                             
-                            if (idx === 0) {
-                              // 1-shogirt: Umumiy to'lovdan o'z foizini oladi
-                              firstApprenticeInitialAmount = (task.payment * assignment.percentage) / 100;
-                              earning = firstApprenticeInitialAmount;
+                            // 1. Ustoz pulini olish (1-shogirtning foiziga qarab)
+                            const firstPercentage = task.assignments[0].percentage;
+                            const apprenticePool = (task.payment * firstPercentage) / 100;
+                            masterShare = task.payment - apprenticePool;
+                            
+                            // 2. 50%dan yuqori shogirdlarni sanash
+                            const highPercentageApprentices = task.assignments.filter(a => a.percentage > 50);
+                            const lowPercentageApprentices = task.assignments.filter(a => a.percentage <= 50);
+                            
+                            // 3. Pul taqsimoti
+                            if (assignment.percentage > 50) {
+                              // 50%dan yuqori: apprenticePool'ni teng bo'lish
+                              const sharePerApprentice = apprenticePool / highPercentageApprentices.length;
+                              earning = sharePerApprentice;
+                              baseAmount = apprenticePool;
                               
-                              // Qolgan shogirdlarning pulini ayirish (DASTLABKI puldan)
-                              let totalDeductions = 0;
-                              for (let i = 1; i < task.assignments.length; i++) {
-                                const nextEarning = (firstApprenticeInitialAmount * task.assignments[i].percentage) / 100;
-                                totalDeductions += nextEarning;
+                              // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                              if (idx === 0 && lowPercentageApprentices.length > 0) {
+                                let totalDeductions = 0;
+                                for (const lowApp of lowPercentageApprentices) {
+                                  const deduction = (sharePerApprentice * lowApp.percentage) / 100;
+                                  totalDeductions += deduction;
+                                }
+                                earning = sharePerApprentice - totalDeductions;
                               }
-                              
-                              firstApprenticeRemaining = firstApprenticeInitialAmount - totalDeductions;
-                              earning = firstApprenticeRemaining; // 1-shogirtga qolgan pul
-                              baseAmount = firstApprenticeInitialAmount; // Ko'rsatish uchun dastlabki pul
                             } else {
-                              // Keyingi shogirtlar: 1-shogirtning DASTLABKI pulidan oladi
-                              const firstApprenticeInitial = (task.payment * task.assignments[0].percentage) / 100;
-                              baseAmount = firstApprenticeInitial;
-                              earning = (firstApprenticeInitial * assignment.percentage) / 100;
+                              // 50% va past: 1-shogirtning pulidan oladi
+                              const firstApprenticeShare = apprenticePool / highPercentageApprentices.length;
+                              baseAmount = firstApprenticeShare;
+                              earning = (firstApprenticeShare * assignment.percentage) / 100;
                             }
 
                             return (
                               <div key={assignment.id} className="p-2 bg-blue-50 rounded-lg border border-blue-200">
                                 <div className="flex items-center justify-between mb-2">
                                   <span className="text-xs font-semibold text-blue-700">
-                                    {idx + 1}-shogird {idx > 0 && `(1-shogirtning dastlabki pulidan)`}
+                                    {idx + 1}-shogird {assignment.percentage > 50 ? '(50%dan yuqori)' : '(1-shogirtning pulidan)'}
                                   </span>
                                   <button
                                     type="button"
@@ -501,24 +510,18 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   <div className="mt-2 p-2 bg-white rounded text-xs space-y-1">
                                     <div className="flex justify-between">
                                       <span className="text-gray-600">
-                                        {idx === 0 ? 'Umumiy to\'lov:' : '1-shogirtning dastlabki puli:'}
+                                        {assignment.percentage > 50 ? 'Shogirdlar puli:' : '1-shogirtning ulushi:'}
                                       </span>
                                       <span className="font-bold">{baseAmount.toLocaleString()} so'm</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-green-600">Oladi ({assignment.percentage}%):</span>
+                                      <span className="text-green-600">Oladi:</span>
                                       <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
                                     </div>
                                     {idx === 0 && (
                                       <div className="flex justify-between">
-                                        <span className="text-blue-600">Ustoz:</span>
-                                        <span className="font-bold text-blue-700">{(task.payment - baseAmount).toLocaleString()} so'm</span>
-                                      </div>
-                                    )}
-                                    {idx === 0 && task.assignments.length > 1 && (
-                                      <div className="flex justify-between">
-                                        <span className="text-orange-600">1-shogirtga qoladi:</span>
-                                        <span className="font-bold text-orange-700">{earning.toLocaleString()} so'm</span>
+                                        <span className="text-blue-600">Ustoz ulushi:</span>
+                                        <span className="font-bold text-blue-700">{masterShare.toLocaleString()} so'm</span>
                                       </div>
                                     )}
                                   </div>
@@ -537,52 +540,64 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   <span className="font-bold">{task.payment.toLocaleString()} so'm</span>
                                 </div>
                                 
-                                {/* 1-shogirt */}
-                                {task.assignments.length > 0 && (() => {
-                                  const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
+                                {(() => {
+                                  // 1. Ustoz pulini olish
+                                  const firstPercentage = task.assignments[0].percentage;
+                                  const apprenticePool = (task.payment * firstPercentage) / 100;
+                                  const masterShare = task.payment - apprenticePool;
                                   
-                                  // Qolgan shogirdlarning jami pulini hisoblash
-                                  let totalDeductions = 0;
-                                  for (let i = 1; i < task.assignments.length; i++) {
-                                    const deduction = (firstInitialAmount * task.assignments[i].percentage) / 100;
-                                    totalDeductions += deduction;
-                                  }
+                                  // 2. 50%dan yuqori va past shogirdlarni ajratish
+                                  const highPercentageApprentices = task.assignments.filter(a => a.percentage > 50);
+                                  const lowPercentageApprentices = task.assignments.filter(a => a.percentage <= 50);
                                   
-                                  const firstFinalAmount = firstInitialAmount - totalDeductions;
-                                  const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === task.assignments[0].apprenticeId);
+                                  // 3. Har bir katta shogirdga ajratilgan pul
+                                  const sharePerHighApprentice = apprenticePool / highPercentageApprentices.length;
                                   
                                   return (
-                                    <div className="flex justify-between">
-                                      <span>1-foydalanuvchi ({selectedUser?.name}):</span>
-                                      <span className="font-bold text-green-700">{firstFinalAmount.toLocaleString()} so'm</span>
-                                    </div>
+                                    <>
+                                      {/* Katta shogirdlar */}
+                                      {highPercentageApprentices.map((a, idx) => {
+                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
+                                        let earning = sharePerHighApprentice;
+                                        
+                                        // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                                        if (idx === 0 && lowPercentageApprentices.length > 0) {
+                                          let totalDeductions = 0;
+                                          for (const lowApp of lowPercentageApprentices) {
+                                            const deduction = (sharePerHighApprentice * lowApp.percentage) / 100;
+                                            totalDeductions += deduction;
+                                          }
+                                          earning = sharePerHighApprentice - totalDeductions;
+                                        }
+                                        
+                                        return (
+                                          <div key={idx} className="flex justify-between">
+                                            <span>{idx + 1}-shogird ({selectedUser?.name}):</span>
+                                            <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
+                                          </div>
+                                        );
+                                      })}
+                                      
+                                      {/* Kichik shogirdlar */}
+                                      {lowPercentageApprentices.map((a, idx) => {
+                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
+                                        const earning = (sharePerHighApprentice * a.percentage) / 100;
+                                        
+                                        return (
+                                          <div key={idx} className="flex justify-between">
+                                            <span>{highPercentageApprentices.length + idx + 1}-shogird ({selectedUser?.name}):</span>
+                                            <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
+                                          </div>
+                                        );
+                                      })}
+                                      
+                                      <div className="flex justify-between pt-1 border-t border-gray-300">
+                                        <span>Ustoz ulushi:</span>
+                                        <span className="font-bold text-blue-700">{masterShare.toLocaleString()} so'm</span>
+                                      </div>
+                                    </>
                                   );
                                 })()}
-                                
-                                {/* Qolgan shogirdlar */}
-                                {task.assignments.slice(1).map((a, idx) => {
-                                  const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
-                                  const earning = (firstInitialAmount * a.percentage) / 100;
-                                  const selectedUser2 = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
-                                  
-                                  return (
-                                    <div key={idx} className="flex justify-between">
-                                      <span>{idx + 2}-foydalanuvchi ({selectedUser2?.name}):</span>
-                                      <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
-                                    </div>
-                                  );
-                                })}
-                                
-                                <div className="flex justify-between pt-1 border-t border-gray-300">
-                                  <span>Ustoz ulushi:</span>
-                                  <span className="font-bold text-blue-700">
-                                    {(() => {
-                                      const firstInitialAmount = (task.payment * task.assignments[0].percentage) / 100;
-                                      const masterShare = task.payment - firstInitialAmount;
-                                      return masterShare.toLocaleString();
-                                    })()} so'm
-                                  </span>
-                                </div>
                               </div>
                             </div>
                           )}

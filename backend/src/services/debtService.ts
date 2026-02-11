@@ -8,6 +8,8 @@ interface CreateOrUpdateDebtParams {
   paidAmount: number;
   paymentMethod?: 'cash' | 'card' | 'click';
   notes?: string;
+  paymentDate?: string | Date;
+  dueDate?: string | Date; // Topshirish kuni (muddat)
   createdBy: mongoose.Types.ObjectId | string;
 }
 
@@ -21,7 +23,19 @@ class DebtService {
    * Agar to'liq to'langan bo'lsa, qarzni "paid" ga o'zgartiradi
    */
   async createOrUpdateDebt(params: CreateOrUpdateDebtParams) {
-    const { carId, totalAmount, paidAmount, paymentMethod, notes, createdBy } = params;
+    const { carId, totalAmount, paidAmount, paymentMethod, notes, paymentDate, dueDate, createdBy } = params;
+
+    console.log('📝 DebtService.createOrUpdateDebt chaqirildi:', {
+      carId,
+      totalAmount,
+      paidAmount,
+      paymentMethod,
+      paymentDate,
+      paymentDateType: typeof paymentDate,
+      dueDate,
+      dueDateType: typeof dueDate,
+      notes
+    });
 
     // Mashina ma'lumotlarini olish
     const car = await Car.findById(carId);
@@ -54,12 +68,46 @@ class DebtService {
       existingDebt.amount = totalAmount;
       existingDebt.description = `${car.make} ${car.carModel} (${car.licensePlate}) uchun xizmat to'lovi`;
       
+      // Agar topshirish kuni berilgan bo'lsa, dueDate ni yangilash
+      if (dueDate) {
+        if (typeof dueDate === 'string') {
+          const [year, month, day] = dueDate.split('-');
+          existingDebt.dueDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          existingDebt.dueDate = dueDate as Date;
+        }
+        console.log('📅 Muddat (dueDate) yangilandi:', existingDebt.dueDate);
+      }
+      
       // Agar yangi to'lov bo'lsa, paymentHistory ga qo'shish
       if (paymentMethod && paidAmount > (existingDebt.paidAmount || 0)) {
         const paymentAmount = paidAmount - (existingDebt.paidAmount || 0);
+        let paymentDateObj: Date;
+        
+        if (paymentDate) {
+          // Agar paymentDate string bo'lsa, Date ga o'zgartirish
+          if (typeof paymentDate === 'string') {
+            // YYYY-MM-DD formatida kelgan sanani UTC vaqtda o'zgartirish
+            const [year, month, day] = paymentDate.split('-');
+            paymentDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          } else {
+            paymentDateObj = paymentDate as Date;
+          }
+        } else {
+          paymentDateObj = new Date();
+        }
+        
+        console.log('💰 PaymentHistory ga qo\'shilmoqda:', {
+          paymentAmount,
+          paymentDate,
+          paymentDateObj: paymentDateObj.toISOString(),
+          paymentMethod,
+          notes
+        });
+        
         existingDebt.paymentHistory.push({
           amount: paymentAmount,
-          date: new Date(),
+          date: paymentDateObj,
           paymentMethod,
           notes: notes || `Xizmat to'lovi - ${paymentMethod}`
         });
@@ -70,6 +118,18 @@ class DebtService {
       return { debt: existingDebt, action: 'updated' };
     } else {
       // Yangi qarz yaratish
+      let dueDateObj: Date | undefined = undefined;
+      
+      if (dueDate) {
+        if (typeof dueDate === 'string') {
+          const [year, month, day] = dueDate.split('-');
+          dueDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          dueDateObj = dueDate as Date;
+        }
+        console.log('📅 Yangi qarz uchun muddat (dueDate):', dueDateObj);
+      }
+      
       const newDebt = new Debt({
         type: 'receivable',
         amount: totalAmount,
@@ -80,14 +140,38 @@ class DebtService {
         status: 'pending',
         paidAmount: 0,
         paymentHistory: [],
+        dueDate: dueDateObj,
         createdBy
       });
 
       // Agar allaqachon to'lov bo'lsa, paymentHistory ga qo'shish
       if (paymentMethod && paidAmount > 0) {
+        let paymentDateObj: Date;
+        
+        if (paymentDate) {
+          // Agar paymentDate string bo'lsa, Date ga o'zgartirish
+          if (typeof paymentDate === 'string') {
+            // YYYY-MM-DD formatida kelgan sanani UTC vaqtda o'zgartirish
+            const [year, month, day] = paymentDate.split('-');
+            paymentDateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          } else {
+            paymentDateObj = paymentDate as Date;
+          }
+        } else {
+          paymentDateObj = new Date();
+        }
+        
+        console.log('💰 Yangi qarz uchun paymentHistory ga qo\'shilmoqda:', {
+          paidAmount,
+          paymentDate,
+          paymentDateObj: paymentDateObj.toISOString(),
+          paymentMethod,
+          notes
+        });
+        
         newDebt.paymentHistory.push({
           amount: paidAmount,
-          date: new Date(),
+          date: paymentDateObj,
           paymentMethod,
           notes: notes || `Xizmat to'lovi - ${paymentMethod}`
         });

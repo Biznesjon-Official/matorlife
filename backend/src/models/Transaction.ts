@@ -75,5 +75,8 @@ const transactionSchema = new Schema<ITransaction>({
 // Index for faster queries
 transactionSchema.index({ type: 1, createdAt: -1 });
 transactionSchema.index({ createdBy: 1, createdAt: -1 });
+transactionSchema.index({ category: 1, createdAt: -1 }); // Category bo'yicha qidirish uchun
+transactionSchema.index({ paymentMethod: 1 }); // Payment method bo'yicha filter uchun
+transactionSchema.index({ apprenticeId: 1 }, { sparse: true }); // Maosh to'lovlari uchun
 
 export default mongoose.model<ITransaction>('Transaction', transactionSchema);

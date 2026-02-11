@@ -146,7 +146,9 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
   const handleCarPaymentSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['cars'] });
     queryClient.invalidateQueries({ queryKey: ['transactions'] });
+    queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
     queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
+    queryClient.invalidateQueries({ queryKey: ['transactionStats'] });
     queryClient.invalidateQueries({ queryKey: ['transaction-stats'] });
     toast.success(t('To\'lov muvaffaqiyatli amalga oshirildi', language));
     handleClose();

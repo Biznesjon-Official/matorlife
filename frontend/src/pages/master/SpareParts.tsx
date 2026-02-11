@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, AlertTriangle, Edit, Trash2, TrendingUp, Eye, DollarSign, Box } from 'lucide-react';
 import { t } from '@/lib/transliteration';
+import { useAuth } from '@/contexts/AuthContext';
 import SparePartExpenseModal from '../../components/SparePartExpenseModal';
 import EditSparePartModal from '../../components/EditSparePartModal';
 import ViewSparePartModal from '../../components/ViewSparePartModal';
@@ -14,6 +15,7 @@ interface SparePart {
   sellingPrice?: number;
   profit?: number;
   quantity: number;
+  unit?: 'dona' | 'litr';
   supplier: string;
   usageCount: number;
   isActive: boolean;
@@ -22,6 +24,9 @@ interface SparePart {
 }
 
 const SpareParts: React.FC = () => {
+  const { user } = useAuth();
+  const isMaster = user?.role === 'master';
+  
   const [spareParts, setSpareParts] = useState<SparePart[]>([]);
   const [filteredParts, setFilteredParts] = useState<SparePart[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,7 +200,7 @@ const SpareParts: React.FC = () => {
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="group relative bg-white hover:bg-purple-50 text-purple-600 px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-2 hover:scale-105 w-full sm:w-auto"
+              className={`group relative bg-white hover:bg-purple-50 text-purple-600 px-4 py-3 sm:px-6 sm:py-3.5 rounded-xl font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center space-x-2 hover:scale-105 ${isMaster ? 'w-full sm:w-auto' : 'hidden'}`}
             >
               <Plus className="h-4 w-4 sm:h-5 sm:w-5 group-hover:rotate-90 transition-transform duration-300" />
               <span className="text-sm sm:text-base font-semibold">
@@ -357,9 +362,8 @@ const SpareParts: React.FC = () => {
                             <span className={`text-xs font-semibold ${stockStatus.textColor} uppercase hidden sm:inline`}>{t('Miqdor', language)}</span>
                           </div>
                           <p className={`text-base sm:text-2xl font-bold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-900')}`}>
-                            {part.quantity}
+                            {part.quantity} {part.unit === 'litr' ? t('litr', language) : t('dona', language)}
                           </p>
-                          <p className="text-xs text-gray-500 sm:hidden">{t('dona', language)}</p>
                         </div>
                         
                         <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-orange-100">
@@ -428,26 +432,31 @@ const SpareParts: React.FC = () => {
                       <div className="flex items-stretch gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-100">
                         <button 
                           onClick={() => handleView(part)}
-                          className="flex-1 flex items-center justify-center space-x-1 px-2 py-1.5 sm:py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
+                          className={`${isMaster ? 'flex-1' : 'w-full'} flex items-center justify-center space-x-1 px-2 py-1.5 sm:py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group`}
                           title={t("Ko'rish", language)}
                         >
                           <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                           <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
                         </button>
-                        <button 
-                          onClick={() => handleEdit(part)}
-                          className="p-1.5 sm:p-2 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
-                          title={t('Tahrirlash', language)}
-                        >
-                          <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(part)}
-                          className="p-1.5 sm:p-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
-                          title={t("O'chirish", language)}
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </button>
+                        {/* Tahrirlash va O'chirish tugmalari faqat master uchun */}
+                        {isMaster && (
+                          <>
+                            <button 
+                              onClick={() => handleEdit(part)}
+                              className="p-1.5 sm:p-2 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
+                              title={t('Tahrirlash', language)}
+                            >
+                              <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(part)}
+                              className="p-1.5 sm:p-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
+                              title={t("O'chirish", language)}
+                            >
+                              <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

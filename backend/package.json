@@ -27,7 +27,11 @@
     "test-salary": "ts-node src/scripts/testSalaryPayment.ts",
     "reset-apprentice-data": "ts-node src/scripts/resetApprenticeData.ts",
     "check-total-earnings": "ts-node src/scripts/checkTotalEarnings.ts",
-    "reset-apprentice-earnings": "ts-node src/scripts/resetApprenticeEarnings.ts"
+    "reset-apprentice-earnings": "ts-node src/scripts/resetApprenticeEarnings.ts",
+    "reset-all-earnings": "ts-node src/scripts/resetAllEarnings.ts",
+    "delete-apprentice-tasks": "ts-node src/scripts/deleteApprenticeTasksAndResetStats.ts",
+    "delete-all-cars": "ts-node src/scripts/deleteAllCars.ts",
+    "clear-archived-cars": "ts-node src/scripts/clearArchivedCars.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

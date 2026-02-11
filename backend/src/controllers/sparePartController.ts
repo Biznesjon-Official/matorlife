@@ -218,7 +218,7 @@ export const getSparePartById = async (req: AuthRequest, res: Response) => {
 
 export const createSparePart = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, costPrice, sellingPrice, price, quantity = 1, supplier = 'Noma\'lum' } = req.body;
+    const { name, costPrice, sellingPrice, price, quantity = 1, unit = 'dona', supplier = 'Noma\'lum' } = req.body;
 
     // Check if spare part with same name already exists
     const existingSparePart = await SparePart.findOne({ 
@@ -239,6 +239,7 @@ export const createSparePart = async (req: AuthRequest, res: Response) => {
       sellingPrice: sellingPrice || price, // Backward compatibility
       price: sellingPrice || price, // Deprecated field
       quantity,
+      unit: unit || 'dona',
       supplier: supplier.trim()
     });
 
@@ -257,7 +258,7 @@ export const createSparePart = async (req: AuthRequest, res: Response) => {
 // Zapchast + Chiqim yaratish (Kassa sahifasidan)
 export const createSparePartWithExpense = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, costPrice, sellingPrice, price, quantity = 1, supplier = 'Noma\'lum', paymentMethod = 'cash' } = req.body;
+    const { name, costPrice, sellingPrice, price, quantity = 1, unit = 'dona', supplier = 'Noma\'lum', paymentMethod = 'cash' } = req.body;
     const Transaction = require('../models/Transaction').default;
 
     // Check if spare part with same name already exists
@@ -280,6 +281,7 @@ export const createSparePartWithExpense = async (req: AuthRequest, res: Response
       sellingPrice: sellingPrice || price,
       price: sellingPrice || price,
       quantity,
+      unit: unit || 'dona',
       supplier: supplier.trim()
     });
 
@@ -288,7 +290,7 @@ export const createSparePartWithExpense = async (req: AuthRequest, res: Response
     // Chiqim yaratish
     const totalAmount = (costPrice || price) * quantity;
     const description = `Zapchast sotib olindi: ${name.trim()}
-Miqdor: ${quantity} dona
+Miqdor: ${quantity} ${unit || 'dona'}
 Birlik narxi: ${(costPrice || price).toLocaleString()} so'm
 Jami: ${totalAmount.toLocaleString()} so'm
 Yetkazib beruvchi: ${supplier.trim()}`;
@@ -317,7 +319,7 @@ Yetkazib beruvchi: ${supplier.trim()}`;
 
 export const updateSparePart = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, costPrice, sellingPrice, price, quantity, supplier } = req.body;
+    const { name, costPrice, sellingPrice, price, quantity, unit, supplier } = req.body;
     
     const sparePart = await SparePart.findById(req.params.id);
     
@@ -353,6 +355,7 @@ export const updateSparePart = async (req: AuthRequest, res: Response) => {
       sparePart.price = sellingPrice || price;
     }
     if (quantity !== undefined) sparePart.quantity = quantity;
+    if (unit) sparePart.unit = unit;
     if (supplier) sparePart.supplier = supplier.trim();
 
     await sparePart.save();

@@ -376,6 +376,15 @@
   }
 }
 
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+}
+
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -447,6 +456,10 @@
 
 .animate-bounce-slow {
   animation: bounceSlow 3s ease-in-out infinite;
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s infinite;
 }
 
 /* Text Utilities */

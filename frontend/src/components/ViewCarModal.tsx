@@ -149,6 +149,12 @@ const ViewCarModal: React.FC<ViewCarModalProps> = ({ isOpen, onClose, car, onEdi
                   <p className="text-xs text-gray-600">{t('Davlat raqami', language)}</p>
                   <p className="text-xs font-medium text-gray-900">{car.licensePlate}</p>
                 </div>
+                {car.distanceTraveled !== undefined && (
+                  <div className="pt-1.5 border-t border-blue-200">
+                    <p className="text-xs text-gray-600">{t('Bosib o\'tgan masofa', language)}</p>
+                    <p className="text-xs font-bold text-blue-600">{car.distanceTraveled} km</p>
+                  </div>
+                )}
               </div>
             </div>
 

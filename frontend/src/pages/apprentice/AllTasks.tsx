@@ -95,14 +95,18 @@ const ApprenticeAllTasks: React.FC = () => {
   };
 
   const filteredTasks = filter === 'all' 
-    ? tasks?.tasks 
-    : tasks?.tasks?.filter((task: any) => task.status === filter);
+    ? tasks?.tasks?.filter((task: any) => task.car !== null) // Filter out tasks with null car
+    : tasks?.tasks?.filter((task: any) => task.status === filter && task.car !== null);
 
-  const searchedTasks = filteredTasks?.filter((task: any) =>
-    task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    task.assignedTo.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const searchedTasks = filteredTasks?.filter((task: any) => {
+    const titleMatch = task.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const descMatch = task.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const assignedToMatch = task.assignedTo?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const carMatch = task.car?.make?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                     task.car?.carModel?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return titleMatch || descMatch || assignedToMatch || carMatch;
+  });
 
   const handleViewTask = (task: Task) => {
     setSelectedTask(task);
@@ -292,15 +296,23 @@ const ApprenticeAllTasks: React.FC = () => {
                 <p className="text-sm text-gray-600 line-clamp-2">{task.description}</p>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
-                    <User className="h-4 w-4 text-blue-600 shrink-0" />
-                    <span className="font-semibold text-gray-900 text-sm truncate">{task.assignedTo.name}</span>
-                  </div>
+                  {task.assignedTo && (
+                    <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">
+                      <User className="h-4 w-4 text-blue-600 shrink-0" />
+                      <span className="font-semibold text-gray-900 text-sm truncate">
+                        {typeof task.assignedTo === 'object' ? task.assignedTo.name : 'Noma\'lum'}
+                      </span>
+                    </div>
+                  )}
                   
-                  <div className="flex items-center gap-2 bg-purple-50 px-2.5 py-1.5 rounded-lg">
-                    <Car className="h-3.5 w-3.5 text-purple-600 shrink-0" />
-                    <span className="font-semibold text-gray-900 text-sm truncate">{task.car.make} {task.car.carModel}</span>
-                  </div>
+                  {task.car && (
+                    <div className="flex items-center gap-2 bg-purple-50 px-2.5 py-1.5 rounded-lg">
+                      <Car className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+                      <span className="font-semibold text-gray-900 text-sm truncate">
+                        {task.car.make || 'Noma\'lum'} {task.car.carModel || ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">

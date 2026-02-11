@@ -24,6 +24,7 @@ import sparePartRoutes from './routes/spareParts';
 import serviceRoutes from './routes/services';
 import transactionRoutes from './routes/transactions';
 import expenseCategoryRoutes from './routes/expenseCategories';
+import reminderRoutes from './routes/reminders';
 
 // Initialize Telegram Service (must be after dotenv.config())
 // Only initialize if Telegram tokens are provided
@@ -103,6 +104,7 @@ app.use('/api/spare-parts', sparePartRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

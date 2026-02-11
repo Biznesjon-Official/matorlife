@@ -120,3 +120,27 @@ export const transactionApi = {
     return response.data;
   }
 };
+
+// Reminder API
+export const reminderApi = {
+  getReminders: async () => {
+    const response = await api.get('/reminders');
+    return response.data;
+  },
+  getReminder: async (id: string) => {
+    const response = await api.get(`/reminders/${id}`);
+    return response.data;
+  },
+  createReminder: async (data: { title: string; description: string; reminderTime: string }) => {
+    const response = await api.post('/reminders', data);
+    return response.data;
+  },
+  updateReminder: async (id: string, data: Partial<{ title: string; description: string; reminderTime: string; status: string }>) => {
+    const response = await api.put(`/reminders/${id}`, data);
+    return response.data;
+  },
+  deleteReminder: async (id: string) => {
+    const response = await api.delete(`/reminders/${id}`);
+    return response.data;
+  }
+};

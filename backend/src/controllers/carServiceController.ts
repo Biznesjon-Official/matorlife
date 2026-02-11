@@ -465,7 +465,7 @@ export const removeServiceItem = async (req: AuthRequest, res: Response) => {
 // Add payment to car service
 export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, paymentMethod, notes } = req.body;
+    const { amount, paymentMethod, notes, paymentDate, deliveryDate } = req.body;
     const serviceId = req.params.id;
 
     console.log('💳 To\'lov qabul qilinmoqda:', {
@@ -473,6 +473,9 @@ export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
       amount,
       amountType: typeof amount,
       paymentMethod,
+      paymentDate,
+      deliveryDate,
+      paymentDateType: typeof paymentDate,
       notes
     });
 
@@ -533,12 +536,25 @@ export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
 
     // ✨ DebtService orqali qarzni boshqarish (markazlashtirilgan)
     try {
+      console.log('🔄 DebtService.createOrUpdateDebt chaqirilmoqda:', {
+        carId: service.car,
+        totalAmount: service.totalPrice,
+        paidAmount: service.paidAmount,
+        paymentMethod: paymentMethod || 'cash',
+        paymentDate: paymentDate,
+        deliveryDate: deliveryDate,
+        paymentDateType: typeof paymentDate,
+        notes: notes || `Xizmat to'lovi - ${paymentMethod || 'naqd'}`
+      });
+      
       await debtService.createOrUpdateDebt({
         carId: service.car,
         totalAmount: service.totalPrice,
         paidAmount: service.paidAmount,
         paymentMethod: paymentMethod || 'cash',
         notes: notes || `Xizmat to'lovi - ${paymentMethod || 'naqd'}`,
+        paymentDate: paymentDate || new Date().toISOString(),
+        dueDate: deliveryDate || undefined, // Topshirish kunini muddat sifatida saqlash
         createdBy: req.user?.id
       });
     } catch (debtError: any) {

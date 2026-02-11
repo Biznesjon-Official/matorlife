@@ -14,7 +14,8 @@ import {
   getArchivedCars,
   restoreCar,
   addCarPayment,
-  completeCar
+  completeCar,
+  updateOdometer
 } from '../controllers/carController';
 import { authenticate } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
@@ -153,5 +154,12 @@ router.delete('/:id', authenticate, deleteCar);
 
 // Restore car from archive
 router.post('/:id/restore', authenticate, restoreCar);
+
+// Update car odometer
+router.put('/:id/odometer', authenticate, [
+  body('initialOdometer').isInt({ min: 0 }).withMessage('Boshlang\'ich odometer 0 yoki undan katta bo\'lishi kerak'),
+  body('currentOdometer').isInt({ min: 0 }).withMessage('Hozirgi odometer 0 yoki undan katta bo\'lishi kerak'),
+  handleValidationErrors
+], updateOdometer);
 
 export default router;

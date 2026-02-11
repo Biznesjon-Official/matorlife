@@ -34,6 +34,7 @@ export interface ICar extends Document {
   licensePlate: string;
   ownerName: string;
   ownerPhone: string;
+  mileage: number;
   parts: IPart[];
   serviceItems: IServiceItem[];
   totalEstimate: number;
@@ -43,6 +44,9 @@ export interface ICar extends Document {
   status: 'pending' | 'in-progress' | 'completed' | 'delivered';
   isDeleted: boolean;
   deletedAt?: Date;
+  initialOdometer?: number;
+  currentOdometer?: number;
+  distanceTraveled?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -163,6 +167,11 @@ const carSchema = new Schema<ICar>({
     required: true,
     trim: true
   },
+  mileage: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
   parts: [partSchema],
   serviceItems: [serviceItemSchema],
   totalEstimate: {
@@ -192,15 +201,43 @@ const carSchema = new Schema<ICar>({
   },
   deletedAt: {
     type: Date
+  },
+  initialOdometer: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  currentOdometer: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  distanceTraveled: {
+    type: Number,
+    default: 0,
+    min: 0
   }
 }, {
   timestamps: true
 });
 
+// Index'lar qo'shish - tezroq qidirish uchun
+carSchema.index({ licensePlate: 1 });
+carSchema.index({ status: 1, createdAt: -1 });
+carSchema.index({ isDeleted: 1, createdAt: -1 });
+carSchema.index({ ownerName: 1 });
+carSchema.index({ ownerPhone: 1 });
+
 carSchema.pre('save', function(next) {
   const partsTotal = this.parts.reduce((total, part) => total + (part.price * part.quantity), 0);
   const servicesTotal = this.serviceItems.reduce((total, service) => total + (service.price * service.quantity), 0);
   this.totalEstimate = partsTotal + servicesTotal;
+  
+  // Masofani hisoblash
+  if (this.initialOdometer && this.currentOdometer) {
+    this.distanceTraveled = Math.max(0, this.currentOdometer - this.initialOdometer);
+  }
+  
   next();
 });
 

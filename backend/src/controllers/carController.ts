@@ -7,7 +7,7 @@ import telegramService from '../services/telegramService';
 import debtService from '../services/debtService';
 export const createCar = async (req: AuthRequest, res: Response) => {
   try {
-    const { make, carModel, year, licensePlate, ownerName, ownerPhone, parts, serviceItems, usedSpareParts } = req.body;
+    const { make, carModel, year, licensePlate, ownerName, ownerPhone, parts, serviceItems, usedSpareParts, initialOdometer, currentOdometer } = req.body;
     const existingCar = await Car.findOne({ licensePlate });
     if (existingCar) {
       return res.status(400).json({ message: 'Bu davlat raqami bilan mashina allaqachon mavjud' });
@@ -48,7 +48,10 @@ export const createCar = async (req: AuthRequest, res: Response) => {
       ownerName,
       ownerPhone,
       parts: parts || [],
-      serviceItems: serviceItems || []
+      serviceItems: serviceItems || [],
+      initialOdometer: initialOdometer || 0,
+      currentOdometer: currentOdometer || 0,
+      distanceTraveled: Math.max(0, (currentOdometer || 0) - (initialOdometer || 0))
     });
     await car.save();
     // Telegram'ga xabar yuborish
@@ -84,42 +87,28 @@ export const createCar = async (req: AuthRequest, res: Response) => {
 export const getCars = async (req: AuthRequest, res: Response) => {
   try {
     const { status, search } = req.query;
-    const filter: any = {}; // Barcha mashinalarni olish (o'chirilganlar ham)
+    const filter: any = {};
     
     if (status) filter.status = status;
+    
+    // OPTIMIZED: Qidiruv uchun MongoDB regex ishlatish
     if (search) {
-      // Qidiruv so'zini tozalash (bo'shliqlar, kichik harflar, maxsus belgilar)
-      const normalizeText = (text: string) => {
-        return text
-          .toLowerCase()
-          .replace(/\s+/g, '') // Barcha bo'shliqlarni olib tashlash
-          .replace(/[^a-z0-9а-яё]/gi, ''); // Faqat harf va raqamlar (lotin va kirill)
-      };
-      
-      const normalizedSearch = normalizeText(search as string);
-      
-      // Barcha mashinalarni olish va frontend da filtrlash
-      const allCars = await Car.find(filter).sort({ createdAt: -1 });
-      
-      // Har bir mashinani qidiruv so'zi bilan solishtirish
-      const filteredCars = allCars.filter((car: any) => {
-        const licensePlate = normalizeText(car.licensePlate || '');
-        const make = normalizeText(car.make || '');
-        const model = normalizeText(car.carModel || '');
-        const owner = normalizeText(car.ownerName || '');
-        
-        return (
-          licensePlate.includes(normalizedSearch) ||
-          make.includes(normalizedSearch) ||
-          model.includes(normalizedSearch) ||
-          owner.includes(normalizedSearch)
-        );
-      });
-      
-      return res.json({ cars: filteredCars });
+      const searchRegex = new RegExp(search as string, 'i');
+      filter.$or = [
+        { licensePlate: searchRegex },
+        { make: searchRegex },
+        { carModel: searchRegex },
+        { ownerName: searchRegex }
+      ];
     }
     
-    const cars = await Car.find(filter).sort({ createdAt: -1 });
+    // OPTIMIZED: lean() + select() - faqat kerakli fieldlar
+    const cars = await Car.find(filter)
+      .select('make carModel year licensePlate ownerName ownerPhone status totalEstimate paidAmount paymentStatus parts serviceItems isDeleted createdAt updatedAt')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+    
     res.json({ cars });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -127,7 +116,8 @@ export const getCars = async (req: AuthRequest, res: Response) => {
 };
 export const getCarById = async (req: AuthRequest, res: Response) => {
   try {
-    const car = await Car.findById(req.params.id);
+    // OPTIMIZED: lean() ishlatish
+    const car = await Car.findById(req.params.id).lean().exec();
     if (!car) {
       return res.status(404).json({ message: 'Car not found' });
     }
@@ -193,8 +183,15 @@ export const updateCar = async (req: AuthRequest, res: Response) => {
       licensePlate: updates.licensePlate?.trim() || existingCar.licensePlate,
       ownerName: updates.ownerName?.trim() || existingCar.ownerName,
       ownerPhone: updates.ownerPhone?.trim() || existingCar.ownerPhone,
-      status: updates.status || existingCar.status
+      status: updates.status || existingCar.status,
+      initialOdometer: updates.initialOdometer !== undefined ? Number(updates.initialOdometer) : existingCar.initialOdometer,
+      currentOdometer: updates.currentOdometer !== undefined ? Number(updates.currentOdometer) : existingCar.currentOdometer
     };
+    
+    // Masofani hisoblash
+    if (updateData.initialOdometer !== undefined && updateData.currentOdometer !== undefined) {
+      updateData.distanceTraveled = Math.max(0, updateData.currentOdometer - updateData.initialOdometer);
+    }
     // Parts processing - MUHIM: To'g'ri saqlash
     if (updates.parts !== undefined && Array.isArray(updates.parts)) {
       const validParts = updates.parts
@@ -710,5 +707,52 @@ export const addCarPayment = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('❌ To\'lov qo\'shishda xatolik:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Update car odometer
+export const updateOdometer = async (req: AuthRequest, res: Response) => {
+  try {
+    const { initialOdometer, currentOdometer } = req.body;
+    const carId = req.params.id;
+
+    if (initialOdometer === undefined || currentOdometer === undefined) {
+      return res.status(400).json({ message: 'initialOdometer va currentOdometer talab qilinadi' });
+    }
+
+    if (initialOdometer < 0 || currentOdometer < 0) {
+      return res.status(400).json({ message: 'Odometer qiymatlari manfiy bo\'lishi mumkin emas' });
+    }
+
+    if (currentOdometer < initialOdometer) {
+      return res.status(400).json({ message: 'Hozirgi odometer boshlang\'ich odometrdan kichik bo\'lishi mumkin emas' });
+    }
+
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ message: 'Mashina topilmadi' });
+    }
+
+    car.initialOdometer = initialOdometer;
+    car.currentOdometer = currentOdometer;
+    car.distanceTraveled = currentOdometer - initialOdometer;
+
+    await car.save();
+
+    console.log(`✅ Odometer yangilandi: ${car.licensePlate} - Boshlang\'ich: ${initialOdometer}km, Hozirgi: ${currentOdometer}km, Masofasi: ${car.distanceTraveled}km`);
+
+    res.json({
+      message: 'Odometer muvaffaqiyatli yangilandi',
+      car: {
+        _id: car._id,
+        licensePlate: car.licensePlate,
+        initialOdometer: car.initialOdometer,
+        currentOdometer: car.currentOdometer,
+        distanceTraveled: car.distanceTraveled
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Odometer yangilanishda xatolik:', error);
+    res.status(500).json({ message: 'Server xatoligi', error: error.message });
   }
 };

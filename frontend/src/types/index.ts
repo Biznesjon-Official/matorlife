@@ -199,6 +199,7 @@ export interface Car {
   licensePlate: string;
   ownerName: string;
   ownerPhone: string;
+  mileage: number;
   parts: Part[];
   serviceItems: ServiceItem[];
   totalEstimate: number;
@@ -207,6 +208,9 @@ export interface Car {
   status: 'pending' | 'in-progress' | 'completed' | 'delivered';
   isDeleted?: boolean;
   deletedAt?: string;
+  initialOdometer?: number;
+  currentOdometer?: number;
+  distanceTraveled?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -298,6 +302,7 @@ export interface Debt {
 export interface Payment {
   amount: number;
   date: string;
+  paymentMethod?: 'cash' | 'card' | 'click';
   notes?: string;
 }
 

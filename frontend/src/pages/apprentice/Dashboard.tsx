@@ -115,9 +115,9 @@ const ApprenticeDashboard: React.FC = () => {
   const weeklyProgress = Math.min(100, (approvedTasks.length * 20));
 
   return (
-    <div className="min-h-screen pb-20 sm:pb-24 space-y-4 sm:space-y-6 px-2 sm:px-0 animate-fade-in">
+    <div className="min-h-screen pb-20 sm:pb-24 space-y-3 sm:space-y-4 md:space-y-6 px-3 sm:px-4 md:px-0 animate-fade-in">
       {/* Premium Hero Section with Animated Background */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 p-6 sm:p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-600 to-blue-700 p-4 sm:p-6 md:p-8 text-white shadow-2xl">
         {/* Animated Background Patterns */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-48 sm:w-72 h-48 sm:h-72 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-float"></div>
@@ -127,78 +127,78 @@ const ApprenticeDashboard: React.FC = () => {
 
         <div className="relative z-10">
           {/* Greeting with Icon */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-lg animate-bounce-slow">
-              <Rocket className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-white/20 backdrop-blur-md rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/30 shadow-lg animate-bounce-slow flex-shrink-0">
+              <Rocket className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 tracking-tight">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl font-extrabold mb-0.5 sm:mb-1 tracking-tight truncate">
                 {t('Salom', language)}, {user?.name}!
               </h1>
-              <p className="text-blue-100 text-sm sm:text-base flex items-center gap-2">
-                <Flame className="h-4 w-4 text-yellow-300 animate-pulse" />
-                {t('Bugun', language)} {todayTasks.length} {t('ta vazifa sizni kutmoqda', language)}
+              <p className="text-blue-100 text-xs sm:text-sm md:text-base flex items-center gap-1.5 sm:gap-2">
+                <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-300 animate-pulse flex-shrink-0" />
+                <span className="truncate">{t('Bugun', language)} {todayTasks.length} {t('ta vazifa sizni kutmoqda', language)}</span>
               </p>
             </div>
           </div>
           
           {/* Premium Stats Grid */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 mt-3 sm:mt-4 md:mt-6">
             {/* Tasdiqlangan vazifalar */}
-            <div className="group relative bg-white/15 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/30 shadow-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="group relative bg-white/15 backdrop-blur-xl rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/30 shadow-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-lg sm:rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-400/30 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
-                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-3">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-blue-400/30 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-white" />
                   </div>
-                  <div className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-blue-400/20 rounded-lg">
-                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-blue-200" />
+                  <div className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 bg-blue-400/20 rounded-md sm:rounded-lg">
+                    <TrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 text-blue-200" />
                   </div>
                 </div>
-                <p className="text-blue-100 text-xs font-medium mb-1">{t('Tasdiqlangan', language)}</p>
-                <p className="text-2xl sm:text-3xl font-black tracking-tight">{approvedTasks.length}</p>
-                <div className="mt-1 sm:mt-2 flex items-center gap-1 text-xs text-blue-200">
-                  <Star className="h-3 w-3 fill-yellow-300 text-yellow-300" />
-                  <span>{completionRate}% {t('bajarilgan', language)}</span>
+                <p className="text-blue-100 text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1">{t('Tasdiqlangan', language)}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">{approvedTasks.length}</p>
+                <div className="mt-1 sm:mt-1.5 md:mt-2 flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-blue-200">
+                  <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-yellow-300 text-yellow-300 flex-shrink-0" />
+                  <span className="truncate">{completionRate}% {t('bajarilgan', language)}</span>
                 </div>
               </div>
             </div>
 
             {/* Daromad */}
-            <div className="group relative bg-white/15 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/30 shadow-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="group relative bg-white/15 backdrop-blur-xl rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/30 shadow-xl hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-transparent rounded-lg sm:rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-400/30 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
-                    <Award className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-200" />
+                <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-3">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-yellow-400/30 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
+                    <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-yellow-200" />
                   </div>
-                  <div className="px-1.5 py-0.5 sm:px-2 sm:py-1 bg-yellow-400/20 rounded-lg">
-                    <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-200" />
+                  <div className="px-1 py-0.5 sm:px-1.5 sm:py-0.5 md:px-2 md:py-1 bg-yellow-400/20 rounded-md sm:rounded-lg">
+                    <Gift className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-4 md:w-4 text-yellow-200" />
                   </div>
                 </div>
-                <p className="text-blue-100 text-xs font-medium mb-1">{t('Daromad', language)}</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight">
+                <p className="text-blue-100 text-[10px] sm:text-xs font-medium mb-0.5 sm:mb-1">{t('Daromad', language)}</p>
+                <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black tracking-tight truncate">
                   {new Intl.NumberFormat('uz-UZ').format(totalEarnings)}
                 </p>
-                <div className="mt-1 sm:mt-2 flex items-center gap-1 text-xs text-blue-200">
-                  <Trophy className="h-3 w-3 fill-yellow-300 text-yellow-300" />
-                  <span>{t('Joriy oylik', language)}</span>
+                <div className="mt-1 sm:mt-1.5 md:mt-2 flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-blue-200">
+                  <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-yellow-300 text-yellow-300 flex-shrink-0" />
+                  <span className="truncate">{t('Joriy oylik', language)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="mt-4 sm:mt-6 bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-white/20">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
-                <Activity className="h-3 w-3 sm:h-4 sm:w-4" />
-                {t('Haftalik progress', language)}
+          <div className="mt-3 sm:mt-4 md:mt-6 bg-white/10 backdrop-blur-sm rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 border border-white/20">
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <span className="text-[10px] sm:text-xs md:text-sm font-semibold text-white flex items-center gap-1 sm:gap-1.5 md:gap-2">
+                <Activity className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 flex-shrink-0" />
+                <span className="truncate">{t('Haftalik progress', language)}</span>
               </span>
-              <span className="text-xs sm:text-sm font-bold text-white">{weeklyProgress}%</span>
+              <span className="text-xs sm:text-sm font-bold text-white ml-2">{weeklyProgress}%</span>
             </div>
-            <div className="w-full bg-white/20 rounded-full h-2 sm:h-3 overflow-hidden backdrop-blur-sm">
+            <div className="w-full bg-white/20 rounded-full h-1.5 sm:h-2 md:h-3 overflow-hidden backdrop-blur-sm">
               <div 
                 className="h-full bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 rounded-full transition-all duration-1000 ease-out shadow-lg relative overflow-hidden"
                 style={{ width: `${weeklyProgress}%` }}
@@ -239,30 +239,30 @@ const ApprenticeDashboard: React.FC = () => {
           return (
             <div 
               key={stat.name}
-              className={`group relative bg-gradient-to-br ${color.bg} rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up border border-white/20`}
+              className={`group relative bg-gradient-to-br ${color.bg} rounded-lg sm:rounded-xl md:rounded-2xl p-2.5 sm:p-3 md:p-4 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-slide-up border border-white/20`}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {/* Glow effect */}
-              <div className={`absolute inset-0 ${color.glow} rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+              <div className={`absolute inset-0 ${color.glow} rounded-lg sm:rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
               
               <div className="relative">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div className={`w-9 h-9 sm:w-11 sm:h-11 ${color.icon} rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+                <div className="flex items-center justify-between mb-1.5 sm:mb-2 md:mb-3">
+                  <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-11 md:h-11 ${color.icon} rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg backdrop-blur-sm group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
                   </div>
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></div>
+                  <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 md:w-2 md:h-2 bg-white rounded-full animate-pulse"></div>
                 </div>
-                <p className="text-white/90 text-xs font-semibold mb-0.5 sm:mb-1 tracking-wide">{stat.name}</p>
-                <p className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight">
+                <p className="text-white/90 text-[10px] sm:text-xs font-semibold mb-0.5 sm:mb-1 tracking-wide truncate">{stat.name}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight">
                   {tasksLoading ? (
-                    <div className="animate-pulse bg-white/30 h-6 sm:h-8 w-10 sm:w-12 rounded-lg"></div>
+                    <div className="animate-pulse bg-white/30 h-5 sm:h-6 md:h-8 w-8 sm:w-10 md:w-12 rounded-lg"></div>
                   ) : (
                     stat.value
                   )}
                 </p>
                 
                 {/* Decorative element */}
-                <div className="absolute -bottom-1 -right-1 w-12 sm:w-16 h-12 sm:h-16 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
+                <div className="absolute -bottom-1 -right-1 w-10 sm:w-12 md:w-16 h-10 sm:h-12 md:h-16 bg-white/10 rounded-full blur-2xl group-hover:bg-white/20 transition-all"></div>
               </div>
             </div>
           );
@@ -270,46 +270,46 @@ const ApprenticeDashboard: React.FC = () => {
       </div>
 
       {/* Premium Today's Tasks Section */}
-      <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden animate-slide-up" style={{ animationDelay: '300ms' }}>
+      <div className="relative bg-white/80 backdrop-blur-xl rounded-xl sm:rounded-2xl md:rounded-3xl shadow-2xl border border-gray-200/50 overflow-hidden animate-slide-up" style={{ animationDelay: '300ms' }}>
         {/* Premium Header with Gradient */}
-        <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-6 text-white overflow-hidden">
+        <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 p-3 sm:p-4 md:p-6 text-white overflow-hidden">
           {/* Animated background pattern */}
           <div className="absolute inset-0 opacity-20">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-white rounded-full blur-3xl animate-pulse"></div>
           </div>
           
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-lg">
-                <Target className="h-6 w-6" />
+          <div className="relative flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-md rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/30 shadow-lg flex-shrink-0">
+                <Target className="h-4.5 w-4.5 sm:h-5 sm:w-5 md:h-6 md:w-6" />
               </div>
-              <div>
-                <h3 className="text-xl sm:text-2xl font-black tracking-tight">{t('Bugungi vazifalar', language)}</h3>
-                <p className="text-blue-100 text-sm">{t('Bugun bajarilishi kerak', language)}</p>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black tracking-tight truncate">{t('Bugungi vazifalar', language)}</h3>
+                <p className="text-blue-100 text-[10px] sm:text-xs md:text-sm truncate">{t('Bugun bajarilishi kerak', language)}</p>
               </div>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-3xl font-black">{todayTasks.length}</span>
-              <span className="text-xs text-emerald-100 font-medium">{t('vazifa', language)}</span>
+            <div className="flex flex-col items-end flex-shrink-0">
+              <span className="text-xl sm:text-2xl md:text-3xl font-black">{todayTasks.length}</span>
+              <span className="text-[10px] sm:text-xs text-emerald-100 font-medium">{t('vazifa', language)}</span>
             </div>
           </div>
         </div>
         
-        <div className="p-4 sm:p-6">
+        <div className="p-3 sm:p-4 md:p-6">
           {todayTasks.length === 0 ? (
-            <div className="text-center py-8 sm:py-12 animate-bounce-in">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg">
-                <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600" />
+            <div className="text-center py-6 sm:py-8 md:py-12 animate-bounce-in">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center mx-auto mb-2 sm:mb-3 md:mb-4 shadow-lg">
+                <CheckCircle className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-blue-600" />
               </div>
-              <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">{t('Ajoyib!', language)}</h4>
-              <p className="text-sm sm:text-base text-gray-500">{t('Bugun sizga vazifa berilmagan', language)}</p>
-              <div className="mt-3 sm:mt-4 inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-xs sm:text-sm font-semibold">
-                <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-blue-500 text-blue-500" />
+              <h4 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-1.5 sm:mb-2">{t('Ajoyib!', language)}</h4>
+              <p className="text-xs sm:text-sm md:text-base text-gray-500">{t('Bugun sizga vazifa berilmagan', language)}</p>
+              <div className="mt-2 sm:mt-3 md:mt-4 inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-blue-50 text-blue-700 rounded-full text-xs sm:text-sm font-semibold">
+                <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4 fill-blue-500 text-blue-500" />
                 {t('Dam oling!', language)}
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {todayTasks.map((task: any, index: number) => {
                 let borderColor = 'border-l-gray-400';
                 let bgGradient = 'from-gray-50 to-white';
@@ -319,92 +319,96 @@ const ApprenticeDashboard: React.FC = () => {
                 if (task.status === 'completed' || task.status === 'approved') {
                   borderColor = 'border-l-blue-500';
                   bgGradient = 'from-blue-50 to-indigo-50';
-                  statusIcon = <CheckCircle className="h-6 w-6 text-blue-600" />;
+                  statusIcon = <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />;
                   statusBadge = 'bg-blue-100 text-blue-700 border-blue-200';
                 } else if (task.status === 'in-progress') {
                   borderColor = 'border-l-amber-500';
                   bgGradient = 'from-amber-50 to-orange-50';
-                  statusIcon = <Clock className="h-6 w-6 text-amber-600" />;
+                  statusIcon = <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />;
                   statusBadge = 'bg-amber-100 text-amber-700 border-amber-200';
                 } else if (task.status === 'assigned') {
                   borderColor = 'border-l-indigo-500';
                   bgGradient = 'from-indigo-50 to-blue-50';
-                  statusIcon = <Zap className="h-6 w-6 text-indigo-600" />;
+                  statusIcon = <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />;
                   statusBadge = 'bg-indigo-100 text-indigo-700 border-indigo-200';
                 }
                 
                 return (
                   <div 
                     key={task._id}
-                    className={`group relative border-l-4 ${borderColor} bg-gradient-to-br ${bgGradient} rounded-2xl p-5 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] animate-slide-up border border-gray-200/50`}
+                    className={`group relative border-l-4 ${borderColor} bg-gradient-to-br ${bgGradient} rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] animate-slide-up border border-gray-200/50`}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     {/* Hover glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl sm:rounded-2xl"></div>
                     
-                    <div className="relative flex items-start gap-4">
+                    <div className="relative flex items-start gap-2.5 sm:gap-3 md:gap-4">
                       {/* Status Icon */}
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <div className="flex-shrink-0 mt-0.5 sm:mt-1">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-white rounded-lg sm:rounded-xl shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                           {statusIcon}
                         </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
                         {/* Task Title */}
-                        <h4 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-blue-600 transition-colors">
+                        <h4 className="font-bold text-gray-900 text-sm sm:text-base md:text-lg mb-1.5 sm:mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
                           {task.title}
                         </h4>
                         
                         {/* Task Description */}
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+                        <div className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2 leading-relaxed">
                           {task.description}
-                        </p>
+                        </div>
                         
                         {/* Badges */}
-                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4">
                           {/* Priority Badge */}
-                          <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-xl border shadow-sm ${getPriorityColor(task.priority)}`}>
-                            {task.priority === 'urgent' && <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.priority === 'high' && <AlertCircle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.priority === 'medium' && <Circle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.priority === 'low' && <CheckCircle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.priority === 'urgent' ? t('Shoshilinch', language) : 
-                             task.priority === 'high' ? t('Yuqori', language) :
-                             task.priority === 'medium' ? t('O\'rta', language) : t('Past', language)}
+                          <span className={`inline-flex items-center px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl border shadow-sm ${getPriorityColor(task.priority)}`}>
+                            {task.priority === 'urgent' && <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.priority === 'high' && <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.priority === 'medium' && <Circle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.priority === 'low' && <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            <span className="truncate">
+                              {task.priority === 'urgent' ? t('Shoshilinch', language) : 
+                               task.priority === 'high' ? t('Yuqori', language) :
+                               task.priority === 'medium' ? t('O\'rta', language) : t('Past', language)}
+                            </span>
                           </span>
                           
                           {/* Status Badge */}
-                          <span className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-xl border shadow-sm ${statusBadge}`}>
-                            {task.status === 'assigned' && <FileText className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.status === 'in-progress' && <Zap className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.status === 'completed' && <CheckCircle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.status === 'approved' && <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.status === 'rejected' && <XCircle className="h-3.5 w-3.5 mr-1.5" />}
-                            {task.status === 'assigned' ? t('Tayinlangan', language) :
-                             task.status === 'in-progress' ? t('Jarayonda', language) :
-                             task.status === 'completed' ? t('Bajarilgan', language) :
-                             task.status === 'approved' ? t('Tasdiqlangan', language) : t('Rad etilgan', language)}
+                          <span className={`inline-flex items-center px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold rounded-lg sm:rounded-xl border shadow-sm ${statusBadge}`}>
+                            {task.status === 'assigned' && <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.status === 'in-progress' && <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.status === 'completed' && <CheckCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.status === 'approved' && <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            {task.status === 'rejected' && <XCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />}
+                            <span className="truncate">
+                              {task.status === 'assigned' ? t('Tayinlangan', language) :
+                               task.status === 'in-progress' ? t('Jarayonda', language) :
+                               task.status === 'completed' ? t('Bajarilgan', language) :
+                               task.status === 'approved' ? t('Tasdiqlangan', language) : t('Rad etilgan', language)}
+                            </span>
                           </span>
                           
                           {/* Time Badge */}
-                          <span className="inline-flex items-center px-3 py-1.5 text-xs font-bold bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl border border-gray-300 shadow-sm">
-                            <Clock className="h-3.5 w-3.5 mr-1.5" />
-                            {task.estimatedHours} {t('soat', language)}
+                          <span className="inline-flex items-center px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-lg sm:rounded-xl border border-gray-300 shadow-sm">
+                            <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 md:h-3.5 md:w-3.5 mr-1 sm:mr-1.5 flex-shrink-0" />
+                            <span className="truncate">{task.estimatedHours} {t('soat', language)}</span>
                           </span>
                         </div>
                         
                         {/* Car Info Card */}
                         {task.car && (
-                          <div className="flex items-center gap-3 p-3 bg-white/80 backdrop-blur-sm rounded-xl border border-gray-200 mb-4 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg">
+                          <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3 p-2 sm:p-2.5 md:p-3 bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl border border-gray-200 mb-3 sm:mb-4 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl flex items-center justify-center text-white font-black text-sm sm:text-base md:text-lg shadow-lg flex-shrink-0">
                               {task.car.make.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-gray-900 truncate">
+                              <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                                 {task.car.make} {task.car.carModel}
                               </p>
-                              <p className="text-xs text-gray-500 font-semibold">{task.car.licensePlate}</p>
+                              <p className="text-[10px] sm:text-xs text-gray-500 font-semibold truncate">{task.car.licensePlate}</p>
                             </div>
                           </div>
                         )}
@@ -414,16 +418,16 @@ const ApprenticeDashboard: React.FC = () => {
                           <button 
                             onClick={() => handleStartTask(task._id)}
                             disabled={processingTaskId === task._id}
-                            className="w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                            className="w-full px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm md:text-base shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                           >
                             {processingTaskId === task._id ? (
                               <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-3 border-white border-t-transparent"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 sm:border-3 border-white border-t-transparent"></div>
                                 <span>{t('Yuklanmoqda...', language)}</span>
                               </>
                             ) : (
                               <>
-                                <Zap className="h-5 w-5" />
+                                <Zap className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                                 <span>{t('Boshlash', language)}</span>
                               </>
                             )}
@@ -433,16 +437,16 @@ const ApprenticeDashboard: React.FC = () => {
                           <button 
                             onClick={() => handleCompleteTask(task._id)}
                             disabled={processingTaskId === task._id}
-                            className="w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-2 font-bold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                            className="w-full px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 md:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm md:text-base shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                           >
                             {processingTaskId === task._id ? (
                               <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-3 border-white border-t-transparent"></div>
+                                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 sm:border-3 border-white border-t-transparent"></div>
                                 <span>{t('Yuklanmoqda...', language)}</span>
                               </>
                             ) : (
                               <>
-                                <CheckCircle className="h-5 w-5" />
+                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                                 <span>{t('Tugatish', language)}</span>
                               </>
                             )}
@@ -459,44 +463,44 @@ const ApprenticeDashboard: React.FC = () => {
       </div>
 
       {/* Daromad Tarixi */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 sm:p-4 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Award className="h-4 w-4 sm:h-5 sm:w-5" />
-              <h3 className="text-base sm:text-lg font-bold">{t('Daromad tarixi', language)}</h3>
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 sm:p-4 md:p-5 text-white">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+              <Award className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <h3 className="text-sm sm:text-base md:text-lg font-bold truncate">{t('Daromad tarixi', language)}</h3>
             </div>
-            <div className="text-right">
-              <div className="text-lg sm:text-xl font-bold">{new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}</div>
-              <div className="text-xs text-blue-100">{t('Joriy oylik', language)}</div>
+            <div className="text-right flex-shrink-0">
+              <div className="text-base sm:text-lg md:text-xl font-bold truncate">{new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}</div>
+              <div className="text-[10px] sm:text-xs text-blue-100 whitespace-nowrap">{t('Joriy oylik', language)}</div>
             </div>
           </div>
         </div>
         
-        <div className="p-3 sm:p-4">
+        <div className="p-3 sm:p-4 md:p-5">
           <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">{t('Oxirgi daromadlar', language)}</h4>
           
           {approvedTasks.length === 0 ? (
-            <div className="text-center py-6">
-              <Award className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">{t('Hali daromad yo\'q', language)}</p>
+            <div className="text-center py-5 sm:py-6">
+              <Award className="h-9 w-9 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500 text-xs sm:text-sm">{t('Hali daromad yo\'q', language)}</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 sm:space-y-2.5">
               {approvedTasks
                 .filter((task: any) => task.payment && task.payment > 0)
                 .sort((a: any, b: any) => new Date(b.approvedAt || b.createdAt).getTime() - new Date(a.approvedAt || a.createdAt).getTime())
                 .slice(0, 5)
                 .map((task: any) => (
-                  <div key={task._id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div key={task._id} className="flex items-center justify-between gap-2 p-2.5 sm:p-3 bg-blue-50 rounded-lg sm:rounded-xl border border-blue-200">
                     <div className="flex-1 min-w-0">
-                      <h5 className="font-semibold text-gray-900 truncate text-sm">{task.title}</h5>
-                      <p className="text-xs text-gray-600 truncate">
+                      <h5 className="font-semibold text-gray-900 truncate text-xs sm:text-sm">{task.title}</h5>
+                      <p className="text-[10px] sm:text-xs text-gray-600 truncate">
                         {task.car?.make} {task.car?.carModel}
                       </p>
                     </div>
-                    <div className="text-right ml-3">
-                      <p className="text-base font-bold text-blue-600">
+                    <div className="text-right ml-2 flex-shrink-0">
+                      <p className="text-sm sm:text-base font-bold text-blue-600 whitespace-nowrap">
                         +{new Intl.NumberFormat('uz-UZ').format(task.payment)}
                       </p>
                     </div>
@@ -504,8 +508,8 @@ const ApprenticeDashboard: React.FC = () => {
                 ))}
               
               {approvedTasks.filter((task: any) => task.payment && task.payment > 0).length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-gray-500 text-sm">{t('To\'lovli vazifalar yo\'q', language)}</p>
+                <div className="text-center py-5 sm:py-6">
+                  <p className="text-gray-500 text-xs sm:text-sm">{t('To\'lovli vazifalar yo\'q', language)}</p>
                 </div>
               )}
             </div>

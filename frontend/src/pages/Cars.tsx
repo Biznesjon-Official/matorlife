@@ -283,14 +283,19 @@ const Cars: React.FC = () => {
           </div>
         </div>
 
-        {/* Cars Grid */}
+        {/* Cars Grid - Optimized Loading */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 sm:py-20">
-            <div className="relative">
-              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-blue-200"></div>
-              <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-t-blue-600 absolute top-0 left-0"></div>
+          <div className="flex flex-col items-center justify-center py-12 sm:py-16">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+              {/* Spinning circle */}
+              <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              {/* Inner pulsing dot */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
+              </div>
             </div>
-            <p className="mt-4 sm:mt-6 text-gray-600 font-medium text-sm sm:text-base">{t("Mashinalar yuklanmoqda...", language)}</p>
+            <p className="mt-4 text-gray-600 font-medium text-sm sm:text-base animate-pulse">{t("Yuklanmoqda...", language)}</p>
           </div>
         ) : displayedCars.length === 0 ? (
           <div className="bg-white rounded-lg sm:rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-16 text-center">
@@ -571,6 +576,29 @@ const Cars: React.FC = () => {
                         </p>
                       </div>
                     </div>
+
+                    {/* Odometer Info */}
+                    {(car.initialOdometer !== undefined || car.currentOdometer !== undefined) && (
+                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-blue-100">
+                        <div className="flex items-center space-x-1 sm:space-x-2 mb-2">
+                          <span className="text-xs font-semibold text-blue-600 uppercase">{t("Odometer", language)}</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div>
+                            <p className="text-xs text-gray-500">{t("Boshlang'ich", language)}</p>
+                            <p className="text-sm font-bold text-blue-900">{car.initialOdometer || 0} km</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">{t("Hozirgi", language)}</p>
+                            <p className="text-sm font-bold text-blue-900">{car.currentOdometer || 0} km</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">{t("Masofasi", language)}</p>
+                            <p className="text-sm font-bold text-blue-900">{car.distanceTraveled || 0} km</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Footer - Action Buttons */}

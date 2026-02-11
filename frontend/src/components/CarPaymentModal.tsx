@@ -24,6 +24,8 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
   const [cardAmount, setCardAmount] = useState('');
   const [cardAmountDisplay, setCardAmountDisplay] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [deliveryDate, setDeliveryDate] = useState<string>(''); // Topshirish kuni
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [carService, setCarService] = useState<any>(null);
   const [loadingService, setLoadingService] = useState(true);
@@ -42,6 +44,8 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
         setCashAmountDisplay('');
         setCardAmount('');
         setCardAmountDisplay('');
+        setPaymentDate(new Date().toISOString().split('T')[0]);
+        setDeliveryDate(''); // Topshirish kunini reset qilish
         
         try {
           console.log('🔍 Mashina xizmati yuklanmoqda:', car._id);
@@ -249,20 +253,40 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
       if (serviceToUse) {
         // Naqd to'lovni qo'shish
         if (cash > 0) {
+          console.log('💵 Naqd to\'lov yuborilmoqda:', {
+            amount: cash,
+            paymentMethod: 'cash',
+            paymentDate: paymentDate,
+            deliveryDate: deliveryDate,
+            paymentDateType: typeof paymentDate
+          });
+          
           await api.post(`/car-services/${serviceToUse._id}/payment`, {
             amount: cash,
             paymentMethod: 'cash',
-            notes: `${t('Naqd', language)}${notes ? ` - ${notes}` : ''}`
+            paymentDate: paymentDate,
+            deliveryDate: deliveryDate || undefined,
+            notes: `${t('Naqd', language)} - ${paymentDate}${notes ? ` - ${notes}` : ''}`
           });
           console.log(`💵 Naqd to'lov qo'shildi: ${cash} so'm`);
         }
         
         // Plastik to'lovni qo'shish
         if (card > 0) {
+          console.log('💳 Plastik to\'lov yuborilmoqda:', {
+            amount: card,
+            paymentMethod: 'card',
+            paymentDate: paymentDate,
+            deliveryDate: deliveryDate,
+            paymentDateType: typeof paymentDate
+          });
+          
           await api.post(`/car-services/${serviceToUse._id}/payment`, {
             amount: card,
             paymentMethod: 'card',
-            notes: `${t('Plastik', language)}${notes ? ` - ${notes}` : ''}`
+            paymentDate: paymentDate,
+            deliveryDate: deliveryDate || undefined,
+            notes: `${t('Plastik', language)} - ${paymentDate}${notes ? ` - ${notes}` : ''}`
           });
           console.log(`💳 Plastik to'lov qo'shildi: ${card} so'm`);
         }
@@ -282,6 +306,8 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
       setCardAmount('');
       setCardAmountDisplay('');
       setNotes('');
+      setPaymentDate(new Date().toISOString().split('T')[0]);
+      setDeliveryDate('');
       setErrors({});
       
       onSuccess();
@@ -406,6 +432,36 @@ const CarPaymentModal: React.FC<CarPaymentModalProps> = ({ isOpen, onClose, car,
                 {errors.payment}
               </p>
             )}
+          </div>
+
+          {/* Kun belgisi */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📅 {t('To\'lov kuni', language)}
+            </label>
+            <input
+              type="date"
+              value={paymentDate}
+              onChange={(e) => setPaymentDate(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 transition-all text-lg font-semibold"
+            />
+          </div>
+
+          {/* Topshirish kuni */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🚗 {t('Topshirish kuni', language)} ({t('ixtiyoriy', language)})
+            </label>
+            <input
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-purple-300 rounded-lg focus:outline-none focus:border-purple-500 transition-all text-lg font-semibold"
+              placeholder={t('Mashinani topshirish kuni', language)}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {t('Bu kun qarz daftarchada muddat sifatida saqlanadi', language)}
+            </p>
           </div>
 
           {/* Izoh */}

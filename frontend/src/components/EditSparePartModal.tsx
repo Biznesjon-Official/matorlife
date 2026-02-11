@@ -10,6 +10,7 @@ interface SparePart {
   name: string;
   price: number;
   quantity: number;
+  unit?: 'dona' | 'litr';
   supplier: string;
   usageCount: number;
   isActive: boolean;
@@ -48,6 +49,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({
     price: '',
     priceDisplay: '', // Formatli ko'rsatish uchun
     quantity: '',
+    unit: 'dona' as 'dona' | 'litr',
     supplier: ''
   });
 
@@ -72,6 +74,8 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({
         price: sparePart.price.toString(),
         priceDisplay: priceFormatted,
         quantity: sparePart.quantity.toString(),
+        // @ts-ignore
+        unit: sparePart.unit || 'dona',
         supplier: sparePart.supplier
       });
     }
@@ -132,6 +136,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({
         sellingPrice: sellingPrice,
         price: sellingPrice, // Backward compatibility
         quantity: Number(formData.quantity),
+        unit: formData.unit,
         supplier: formData.supplier
       });
 
@@ -146,7 +151,7 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     if (name === 'costPrice') {
@@ -357,20 +362,31 @@ const EditSparePartModal: React.FC<EditSparePartModalProps> = ({
               <label className="block text-xs font-medium text-gray-700 mb-1">
                 {t('Miqdor', language)} *
               </label>
-              <input
-                type="number"
-                name="quantity"
-                required
-                min="0"
-                value={formData.quantity}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
-                  errors.quantity 
-                    ? 'border-red-300 focus:border-red-500' 
-                    : 'border-gray-200 focus:border-purple-500'
-                }`}
-                placeholder="0"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  name="quantity"
+                  required
+                  min="0"
+                  value={formData.quantity}
+                  onChange={handleChange}
+                  className={`flex-1 px-3 py-2 text-sm border-2 rounded-lg focus:outline-none transition-all ${
+                    errors.quantity 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-gray-200 focus:border-purple-500'
+                  }`}
+                  placeholder="0"
+                />
+                <select
+                  name="unit"
+                  value={formData.unit}
+                  onChange={handleChange}
+                  className="px-3 py-2 text-sm border-2 border-gray-200 rounded-lg focus:outline-none focus:border-purple-500 transition-all bg-white font-medium"
+                >
+                  <option value="dona">{t('dona', language)}</option>
+                  <option value="litr">{t('litr', language)}</option>
+                </select>
+              </div>
               {errors.quantity && (
                 <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />

@@ -1,0 +1,15 @@
+// Placeholder for reminder sound file
+// Bu yerga reminder.mp3 faylini qo'yish kerak
+// Masalan: https://freesound.org/ dan yuklab olish mumkin
+
+// MUHIM: 
+// 1. Bu faylni o'chirib tashlang
+// 2. reminder.mp3 nomli audio fayl qo'ying
+// 3. Fayl hajmi 100KB dan kichik bo'lishi kerak
+// 4. Format: MP3
+// 5. Davomiyligi: 3-5 soniya
+
+// Tavsiya etiladigan musiqa:
+// - Notification bell sound
+// - Gentle alarm sound
+// - Pleasant reminder chime

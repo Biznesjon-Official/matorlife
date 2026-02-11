@@ -11,6 +11,7 @@ import Debts from '@/pages/Debts';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import AIChatWidget from '@/components/AIChatWidget';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
+import { useReminders } from '@/hooks/useReminders';
 
 // Master pages
 import MasterTasks from '@/pages/master/Tasks';
@@ -19,13 +20,13 @@ import MasterKnowledgeBase from '@/pages/master/KnowledgeBase';
 import MasterSpareParts from '@/pages/master/SpareParts';
 import MasterCashier from '@/pages/master/Cashier';
 import MasterExpenses from '@/pages/master/Expenses';
+import MasterReminders from '@/pages/master/Reminders';
 
 // Apprentice pages
 import ApprenticeTasks from '@/pages/apprentice/Tasks';
 import ApprenticeAllTasks from '@/pages/apprentice/AllTasks';
 import ApprenticeAchievements from '@/pages/apprentice/Achievements';
 import ApprenticeAIDiagnostic from '@/pages/apprentice/AIDiagnostic';
-import ApprenticeSpareParts from '@/pages/apprentice/SpareParts';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -122,6 +123,9 @@ function DashboardRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  // Global reminder notifications
+  useReminders();
+
   return (
     <Routes>
       <Route
@@ -194,6 +198,11 @@ function AppRoutes() {
             <MasterSpareParts />
           </ProtectedRoute>
         } />
+        <Route path="master/reminders" element={
+          <MasterRoute>
+            <MasterReminders />
+          </MasterRoute>
+        } />
         <Route path="cars" element={
           <MasterRoute>
             <Cars />
@@ -227,9 +236,9 @@ function AppRoutes() {
           </ApprenticeRoute>
         } />
         <Route path="apprentice/spare-parts" element={
-          <ApprenticeRoute>
-            <ApprenticeSpareParts />
-          </ApprenticeRoute>
+          <ProtectedRoute>
+            <MasterSpareParts />
+          </ProtectedRoute>
         } />
         <Route path="apprentice/ai-diagnostic" element={
           <ApprenticeRoute>

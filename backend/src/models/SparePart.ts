@@ -6,6 +6,7 @@ export interface ISparePart extends Document {
   sellingPrice: number; // Sotish narxi
   price: number; // Deprecated - eski tizim uchun
   quantity: number;
+  unit: 'dona' | 'litr'; // Birlik: dona yoki litr
   supplier: string;
   usageCount: number;
   isActive: boolean;
@@ -42,6 +43,12 @@ const sparePartSchema = new Schema<ISparePart>({
     type: Number,
     required: true,
     min: 0
+  },
+  unit: {
+    type: String,
+    enum: ['dona', 'litr'],
+    default: 'dona',
+    required: true
   },
   supplier: {
     type: String,

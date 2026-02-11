@@ -13,6 +13,12 @@ export const useCars = (filters?: { status?: string; search?: string }) => {
       const response = await api.get(`/cars?${params.toString()}`);
       return response.data;
     },
+    staleTime: 30000, // 30 seconds - cache'da uzoqroq saqlash
+    gcTime: 60000, // 60 seconds
+    retry: 0, // Retry qilmaslik - tezroq
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Mount'da refetch qilmaslik
+    placeholderData: (previousData) => previousData, // Eski ma'lumotlarni ko'rsatish
   });
 };
 
@@ -24,6 +30,12 @@ export const useCar = (id: string) => {
       return response.data;
     },
     enabled: !!id,
+    staleTime: 30000,
+    gcTime: 60000,
+    retry: 0,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    placeholderData: (previousData) => previousData,
   });
 };
 

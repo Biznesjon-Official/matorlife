@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Search, AlertTriangle, Eye, DollarSign, Box, Edit, Trash2 } from 'lucide-react';
+import { Package, Search, AlertTriangle, Eye, DollarSign, Box } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import ViewSparePartModal from '../../components/ViewSparePartModal';
-import EditSparePartModal from '../../components/EditSparePartModal';
-import DeleteSparePartModal from '../../components/DeleteSparePartModal';
 
 interface SparePart {
   _id: string;
@@ -13,6 +11,7 @@ interface SparePart {
   sellingPrice?: number;
   profit?: number;
   quantity: number;
+  unit?: 'dona' | 'litr';
   supplier: string;
   usageCount: number;
   isActive: boolean;
@@ -27,8 +26,6 @@ const ApprenticeSpareParts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPart, setSelectedPart] = useState<SparePart | null>(null);
 
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -83,30 +80,8 @@ const ApprenticeSpareParts: React.FC = () => {
     setIsViewModalOpen(true);
   };
 
-  const handleEdit = (part: SparePart) => {
-    setSelectedPart(part);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDelete = (part: SparePart) => {
-    setSelectedPart(part);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleEditFromView = () => {
-    setIsViewModalOpen(false);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDeleteFromView = () => {
-    setIsViewModalOpen(false);
-    setIsDeleteModalOpen(true);
-  };
-
   const closeModal = () => {
     setIsViewModalOpen(false);
-    setIsEditModalOpen(false);
-    setIsDeleteModalOpen(false);
     setSelectedPart(null);
   };
 
@@ -178,15 +153,17 @@ const ApprenticeSpareParts: React.FC = () => {
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
           
-          <div className="relative flex items-center space-x-3 sm:space-x-6">
-            <div className="bg-white/20 backdrop-blur-xl p-2.5 sm:p-4 rounded-lg sm:rounded-2xl shadow-lg">
-              <Package className="h-6 w-6 sm:h-10 sm:w-10 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 tracking-tight">{t('Zapchastlar', language)}</h1>
-              <p className="text-purple-100 text-xs sm:text-base lg:text-lg">
-                {spareParts.length} ta zapchast mavjud
-              </p>
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center space-x-3 sm:space-x-6">
+              <div className="bg-white/20 backdrop-blur-xl p-2.5 sm:p-4 rounded-lg sm:rounded-2xl shadow-lg">
+                <Package className="h-6 w-6 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-white mb-1 tracking-tight">{t('Zapchastlar', language)}</h1>
+                <p className="text-purple-100 text-xs sm:text-base lg:text-lg">
+                  {spareParts.length} ta zapchast mavjud
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -305,9 +282,8 @@ const ApprenticeSpareParts: React.FC = () => {
                           <span className={`text-xs font-semibold ${stockStatus.textColor} uppercase hidden sm:inline`}>{t('Miqdor', language)}</span>
                         </div>
                         <p className={`text-base sm:text-2xl font-bold ${stockStatus.textColor.replace('text-', 'text-').replace('-600', '-900')}`}>
-                          {part.quantity}
+                          {part.quantity} {part.unit === 'litr' ? t('litr', language) : t('dona', language)}
                         </p>
-                        <p className="text-xs text-gray-500 sm:hidden">{t('dona', language)}</p>
                       </div>
                       
                       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-2.5 sm:p-4 border border-green-100">
@@ -332,9 +308,9 @@ const ApprenticeSpareParts: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions - FAQAT KO'RISH TUGMASI (Tahrirlash va O'chirish yo'q) */}
                   <div className="px-2.5 sm:px-4 pb-2.5 sm:pb-4">
-                    <div className="flex items-stretch gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-2 sm:pt-3 border-t border-gray-100">
                       <button 
                         onClick={() => handleView(part)}
                         className="flex-1 flex items-center justify-center space-x-1 px-2 py-1.5 sm:py-2 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg sm:rounded-xl transition-all duration-200 font-medium group"
@@ -342,20 +318,6 @@ const ApprenticeSpareParts: React.FC = () => {
                       >
                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 group-hover:scale-110 transition-transform" />
                         <span className="text-xs sm:text-sm">{t("Ko'rish", language)}</span>
-                      </button>
-                      <button 
-                        onClick={() => handleEdit(part)}
-                        className="p-1.5 sm:p-2 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg sm:rounded-xl transition-all duration-200"
-                        title={t('Tahrirlash', language)}
-                      >
-                        <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(part)}
-                        className="p-1.5 sm:p-2 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 rounded-lg sm:rounded-xl transition-all duration-200"
-                        title={t("O'chirish", language)}
-                      >
-                        <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                   </div>
@@ -368,37 +330,14 @@ const ApprenticeSpareParts: React.FC = () => {
 
       {/* View Modal - Shogirt uchun maxsus versiya */}
       {selectedPart && (
-        <>
-          <ViewSparePartModal
-            isOpen={isViewModalOpen}
-            onClose={closeModal}
-            sparePart={selectedPart}
-            isApprentice={true}
-            onEdit={handleEditFromView}
-            onDelete={handleDeleteFromView}
-          />
-
-          <EditSparePartModal
-            isOpen={isEditModalOpen}
-            onClose={closeModal}
-            sparePart={selectedPart}
-            onSuccess={() => {
-              fetchSpareParts();
-              closeModal();
-            }}
-            isApprentice={true}
-          />
-
-          <DeleteSparePartModal
-            isOpen={isDeleteModalOpen}
-            onClose={closeModal}
-            sparePart={selectedPart}
-            onSuccess={() => {
-              fetchSpareParts();
-              closeModal();
-            }}
-          />
-        </>
+        <ViewSparePartModal
+          isOpen={isViewModalOpen}
+          onClose={closeModal}
+          sparePart={selectedPart}
+          isApprentice={true}
+          onEdit={undefined}
+          onDelete={undefined}
+        />
       )}
     </div>
   );

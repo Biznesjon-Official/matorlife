@@ -26,6 +26,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
     sellingPrice: '',
     sellingPriceDisplay: '',
     quantity: '',
+    unit: 'dona' as 'dona' | 'litr',
     supplier: '',
     paymentMethod: 'cash' as 'cash' | 'card'
   });
@@ -92,6 +93,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
           sellingPrice: sellingPrice,
           price: sellingPrice,
           quantity: Number(formData.quantity),
+          unit: formData.unit,
           supplier: formData.supplier,
           paymentMethod: formData.paymentMethod
         });
@@ -109,6 +111,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
           sellingPrice: sellingPrice,
           price: sellingPrice,
           quantity: Number(formData.quantity),
+          unit: formData.unit,
           supplier: formData.supplier
         });
 
@@ -126,6 +129,7 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
         sellingPrice: '',
         sellingPriceDisplay: '',
         quantity: '',
+        unit: 'dona',
         supplier: '',
         paymentMethod: 'cash'
       });
@@ -273,20 +277,31 @@ const SparePartExpenseModal: React.FC<SparePartExpenseModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('Miqdor', language)} *
                 </label>
-                <input
-                  type="number"
-                  name="quantity"
-                  required
-                  min="0"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
-                    errors.quantity 
-                      ? 'border-red-300 focus:border-red-500' 
-                      : 'border-gray-200 focus:border-blue-500'
-                  }`}
-                  placeholder="0"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    name="quantity"
+                    required
+                    min="0"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    className={`flex-1 px-4 py-3 border-2 rounded-lg focus:outline-none transition-all ${
+                      errors.quantity 
+                        ? 'border-red-300 focus:border-red-500' 
+                        : 'border-gray-200 focus:border-blue-500'
+                    }`}
+                    placeholder="0"
+                  />
+                  <select
+                    name="unit"
+                    value={formData.unit}
+                    onChange={handleChange}
+                    className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 transition-all bg-white font-medium"
+                  >
+                    <option value="dona">{t('dona', language)}</option>
+                    <option value="litr">{t('litr', language)}</option>
+                  </select>
+                </div>
                 {errors.quantity && (
                   <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />

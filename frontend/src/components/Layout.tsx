@@ -15,6 +15,7 @@ import {
   Package,
   BookOpen,
   Menu,
+  Calendar,
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import Sidebar from './Sidebar';
@@ -73,6 +74,7 @@ const Layout: React.FC = () => {
     { name: t('Vazifalar', language), href: '/app/master/tasks', icon: CheckSquare },
     { name: t('Zapchastlar', language), href: '/app/master/spare-parts', icon: Package },
     { name: t('Qarz daftarchasi', language), href: '/app/debts', icon: BookOpen },
+    { name: t('Eslatmalar', language), href: '/app/master/reminders', icon: Calendar },
   ];
 
   const getApprenticeNavigation = () => [
@@ -238,7 +240,7 @@ const Layout: React.FC = () => {
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1.5 p-3 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto overflow-x-hidden" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             <style>{`
               nav::-webkit-scrollbar {
                 display: none;
@@ -342,7 +344,7 @@ const Layout: React.FC = () => {
           </nav>
 
           {/* Language Toggle & Logout */}
-          <div className="border-t border-gray-100 p-3 space-y-1.5">
+          <div className="border-t border-gray-100 p-3 space-y-0.5">
             {/* Til almashtirish tugmasi */}
             <div className="relative group/language">
               <button

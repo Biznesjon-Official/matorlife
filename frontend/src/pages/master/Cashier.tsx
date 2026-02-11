@@ -38,8 +38,27 @@ const MasterCashier: React.FC = memo(() => {
     return (savedLanguage as 'latin' | 'cyrillic') || 'latin';
   }, []);
 
-  // Get date range for filter
-  const getDateRange = () => {
+  // Memoized helper functions
+  const getPaymentMethodIcon = useMemo(() => (method: string) => {
+    switch (method) {
+      case 'cash': return <Wallet className="h-4 w-4" />;
+      case 'card': return <CreditCard className="h-4 w-4" />;
+      case 'click': return <Smartphone className="h-4 w-4" />;
+      default: return <DollarSign className="h-4 w-4" />;
+    }
+  }, []);
+
+  const getPaymentMethodText = useMemo(() => (method: string) => {
+    switch (method) {
+      case 'cash': return t('Naqd', language);
+      case 'card': return t('Karta', language);
+      case 'click': return 'Click';
+      default: return method;
+    }
+  }, [language]);
+
+  // Memoized date range calculation
+  const dateRange = useMemo(() => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -64,19 +83,21 @@ const MasterCashier: React.FC = memo(() => {
       default:
         return {};
     }
-  };
-
-  const dateRange = getDateRange();
+  }, [dateFilter]);
   const { data: transactionsData, isLoading: transactionsLoading } = useTransactions({
     type: filter === 'all' ? undefined : filter,
     ...dateRange
   });
   const { data: summaryData, isLoading: summaryLoading } = useTransactionSummary();
 
-  const transactions = (transactionsData as TransactionResponse)?.transactions || [];
-  const summary = summaryData?.summary || {
+  const transactions = useMemo(() => 
+    (transactionsData as TransactionResponse)?.transactions || [], 
+    [transactionsData]
+  );
+  
+  const summary = useMemo(() => summaryData?.summary || {
     totalIncome: 0,
-    totalExpense: 0,
+    totalExpense: 0,            
     balance: 0,
     incomeCount: 0,
     expenseCount: 0,
@@ -86,25 +107,7 @@ const MasterCashier: React.FC = memo(() => {
     expenseCard: 0,
     balanceCash: 0,
     balanceCard: 0
-  };
-
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method) {
-      case 'cash': return <Wallet className="h-4 w-4" />;
-      case 'card': return <CreditCard className="h-4 w-4" />;
-      case 'click': return <Smartphone className="h-4 w-4" />;
-      default: return <DollarSign className="h-4 w-4" />;
-    }
-  };
-
-  const getPaymentMethodText = (method: string) => {
-    switch (method) {
-      case 'cash': return t('Naqd', language);
-      case 'card': return t('Karta', language);
-      case 'click': return 'Click';
-      default: return method;
-    }
-  };
+  }, [summaryData]);
 
   const handleMonthlyReset = async () => {
     try {
@@ -143,29 +146,29 @@ const MasterCashier: React.FC = memo(() => {
                 </div>
               </div>
               
-              <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto">
+              <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                 <button
                   onClick={() => setIsResetModalOpen(true)}
-                  className="group relative overflow-hidden px-5 py-3 bg-gradient-to-r from-red-500 via-red-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                  className="group relative overflow-hidden px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-red-500 via-red-600 to-pink-600 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-center"
                   title={t("Barcha daromadlarni 0 ga qaytarish", language)}
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  <Calendar className="h-4 w-4 relative z-10" />
+                  <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 relative z-10" />
                   <span className="relative z-10">{t('Oylik Reset', language)}</span>
                 </button>
                 <button
                   onClick={() => setIsHistoryModalOpen(true)}
-                  className="group relative overflow-hidden px-5 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold shadow-md hover:shadow-xl hover:border-blue-400 transition-all duration-300 hover:scale-105 flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                  className="group relative overflow-hidden px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-md hover:shadow-xl hover:border-blue-400 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-center"
                   title={t("Oylik tarix", language)}
                 >
-                  <History className="h-4 w-4 group-hover:text-blue-600 transition-colors" />
+                  <History className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:text-blue-600 transition-colors" />
                   <span className="group-hover:text-blue-600 transition-colors">{t('Tarix', language)}</span>
                 </button>
                 <Link 
                   to="/app/master/expenses"
-                  className="group relative overflow-hidden px-5 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-semibold shadow-md hover:shadow-xl hover:border-indigo-400 transition-all duration-300 hover:scale-105 flex items-center gap-2 flex-1 sm:flex-initial justify-center"
+                  className="group relative overflow-hidden px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 text-gray-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-md hover:shadow-xl hover:border-indigo-400 transition-all duration-300 hover:scale-105 flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-center"
                 >
-                  <BarChart3 className="h-4 w-4 group-hover:text-indigo-600 transition-colors" />
+                  <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 group-hover:text-indigo-600 transition-colors" />
                   <span className="group-hover:text-indigo-600 transition-colors">{t("Hisobot", language)}</span>
                 </Link>
               </div>
@@ -174,6 +177,44 @@ const MasterCashier: React.FC = memo(() => {
 
           {/* Stats Cards - Premium Design */}
           <div className="relative z-10 px-6 sm:px-8 lg:px-10 pb-6 sm:pb-8 lg:pb-10">
+          
+          {/* Action Buttons - Mobile First */}
+          <div className="flex justify-center gap-2 mb-4 sm:mb-5 md:hidden">
+            {/* KIRIM Button */}
+            <button
+              onClick={() => setIsIncomeModalOpen(true)}
+              className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] w-32"
+              style={{ padding: '0.425rem' }}
+            >
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+              <div className="relative z-10 flex flex-col items-center justify-center gap-1">
+                <div className="p-1.5 bg-white/20 rounded-lg">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-xs font-bold">{t("KIRIM", language)}</h2>
+                </div>
+              </div>
+            </button>
+
+            {/* CHIQIM Button */}
+            <button
+              onClick={() => setIsExpenseModalOpen(true)}
+              className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] w-32"
+              style={{ padding: '0.425rem' }}
+            >
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+              <div className="relative z-10 flex flex-col items-center justify-center gap-1">
+                <div className="p-1.5 bg-white/20 rounded-lg">
+                  <TrendingDown className="h-4 w-4" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-xs font-bold">{t("CHIQIM", language)}</h2>
+                </div>
+              </div>
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6">
             {/* KIRIM CARD */}
             <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 hover:shadow-lg transition-all">
@@ -293,45 +334,45 @@ const MasterCashier: React.FC = memo(() => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Action Buttons - Desktop Only */}
+          <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {/* KIRIM Button */}
             <button
               onClick={() => setIsIncomeModalOpen(true)}
-              className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white p-4 sm:p-5 md:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <TrendingUp className="h-8 w-8" />
+                <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+                  <div className="p-2 sm:p-2.5 md:p-3 bg-white/20 rounded-lg">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-2xl font-bold mb-1">{t("KIRIM", language)}</h2>
-                    <p className="text-sm text-green-100">{t("Pul kirimi qo'shish", language)}</p>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-0.5 sm:mb-1">{t("KIRIM", language)}</h2>
+                    <p className="text-xs sm:text-sm text-green-100">{t("Pul kirimi qo'shish", language)}</p>
                   </div>
                 </div>
-                <Plus className="h-6 w-6" />
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
             </button>
 
             {/* CHIQIM Button */}
             <button
               onClick={() => setIsExpenseModalOpen(true)}
-              className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 text-white p-4 sm:p-5 md:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
             >
               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white/20 rounded-lg">
-                    <TrendingDown className="h-8 w-8" />
+                <div className="flex items-center gap-2.5 sm:gap-3 md:gap-4">
+                  <div className="p-2 sm:p-2.5 md:p-3 bg-white/20 rounded-lg">
+                    <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
                   </div>
                   <div className="text-left">
-                    <h2 className="text-2xl font-bold mb-1">{t("CHIQIM", language)}</h2>
-                    <p className="text-sm text-red-100">{t("Xarajat belgilash", language)}</p>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-0.5 sm:mb-1">{t("CHIQIM", language)}</h2>
+                    <p className="text-xs sm:text-sm text-red-100">{t("Xarajat belgilash", language)}</p>
                   </div>
                 </div>
-                <Plus className="h-6 w-6" />
+                <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
             </button>
           </div>

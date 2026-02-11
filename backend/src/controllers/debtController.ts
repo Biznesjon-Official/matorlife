@@ -65,6 +65,22 @@ export const getDebts = async (req: AuthRequest, res: Response) => {
       .populate('car', 'make carModel licensePlate ownerName')
       .populate('createdBy', 'name')
       .sort({ createdAt: -1 });
+    
+    // Debug: To'lov tarixini tekshirish
+    debts.forEach(debt => {
+      if (debt.paymentHistory && debt.paymentHistory.length > 0) {
+        console.log(`📊 Qarz: ${debt.creditorName}, To'lovlar soni: ${debt.paymentHistory.length}`);
+        debt.paymentHistory.forEach((payment, index) => {
+          console.log(`  💳 To'lov #${index + 1}:`, {
+            amount: payment.amount,
+            date: payment.date,
+            dateType: typeof payment.date,
+            notes: payment.notes
+          });
+        });
+      }
+    });
+    
     res.json({ debts });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });

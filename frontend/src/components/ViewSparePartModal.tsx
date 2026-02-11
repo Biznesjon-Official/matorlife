@@ -10,6 +10,7 @@ interface SparePart {
   sellingPrice?: number; // Sotish narxi
   profit?: number; // Foyda (virtual field)
   quantity: number;
+  unit?: 'dona' | 'litr';
   supplier: string;
   usageCount: number;
   isActive: boolean;
@@ -86,7 +87,7 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
                 <span className="text-xs font-semibold text-blue-600">{t('Miqdor', language)}</span>
               </div>
               <p className="text-lg font-bold text-blue-900">
-                {sparePart.quantity} {t('dona', language)}
+                {sparePart.quantity} {sparePart.unit === 'litr' ? t('litr', language) : t('dona', language)}
               </p>
             </div>
 
@@ -209,12 +210,12 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
           <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
             <button
               onClick={onClose}
-              className="flex-1 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className={`px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors ${isApprentice ? 'w-full' : 'flex-1'}`}
             >
               {t('Yopish', language)}
             </button>
             
-            {onEdit && (
+            {!isApprentice && onEdit && (
               <button
                 onClick={onEdit}
                 className="px-3 py-2 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1"
@@ -224,7 +225,7 @@ const ViewSparePartModal: React.FC<ViewSparePartModalProps> = ({
               </button>
             )}
             
-            {onDelete && (
+            {!isApprentice && onDelete && (
               <button
                 onClick={onDelete}
                 className="px-3 py-2 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors flex items-center gap-1"

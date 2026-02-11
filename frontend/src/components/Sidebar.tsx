@@ -15,6 +15,7 @@ import {
   Package,
   BookOpen,
   X,
+  Calendar,
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 import { useLowStockCount } from '@/hooks/useSpareParts';
@@ -60,6 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { name: t('Vazifalar', language), href: '/app/master/tasks', icon: CheckSquare },
     { name: t('Zapchastlar', language), href: '/app/master/spare-parts', icon: Package },
     { name: t('Qarz daftarchasi', language), href: '/app/debts', icon: BookOpen },
+    { name: t('Eslatmalar', language), href: '/app/master/reminders', icon: Calendar },
   ];
 
   const getApprenticeNavigation = () => [
@@ -185,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+          <nav className="flex-1 space-y-0.5 p-4 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);

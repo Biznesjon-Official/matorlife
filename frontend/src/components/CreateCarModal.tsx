@@ -45,7 +45,10 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
     year: new Date().getFullYear(),
     licensePlate: '',
     ownerName: '',
-    ownerPhone: ''
+    ownerPhone: '',
+    mileage: 0,
+    initialOdometer: 0,
+    currentOdometer: 0
   });
   
   // Ehtiyot qismlar va materiallar
@@ -345,6 +348,11 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (formData.currentOdometer < formData.initialOdometer) {
+      alert(t('Hozirgi odometer boshlang\'ich odometrdan kichik bo\'lishi mumkin emas', language));
+      return;
+    }
+
     const phoneDigits = formData.ownerPhone.replace(/\D/g, '');
     if (phoneDigits.length !== 12 || !phoneDigits.startsWith('998')) {
       alert('Telefon raqami +998 XX XXX XX XX formatida bo\'lishi kerak');
@@ -391,7 +399,10 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
         year: new Date().getFullYear(),
         licensePlate: '',
         ownerName: '',
-        ownerPhone: ''
+        ownerPhone: '',
+        mileage: 0,
+        initialOdometer: 0,
+        currentOdometer: 0
       });
       setItems([]);
       setUsedSpareParts([]);
@@ -426,6 +437,13 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
       setFormData(prev => ({
         ...prev,
         [name]: plateValue
+      }));
+    } else if (name === 'mileage' || name === 'initialOdometer' || name === 'currentOdometer') {
+      // Odometer raqamlarini formatlash
+      const odometerValue = parseInt(value.replace(/\D/g, '')) || 0;
+      setFormData(prev => ({
+        ...prev,
+        [name]: odometerValue
       }));
     } else {
       setFormData(prev => ({
@@ -685,6 +703,52 @@ const CreateCarModal: React.FC<CreateCarModalProps> = ({ isOpen, onClose }) => {
                       placeholder="+998 XX XXX XX XX"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-5">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">{t('Odometer (km)', language)}</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                      {t('Boshlang\'ich', language)}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="initialOdometer"
+                        value={formData.initialOdometer}
+                        onChange={handleChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">km</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                      {t('Hozirgi', language)}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="currentOdometer"
+                        value={formData.currentOdometer}
+                        onChange={handleChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">km</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <span className="font-semibold">{t('Masofasi:', language)}</span> {Math.max(0, formData.currentOdometer - formData.initialOdometer)} km
+                  </p>
                 </div>
               </div>
             </div>

@@ -20,27 +20,31 @@ export const useTransactions = (filters: TransactionFilters = {}) => {
       const response = await api.get(`/transactions?${params.toString()}`);
       return response.data;
     },
-    staleTime: 30000, // 30 seconds
-    retry: 2,
-    placeholderData: (previousData) => previousData, // React Query v5 replacement
+    staleTime: 10000, // 10 seconds - kichraytirildi
+    gcTime: 30000, // 30 seconds - cache'da saqlash vaqti
+    retry: 1, // 1 marta retry - kamaytirildi
+    refetchOnWindowFocus: false, // Window focus'da refetch qilmaslik
+    placeholderData: (previousData) => previousData,
   });
 };
 
 export const useTransactionSummary = () => {
   return useQuery({
-    queryKey: ['transactionSummary'],
+    queryKey: ['transaction-summary'],
     queryFn: async (): Promise<{ summary: TransactionSummary }> => {
       const response = await api.get('/transactions/summary');
       return response.data;
     },
-    staleTime: 60000, // 1 minute
-    retry: 2,
+    staleTime: 10000, // 10 seconds - kichraytirildi
+    gcTime: 30000, // 30 seconds
+    retry: 1, // 1 marta retry
+    refetchOnWindowFocus: false,
   });
 };
 
 export const useTransactionStats = (dateRange?: { startDate?: string; endDate?: string }) => {
   return useQuery({
-    queryKey: ['transactionStats', dateRange],
+    queryKey: ['transaction-stats', dateRange],
     queryFn: async (): Promise<{ summary: TransactionSummary }> => {
       const params = new URLSearchParams();
       if (dateRange?.startDate) params.append('startDate', dateRange.startDate);
@@ -49,8 +53,10 @@ export const useTransactionStats = (dateRange?: { startDate?: string; endDate?: 
       const response = await api.get(`/transactions/stats?${params.toString()}`);
       return response.data;
     },
-    staleTime: 60000,
-    retry: 2,
+    staleTime: 10000, // 10 seconds
+    gcTime: 30000,
+    retry: 1,
+    refetchOnWindowFocus: false,
     enabled: !!dateRange,
   });
 };
@@ -64,11 +70,11 @@ export const useCreateTransaction = () => {
       return response.data;
     },
     onSuccess: (_data, variables) => {
+      // Faqat kerakli query'larni yangilash
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
-      queryClient.invalidateQueries({ queryKey: ['transactionStats'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       
-      // ✅ Agar maosh to'lansa, shogirdlar ma'lumotlarini yangilash
+      // Agar maosh to'lansa, shogirdlar ma'lumotlarini yangilash
       if (variables.apprenticeId) {
         queryClient.invalidateQueries({ queryKey: ['apprentices'] });
         queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -91,9 +97,9 @@ export const useDeleteTransaction = () => {
       return response.data;
     },
     onSuccess: () => {
+      // Faqat kerakli query'larni yangilash
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transactionSummary'] });
-      queryClient.invalidateQueries({ queryKey: ['transactionStats'] });
+      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       toast.success('Tranzaksiya muvaffaqiyatli o\'chirildi');
     },
     onError: (error: any) => {

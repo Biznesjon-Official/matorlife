@@ -49,7 +49,9 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
     licensePlate: '',
     ownerName: '',
     ownerPhone: '',
-    status: 'pending' as 'pending' | 'in-progress' | 'completed' | 'delivered'
+    status: 'pending' as 'pending' | 'in-progress' | 'completed' | 'delivered',
+    initialOdometer: 0,
+    currentOdometer: 0
   });
   const [parts, setParts] = useState<Part[]>([]);
   const [usedSpareParts, setUsedSpareParts] = useState<UsedSparePart[]>([]);
@@ -91,7 +93,9 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
         licensePlate: car.licensePlate || '',
         ownerName: car.ownerName || '',
         ownerPhone: car.ownerPhone || '',
-        status: car.status || 'pending'
+        status: car.status || 'pending',
+        initialOdometer: car.initialOdometer || 0,
+        currentOdometer: car.currentOdometer || 0
       });
       
       // Parts loading
@@ -384,6 +388,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
         ownerName: formData.ownerName.trim(),
         ownerPhone: formData.ownerPhone.trim(),
         status: formData.status,
+        initialOdometer: formData.initialOdometer,
+        currentOdometer: formData.currentOdometer,
         parts: finalParts,
         serviceItems: finalServiceItems,
         usedSpareParts // Zapchastlar ma'lumoti
@@ -403,10 +409,20 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'year' ? Number(value) : value
-    }));
+    
+    if (name === 'initialOdometer' || name === 'currentOdometer') {
+      // Odometer raqamlarini formatlash
+      const numValue = Math.max(0, parseInt(value) || 0);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'year' ? Number(value) : value
+      }));
+    }
   };
 
   const nextStep = () => {
@@ -567,6 +583,48 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       placeholder="+998 XX XXX XX XX"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <h4 className="text-sm sm:text-md font-medium text-gray-900 mb-3">{t('Odometer (km)', language)}</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('Boshlang\'ich', language)}</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="initialOdometer"
+                        value={formData.initialOdometer}
+                        onChange={handleChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">km</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t('Hozirgi', language)}</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="currentOdometer"
+                        value={formData.currentOdometer}
+                        onChange={handleChange}
+                        min="0"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">km</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <span className="font-semibold">{t('Masofasi:', language)}</span> {Math.max(0, formData.currentOdometer - formData.initialOdometer)} km
+                  </p>
                 </div>
               </div>
             </div>

@@ -180,38 +180,38 @@ const ApprenticeTasks: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-8">
+    <div className="space-y-3 sm:space-y-4 md:space-y-6 pb-8 px-3 sm:px-4 md:px-0">
       {/* Responsive Header with Blue Theme */}
-      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-4 sm:p-6 md:p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-3 sm:p-4 md:p-6 lg:p-8 text-white shadow-2xl">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative z-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 mb-3">
-            <div className="p-2 sm:p-3 bg-white/20 rounded-xl backdrop-blur-sm flex-shrink-0">
-              <Target className="h-6 w-6 sm:h-8 sm:w-8" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2 sm:mb-3">
+            <div className="p-2 sm:p-2.5 md:p-3 bg-white/20 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">
+              <Target className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold truncate">{t('Mening vazifalarim', language)}</h1>
-              <p className="text-blue-100 mt-1 text-xs sm:text-sm md:text-base">
+            <div className="flex-1 min-w-0 w-full sm:w-auto">
+              <h1 className="text-base sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold truncate">{t('Mening vazifalarim', language)}</h1>
+              <p className="text-blue-100 mt-0.5 sm:mt-1 text-[10px] sm:text-xs md:text-sm lg:text-base truncate">
                 {t('Sizga berilgan', language)} {myTasks.length} {t('ta vazifani boshqaring', language)}
               </p>
             </div>
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-full sm:w-auto">
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-3 sm:px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-all duration-200 flex items-center gap-2 text-sm sm:text-base font-medium"
+                className="w-full sm:w-auto px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base font-medium"
               >
-                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 flex-shrink-0" />
                 <span className="hidden sm:inline">{t('Yangi vazifa', language)}</span>
                 <span className="sm:hidden">{t('Yangi', language)}</span>
               </button>
             </div>
           </div>
         </div>
-        <div className="absolute top-0 right-0 w-24 h-24 sm:w-32 sm:h-32 md:w-64 md:h-64 bg-white/5 rounded-full -mr-12 sm:-mr-16 md:-mr-32 -mt-12 sm:-mt-16 md:-mt-32"></div>
+        <div className="absolute top-0 right-0 w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 lg:w-64 lg:h-64 bg-white/5 rounded-full -mr-10 sm:-mr-12 md:-mr-16 lg:-mr-32 -mt-10 sm:-mt-12 md:-mt-16 lg:-mt-32"></div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 lg:gap-6 lg:grid-cols-5">
         {[
           { 
             name: t('Tayinlangan', language), 
@@ -253,19 +253,19 @@ const ApprenticeTasks: React.FC = () => {
           return (
             <div 
               key={stat.name}
-              className="group relative overflow-hidden rounded-lg sm:rounded-xl bg-white p-3 sm:p-4 md:p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+              className="group relative overflow-hidden rounded-lg sm:rounded-xl bg-white p-2.5 sm:p-3 md:p-4 lg:p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between">
-                  <div className={`flex h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className={`h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7 bg-gradient-to-br ${stat.gradient} bg-clip-text text-transparent`} />
+                  <div className={`flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br ${stat.iconBg} group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 bg-gradient-to-br ${stat.gradient} bg-clip-text text-transparent`} />
                   </div>
                 </div>
-                <div className="mt-2 sm:mt-3 md:mt-4">
-                  <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{stat.name}</p>
-                  <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stat.value}</p>
+                <div className="mt-1.5 sm:mt-2 md:mt-3 lg:mt-4">
+                  <p className="text-[10px] sm:text-xs md:text-sm font-medium text-gray-600 truncate">{stat.name}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mt-0.5 sm:mt-1">{stat.value}</p>
                 </div>
               </div>
             </div>
@@ -274,13 +274,13 @@ const ApprenticeTasks: React.FC = () => {
       </div>
 
       {/* Tabs and Filters */}
-      <div className="card p-4 sm:p-6">
-        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 gap-4">
+      <div className="card p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col space-y-3 sm:space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 gap-3 sm:gap-4">
           {/* Tabs */}
-          <div className="flex space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-lg overflow-x-auto">
+          <div className="flex space-x-1 sm:space-x-2 bg-gray-100 p-1 rounded-lg overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('active')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'active'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
@@ -290,7 +290,7 @@ const ApprenticeTasks: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'all'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
@@ -300,7 +300,7 @@ const ApprenticeTasks: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('completed')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              className={`px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 activeTab === 'completed'
                   ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
@@ -311,26 +311,26 @@ const ApprenticeTasks: React.FC = () => {
           </div>
 
           {/* Search and Filter */}
-          <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
+          <div className="flex flex-col space-y-2 sm:space-y-3 sm:flex-row sm:space-y-0 sm:space-x-2 md:space-x-3">
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder={t('Qidirish...', language)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-48 md:w-64 text-sm"
+                className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-40 md:w-48 lg:w-64 text-xs sm:text-sm"
               />
             </div>
 
             {/* Priority Filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="relative flex-1 sm:flex-none">
+              <Filter className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 pointer-events-none" />
               <select
                 value={filterPriority}
                 onChange={(e) => setFilterPriority(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white w-full sm:w-40 md:w-48 text-sm"
+                className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white w-full sm:w-36 md:w-40 lg:w-48 text-xs sm:text-sm"
               >
                 <option value="all">{t('Barcha muhimlik', language)}</option>
                 <option value="urgent">{t('Shoshilinch', language)}</option>
