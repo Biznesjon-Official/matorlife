@@ -84,6 +84,15 @@ app.use(express.urlencoded({ extended: true }));
 // Static files - rasmlar uchun
 app.use('/uploads', express.static('uploads'));
 
+// Health check (before rate limiting)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    message: 'Car Repair Workshop API is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Security middleware (production only)
 if (process.env.NODE_ENV === 'production') {
   setupSecurity(app);
@@ -108,16 +117,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/reminders', reminderRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    message: 'Car Repair Workshop API is running!',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Error handling middleware
+// 404 handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   res.status(err.status || 500).json({
     message: err.message || 'Internal server error',
