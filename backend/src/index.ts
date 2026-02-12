@@ -57,7 +57,9 @@ const corsOptions = {
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5177',
       'https://matorlife.uz',
-      'http://matorlife.uz'
+      'https://www.matorlife.uz',
+      'http://matorlife.uz',
+      'http://www.matorlife.uz'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
