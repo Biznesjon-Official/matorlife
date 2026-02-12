@@ -12,6 +12,10 @@ const dropDuplicateIndexes = async () => {
     console.log('✅ MongoDB ga ulandi!');
 
     const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Database connection not available');
+    }
+    
     const carsCollection = db.collection('cars');
 
     console.log('\n📋 Mavjud indexlar:');
