@@ -15,6 +15,7 @@ interface ApprenticeAssignment {
   id: string;
   apprenticeId: string;
   percentage: number;
+  sharePercentage?: number; // Keyingi shogirtga beradigan foiz
 }
 
 interface TaskItem {
@@ -103,7 +104,8 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
             {
               id: Date.now().toString(),
               apprenticeId: '',
-              percentage: 50
+              percentage: 50,
+              sharePercentage: 0 // Default 0% - hech narsa bermaydi
             }
           ]
         };
@@ -126,25 +128,30 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
   };
 
   // Shogird ma'lumotlarini yangilash
-  const updateApprentice = (taskId: string, assignmentId: string, field: 'apprenticeId' | 'percentage', value: any) => {
+  const updateApprentice = (taskId: string, assignmentId: string, field: 'apprenticeId' | 'percentage' | 'sharePercentage', value: any) => {
     setTasks(tasks.map(task => {
       if (task.id === taskId) {
         return {
           ...task,
           assignments: task.assignments.map(assignment => {
             if (assignment.id === assignmentId) {
-              // Faqat foydalanuvchi tanlaganda ishlaydi, foiz o'zgartirilmaydi
+              // Foydalanuvchi tanlaganda
               if (field === 'apprenticeId' && value) {
                 const selectedUser = allAvailableUsers?.find((a: any) => (a._id || a.id) === value);
                 const userPercentage = selectedUser?.percentage || (selectedUser?.role === 'master' ? 100 : 50);
-                console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Rol: ${selectedUser?.role || 'apprentice'}`);
+                const userSharePercentage = selectedUser?.sharePercentageToNext !== undefined ? selectedUser.sharePercentageToNext : 0;
+                console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Share: ${userSharePercentage}%`);
                 return { 
                   ...assignment, 
                   apprenticeId: value,
-                  percentage: userPercentage 
+                  percentage: userPercentage,
+                  sharePercentage: userSharePercentage
                 };
               }
-              // Foiz o'zgartirishni rad etish
+              // sharePercentage o'zgartirish (faqat katta shogirtlar uchun)
+              if (field === 'sharePercentage') {
+                return { ...assignment, sharePercentage: value };
+              }
               return assignment;
             }
             return assignment;
@@ -420,7 +427,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                       ) : (
                         <div className="space-y-2">
                           {task.assignments.map((assignment, idx) => {
-                            // 🔄 YANGI LOGIKA: Ustoz pulini olish, keyin 50%dan yuqori shogirdlarga bo'lish
+                            // 🔄 YANGI LOGIKA: sharePercentage ishlatish
                             let baseAmount = task.payment;
                             let earning = 0;
                             let masterShare = 0;
@@ -436,25 +443,63 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                             
                             // 3. Pul taqsimoti
                             if (assignment.percentage > 50) {
-                              // 50%dan yuqori: apprenticePool'ni teng bo'lish
-                              const sharePerApprentice = apprenticePool / highPercentageApprentices.length;
-                              earning = sharePerApprentice;
-                              baseAmount = apprenticePool;
+                              // 50%dan yuqori: sharePercentage asosida
+                              const highIdx = highPercentageApprentices.findIndex(a => a.id === assignment.id);
+                              let remainingPool = apprenticePool;
                               
-                              // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
-                              if (idx === 0 && lowPercentageApprentices.length > 0) {
-                                let totalDeductions = 0;
-                                for (const lowApp of lowPercentageApprentices) {
-                                  const deduction = (sharePerApprentice * lowApp.percentage) / 100;
-                                  totalDeductions += deduction;
+                              // Oldingi katta shogirdlarning sharePercentage'larini hisoblash
+                              for (let i = 0; i < highIdx; i++) {
+                                const prevApp = highPercentageApprentices[i];
+                                const sharePerc = prevApp.sharePercentage !== undefined ? prevApp.sharePercentage : 0;
+                                remainingPool = (remainingPool * sharePerc) / 100;
+                              }
+                              
+                              baseAmount = remainingPool;
+                              
+                              // Oxirgi katta shogirt - qolgan pulni oladi
+                              if (highIdx === highPercentageApprentices.length - 1) {
+                                earning = remainingPool;
+                                
+                                // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                                if (idx === 0 && lowPercentageApprentices.length > 0) {
+                                  let totalDeductions = 0;
+                                  for (const lowApp of lowPercentageApprentices) {
+                                    const deduction = (remainingPool * lowApp.percentage) / 100;
+                                    totalDeductions += deduction;
+                                  }
+                                  earning = remainingPool - totalDeductions;
                                 }
-                                earning = sharePerApprentice - totalDeductions;
+                              } else {
+                                // Keyingi shogirtga sharePercentage beradi
+                                const sharePerc = assignment.sharePercentage !== undefined ? assignment.sharePercentage : 0;
+                                const nextShare = (remainingPool * sharePerc) / 100;
+                                earning = remainingPool - nextShare;
+                                
+                                // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                                if (idx === 0 && lowPercentageApprentices.length > 0) {
+                                  let totalDeductions = 0;
+                                  for (const lowApp of lowPercentageApprentices) {
+                                    const deduction = (earning * lowApp.percentage) / 100;
+                                    totalDeductions += deduction;
+                                  }
+                                  earning = earning - totalDeductions;
+                                }
                               }
                             } else {
                               // 50% va past: 1-shogirtning pulidan oladi
-                              const firstApprenticeShare = apprenticePool / highPercentageApprentices.length;
-                              baseAmount = firstApprenticeShare;
-                              earning = (firstApprenticeShare * assignment.percentage) / 100;
+                              const firstHighApp = highPercentageApprentices[0];
+                              if (firstHighApp) {
+                                // 1-shogirtning earningini hisoblash
+                                let firstEarning = apprenticePool;
+                                for (let i = 1; i < highPercentageApprentices.length; i++) {
+                                  const prevApp = highPercentageApprentices[i - 1];
+                                  const sharePerc = prevApp.sharePercentage !== undefined ? prevApp.sharePercentage : 0;
+                                  firstEarning = firstEarning - (firstEarning * sharePerc) / 100;
+                                }
+                                
+                                baseAmount = firstEarning / (1 - lowPercentageApprentices.reduce((sum, app) => sum + app.percentage, 0) / 100);
+                                earning = (baseAmount * assignment.percentage) / 100;
+                              }
                             }
 
                             return (
@@ -505,6 +550,38 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   </div>
                                 </div>
 
+                                {/* SharePercentage - faqat katta shogirtlar uchun va oxirgi shogirtdan tashqari */}
+                                {assignment.percentage > 50 && idx < task.assignments.filter((a: any) => a.percentage > 50).length - 1 && (
+                                  <div className="mt-2">
+                                    <label className="block text-xs font-semibold text-purple-700 mb-1">
+                                      Keyingi shogirtga berish % (0 = hech narsa bermaydi)
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      value={assignment.sharePercentage || ''}
+                                      onChange={(e) => updateApprentice(task.id, assignment.id, 'sharePercentage', Number(e.target.value))}
+                                      onFocus={(e) => {
+                                        if (e.target.value === '0') {
+                                          e.target.value = '';
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                          updateApprentice(task.id, assignment.id, 'sharePercentage', 0);
+                                        }
+                                      }}
+                                      className="w-full px-2 py-1.5 text-xs border-2 border-purple-300 rounded focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                                      placeholder="0"
+                                      title="Keyingi katta shogirtga qancha foiz berasiz (0 = hech narsa)"
+                                    />
+                                    <p className="text-xs text-purple-600 mt-1">
+                                      O'zingizga qoladi: {100 - (assignment.sharePercentage || 0)}%
+                                    </p>
+                                  </div>
+                                )}
+
                                 {/* Hisoblash ko'rsatkichi - YANGI LOGIKA */}
                                 {task.payment > 0 && assignment.percentage > 0 && (
                                   <div className="mt-2 p-2 bg-white rounded text-xs space-y-1">
@@ -530,10 +607,10 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                             );
                           })}
 
-                          {/* Jami hisob - YANGI LOGIKA */}
+                          {/* Jami hisob - YANGI LOGIKA (sharePercentage bilan) */}
                           {task.payment > 0 && task.assignments.length > 0 && (
                             <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border-2 border-green-200">
-                              <div className="text-xs font-bold text-gray-700 mb-2">📊 Yangi Logika hisob:</div>
+                              <div className="text-xs font-bold text-gray-700 mb-2">📊 SharePercentage Logika:</div>
                               <div className="space-y-1 text-xs">
                                 <div className="flex justify-between">
                                   <span>Umumiy pul:</span>
@@ -550,43 +627,86 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
                                   const highPercentageApprentices = task.assignments.filter(a => a.percentage > 50);
                                   const lowPercentageApprentices = task.assignments.filter(a => a.percentage <= 50);
                                   
-                                  // 3. Har bir katta shogirdga ajratilgan pul
-                                  const sharePerHighApprentice = apprenticePool / highPercentageApprentices.length;
+                                  // 3. Katta shogirdlar uchun sharePercentage asosida hisoblash
+                                  const highResults: any[] = [];
+                                  let remainingPool = apprenticePool;
+                                  
+                                  for (let i = 0; i < highPercentageApprentices.length; i++) {
+                                    const highApp = highPercentageApprentices[i];
+                                    const sharePerc = highApp.sharePercentage !== undefined ? highApp.sharePercentage : 0;
+                                    
+                                    if (i === highPercentageApprentices.length - 1) {
+                                      // Oxirgi shogirt - qolgan pulni oladi
+                                      let earning = remainingPool;
+                                      
+                                      // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                                      if (i === 0 && lowPercentageApprentices.length > 0) {
+                                        let totalDeductions = 0;
+                                        for (const lowApp of lowPercentageApprentices) {
+                                          const deduction = (remainingPool * lowApp.percentage) / 100;
+                                          totalDeductions += deduction;
+                                        }
+                                        earning = remainingPool - totalDeductions;
+                                      }
+                                      
+                                      highResults.push({ ...highApp, earning });
+                                    } else {
+                                      // Keyingi shogirtga sharePercentage beradi
+                                      const nextShare = (remainingPool * sharePerc) / 100;
+                                      let earning = remainingPool - nextShare;
+                                      
+                                      // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+                                      if (i === 0 && lowPercentageApprentices.length > 0) {
+                                        let totalDeductions = 0;
+                                        for (const lowApp of lowPercentageApprentices) {
+                                          const deduction = (earning * lowApp.percentage) / 100;
+                                          totalDeductions += deduction;
+                                        }
+                                        earning = earning - totalDeductions;
+                                      }
+                                      
+                                      highResults.push({ ...highApp, earning, sharePerc });
+                                      remainingPool = nextShare;
+                                    }
+                                  }
+                                  
+                                  // 4. Kichik shogirdlar uchun hisoblash
+                                  const lowResults: any[] = [];
+                                  if (lowPercentageApprentices.length > 0 && highResults.length > 0) {
+                                    const firstHighEarning = highResults[0].earning;
+                                    const baseAmount = firstHighEarning / (1 - lowPercentageApprentices.reduce((sum, app) => sum + app.percentage, 0) / 100);
+                                    
+                                    for (const lowApp of lowPercentageApprentices) {
+                                      const earning = (baseAmount * lowApp.percentage) / 100;
+                                      lowResults.push({ ...lowApp, earning });
+                                    }
+                                  }
                                   
                                   return (
                                     <>
                                       {/* Katta shogirdlar */}
-                                      {highPercentageApprentices.map((a, idx) => {
-                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
-                                        let earning = sharePerHighApprentice;
-                                        
-                                        // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
-                                        if (idx === 0 && lowPercentageApprentices.length > 0) {
-                                          let totalDeductions = 0;
-                                          for (const lowApp of lowPercentageApprentices) {
-                                            const deduction = (sharePerHighApprentice * lowApp.percentage) / 100;
-                                            totalDeductions += deduction;
-                                          }
-                                          earning = sharePerHighApprentice - totalDeductions;
-                                        }
-                                        
+                                      {highResults.map((result, idx) => {
+                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === result.apprenticeId);
                                         return (
-                                          <div key={idx} className="flex justify-between">
-                                            <span>{idx + 1}-shogird ({selectedUser?.name}):</span>
-                                            <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
+                                          <div key={idx} className="flex justify-between items-center">
+                                            <span className="flex items-center gap-1">
+                                              {idx + 1}-shogird ({selectedUser?.name})
+                                              {result.sharePerc && (
+                                                <span className="text-purple-600 text-xs">→{result.sharePerc}%</span>
+                                              )}
+                                            </span>
+                                            <span className="font-bold text-green-700">{result.earning.toLocaleString()} so'm</span>
                                           </div>
                                         );
                                       })}
                                       
                                       {/* Kichik shogirdlar */}
-                                      {lowPercentageApprentices.map((a, idx) => {
-                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === a.apprenticeId);
-                                        const earning = (sharePerHighApprentice * a.percentage) / 100;
-                                        
+                                      {lowResults.map((result, idx) => {
+                                        const selectedUser = allAvailableUsers?.find((u: any) => (u._id || u.id) === result.apprenticeId);
                                         return (
                                           <div key={idx} className="flex justify-between">
-                                            <span>{highPercentageApprentices.length + idx + 1}-shogird ({selectedUser?.name}):</span>
-                                            <span className="font-bold text-green-700">{earning.toLocaleString()} so'm</span>
+                                            <span>{highResults.length + idx + 1}-shogird ({selectedUser?.name}):</span>
+                                            <span className="font-bold text-green-700">{result.earning.toLocaleString()} so'm</span>
                                           </div>
                                         );
                                       })}

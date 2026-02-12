@@ -21,6 +21,7 @@ import { t } from '@/lib/transliteration';
 import { useLowStockCount } from '@/hooks/useSpareParts';
 import { useCompletedTasksCount } from '@/hooks/useTasks';
 import { useOverdueDebtsCount } from '@/hooks/useDebts';
+import { useTodayRemindersCount } from '@/hooks/useTodayReminders';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { data: lowStockCount = 0 } = useLowStockCount();
   const { data: completedTasksCount = 0 } = useCompletedTasksCount();
   const { data: overdueDebtsCount = 0 } = useOverdueDebtsCount(isMaster); // Faqat master uchun
+  const { data: todayRemindersCount = 0 } = useTodayRemindersCount();
 
   // localStorage'dan tilni o'qish va o'zgartirish
   const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
@@ -194,9 +196,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               const isSparePartsPage = item.href === '/app/master/spare-parts';
               const isTasksPage = item.href === '/app/master/tasks';
               const isDebtsPage = item.href === '/app/debts';
+              const isRemindersPage = item.href === '/app/master/reminders';
               const showSparePartsBadge = isSparePartsPage && lowStockCount > 0; // Shogirt uchun ham ko'rsatish
               const showTasksBadge = user?.role === 'master' && isTasksPage && completedTasksCount > 0;
               const showDebtsBadge = user?.role === 'master' && isDebtsPage && overdueDebtsCount > 0;
+              const showRemindersBadge = user?.role === 'master' && isRemindersPage && todayRemindersCount > 0;
               
               return (
                 <Link
@@ -235,7 +239,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                       {overdueDebtsCount}
                     </div>
                   )}
-                  {active && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && (
+                  {showRemindersBadge && (
+                    <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse shadow-lg">
+                      {todayRemindersCount}
+                    </div>
+                  )}
+                  {active && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && !showRemindersBadge && (
                     <div className="ml-auto relative z-10">
                       <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
                     </div>

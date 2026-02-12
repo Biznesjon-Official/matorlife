@@ -8,26 +8,11 @@ interface CreateReminderModalProps {
 }
 
 export default function CreateReminderModal({ onClose, onSuccess }: CreateReminderModalProps) {
-  // Hozirgi vaqtni olish va 1 daqiqa qo'shish
-  const getDefaultDateTime = () => {
-    const now = new Date();
-    const futureTime = new Date(now.getTime() + 60000); // 1 daqiqa keyin
-    
-    const date = futureTime.toISOString().split('T')[0];
-    const hours = futureTime.getHours().toString().padStart(2, '0');
-    const minutes = futureTime.getMinutes().toString().padStart(2, '0');
-    const time = `${hours}:${minutes}`;
-    
-    return { date, time };
-  };
-
-  const defaultDateTime = getDefaultDateTime();
-
   const [formData, setFormData] = useState({
-    title: 'Test eslatma',
-    description: 'Musiqa test uchun',
-    reminderDate: defaultDateTime.date,
-    reminderTime: defaultDateTime.time
+    title: '',
+    description: '',
+    reminderDate: '',
+    reminderTime: ''
   });
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +28,7 @@ export default function CreateReminderModal({ onClose, onSuccess }: CreateRemind
       await reminderService.create(formData);
       onSuccess();
     } catch (error: any) {
-      console.error(error);
+      // Error handling
     } finally {
       setLoading(false);
     }

@@ -14,6 +14,7 @@ export interface IPendingAssignment {
 export interface ITaskAssignment {
   apprentice: mongoose.Types.ObjectId;
   percentage: number; // Shogird foizi (0-100)
+  sharePercentage?: number; // Keyingi katta shogirtga beradigan foiz (faqat katta shogirtlar uchun)
   allocatedAmount: number; // Ajratilgan pul (umumiy pul / ishchilar soni)
   earning: number; // Shogird daromadi (allocatedAmount * percentage / 100)
   masterShare: number; // Ustoz ulushi (allocatedAmount - earning)
@@ -93,6 +94,12 @@ const taskAssignmentSchema = new Schema<ITaskAssignment>({
     required: true,
     min: 0,
     max: 100
+  },
+  sharePercentage: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: undefined
   },
   allocatedAmount: {
     type: Number,

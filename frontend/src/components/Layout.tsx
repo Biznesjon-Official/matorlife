@@ -22,6 +22,7 @@ import Sidebar from './Sidebar';
 import { useLowStockCount } from '@/hooks/useSpareParts';
 import { useCompletedTasksCount } from '@/hooks/useTasks';
 import { useOverdueDebtsCount } from '@/hooks/useDebts';
+import { useTodayRemindersCount } from '@/hooks/useTodayReminders';
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -35,6 +36,7 @@ const Layout: React.FC = () => {
   const { data: lowStockCount = 0 } = useLowStockCount();
   const { data: completedTasksCount = 0 } = useCompletedTasksCount();
   const { data: overdueDebtsCount = 0 } = useOverdueDebtsCount(isMaster); // Faqat master uchun
+  const { data: todayRemindersCount = 0 } = useTodayRemindersCount();
 
   // localStorage'dan tilni o'qish va o'zgartirish
   const [language, setLanguage] = useState<'latin' | 'cyrillic'>(() => {
@@ -252,9 +254,11 @@ const Layout: React.FC = () => {
               const isSparePartsPage = item.href === '/app/master/spare-parts';
               const isTasksPage = item.href === '/app/master/tasks';
               const isDebtsPage = item.href === '/app/debts';
+              const isRemindersPage = item.href === '/app/master/reminders';
               const showSparePartsBadge = isSparePartsPage && lowStockCount > 0; // Shogirt uchun ham ko'rsatish
               const showTasksBadge = user?.role === 'master' && isTasksPage && completedTasksCount > 0;
               const showDebtsBadge = user?.role === 'master' && isDebtsPage && overdueDebtsCount > 0;
+              const showRemindersBadge = user?.role === 'master' && isRemindersPage && todayRemindersCount > 0;
               
               return (
                 <div key={item.name} className="relative group/item">
@@ -309,7 +313,17 @@ const Layout: React.FC = () => {
                         {overdueDebtsCount}
                       </div>
                     )}
-                    {active && isExpanded && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && (
+                    {showRemindersBadge && isExpanded && (
+                      <div className="ml-auto relative z-10 flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse shadow-lg">
+                        {todayRemindersCount}
+                      </div>
+                    )}
+                    {showRemindersBadge && !isExpanded && (
+                      <div className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold animate-pulse z-20 shadow-lg">
+                        {todayRemindersCount}
+                      </div>
+                    )}
+                    {active && isExpanded && !showSparePartsBadge && !showTasksBadge && !showDebtsBadge && !showRemindersBadge && (
                       <div className="ml-auto relative z-10 animate-fadeIn">
                         <div className="h-2 w-2 rounded-full bg-white animate-pulse"></div>
                       </div>
@@ -333,6 +347,11 @@ const Layout: React.FC = () => {
                       {showDebtsBadge && (
                         <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold shadow-md">
                           {overdueDebtsCount}
+                        </span>
+                      )}
+                      {showRemindersBadge && (
+                        <span className="ml-2 px-1.5 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold shadow-md">
+                          {todayRemindersCount}
                         </span>
                       )}
                       <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>

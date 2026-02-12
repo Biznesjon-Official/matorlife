@@ -35,8 +35,8 @@ export default function Reminders() {
       try {
         const data = await reminderService.getAll(filter === 'all' ? undefined : filter);
         setReminders(data);
-      } catch (error: any) {
-        console.error(error);
+      } catch {
+        // Error handling
       }
     };
 
@@ -53,8 +53,8 @@ export default function Reminders() {
       try {
         const data = await reminderService.getAll(filter === 'all' ? undefined : filter);
         setReminders(data);
-      } catch (error: any) {
-        console.error(error);
+      } catch {
+        // Error handling
       }
     };
 
@@ -73,8 +73,8 @@ export default function Reminders() {
       const data = await reminderService.getAll(filter === 'all' ? undefined : filter);
       setReminders(data);
       setDeletingReminder(null);
-    } catch (error: any) {
-      console.error(error);
+    } catch {
+      // Error handling
     }
   };
 
@@ -83,8 +83,8 @@ export default function Reminders() {
       await reminderService.update(reminder._id, { status: 'completed' });
       const data = await reminderService.getAll(filter === 'all' ? undefined : filter);
       setReminders(data);
-    } catch (error: any) {
-      console.error(error);
+    } catch {
+      // Error handling
     }
   };
 

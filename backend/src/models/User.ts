@@ -8,6 +8,7 @@ export interface IUser extends Document {
   password: string;
   phone?: string; // Telefon raqam
   percentage?: number; // Shogird foizi (0-100)
+  sharePercentageToNext?: number; // Keyingi katta shogirtga beradigan foiz (faqat 50%+ uchun)
   role: 'master' | 'apprentice';
   masterId?: mongoose.Types.ObjectId; // Shogird qaysi ustoz tomonidan qo'shilgan
   earnings: number; // Joriy oylik daromad
@@ -57,6 +58,12 @@ const userSchema = new Schema<IUser>({
     min: 0,
     max: 100,
     default: undefined
+  },
+  sharePercentageToNext: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0 // Default 0% - hech narsa bermaydi
   },
   role: {
     type: String,

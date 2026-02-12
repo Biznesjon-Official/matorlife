@@ -27,9 +27,13 @@ export default function EditReminderModal({ reminder, onClose, onSuccess }: Edit
     try {
       setLoading(true);
       await reminderService.update(reminder._id, formData);
-      onSuccess();
+      
+      // Ma'lumotlarni yangilash uchun kichik kechikish
+      setTimeout(() => {
+        onSuccess();
+      }, 100);
     } catch (error: any) {
-      console.error(error);
+      // Error handling
     } finally {
       setLoading(false);
     }

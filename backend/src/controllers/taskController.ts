@@ -221,48 +221,108 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       else {
         console.log(`\n🔄 USTOZ YARATDI - Hammasi darhol tasdiqlangan`);
         
-        // 4. Katta shogirdlarga pul taqsimlash
-        for (const highApp of highPercentageApprentices) {
-          let earning = sharePerHighApprentice;
+        // 4. Katta shogirdlarga pul taqsimlash (YANGI LOGIKA - sharePercentage ishlatish)
+        if (highPercentageApprentices.length > 0) {
+          let remainingPool = apprenticePool;
           
-          // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
-          if (highApp.index === 0 && lowPercentageApprentices.length > 0) {
-            let totalDeductions = 0;
-            for (const lowApp of lowPercentageApprentices) {
-              const deduction = (sharePerHighApprentice * lowApp.percentage) / 100;
-              totalDeductions += deduction;
+          for (let i = 0; i < highPercentageApprentices.length; i++) {
+            const highApp = highPercentageApprentices[i];
+            const assignment = assignments.find((a: any) => a.apprenticeId === highApp.apprenticeId);
+            const sharePercentage = assignment?.sharePercentage !== undefined ? assignment.sharePercentage : 0; // Default 0% - hech narsa bermaydi
+            
+            let earning = 0;
+            let allocatedAmount = remainingPool;
+            
+            // Oxirgi katta shogirt - qolgan pulni oladi
+            if (i === highPercentageApprentices.length - 1) {
+              earning = remainingPool;
+              
+              // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa, ularning pulini ayirish
+              if (highApp.index === 0 && lowPercentageApprentices.length > 0) {
+                let totalDeductions = 0;
+                for (const lowApp of lowPercentageApprentices) {
+                  const deduction = (remainingPool * lowApp.percentage) / 100;
+                  totalDeductions += deduction;
+                }
+                earning = remainingPool - totalDeductions;
+                console.log(`\n👤 ${i + 1}-shogird (oxirgi): ${highApp.apprentice?.name} (${highApp.percentage}%)`);
+                console.log(`   💰 Qolgan pul: ${remainingPool.toFixed(2)} so'm`);
+                console.log(`   💰 Kichik shogirdlar ayirildi: ${totalDeductions.toFixed(2)} so'm`);
+                console.log(`   ✅ Oladi: ${earning.toFixed(2)} so'm`);
+              } else {
+                console.log(`\n👤 ${i + 1}-shogird (oxirgi): ${highApp.apprentice?.name} (${highApp.percentage}%)`);
+                console.log(`   ✅ Qolgan pulni oladi: ${earning.toFixed(2)} so'm`);
+              }
+              
+              assignmentsWithPercentage.push({
+                apprentice: highApp.apprenticeId,
+                percentage: highApp.percentage,
+                sharePercentage: undefined,
+                allocatedAmount: allocatedAmount,
+                earning: earning,
+                masterShare: highApp.index === 0 ? masterShare : 0
+              });
+            } 
+            // Keyingi shogirtga sharePercentage asosida beradi
+            else {
+              const nextApprenticeShare = (remainingPool * sharePercentage) / 100;
+              earning = remainingPool - nextApprenticeShare;
+              
+              // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+              if (highApp.index === 0 && lowPercentageApprentices.length > 0) {
+                let totalDeductions = 0;
+                for (const lowApp of lowPercentageApprentices) {
+                  const deduction = (earning * lowApp.percentage) / 100;
+                  totalDeductions += deduction;
+                }
+                earning = earning - totalDeductions;
+                console.log(`\n👤 ${i + 1}-shogird: ${highApp.apprentice?.name} (${highApp.percentage}%)`);
+                console.log(`   💰 Jami pul: ${remainingPool.toFixed(2)} so'm`);
+                console.log(`   📤 Keyingi shogirtga ${sharePercentage}%: ${nextApprenticeShare.toFixed(2)} so'm`);
+                console.log(`   💰 Kichik shogirdlar ayirildi: ${totalDeductions.toFixed(2)} so'm`);
+                console.log(`   ✅ Oladi: ${earning.toFixed(2)} so'm`);
+              } else {
+                console.log(`\n👤 ${i + 1}-shogird: ${highApp.apprentice?.name} (${highApp.percentage}%)`);
+                console.log(`   💰 Jami pul: ${remainingPool.toFixed(2)} so'm`);
+                console.log(`   📤 Keyingi shogirtga ${sharePercentage}%: ${nextApprenticeShare.toFixed(2)} so'm`);
+                console.log(`   ✅ O'ziga qoladi: ${earning.toFixed(2)} so'm`);
+              }
+              
+              assignmentsWithPercentage.push({
+                apprentice: highApp.apprenticeId,
+                percentage: highApp.percentage,
+                sharePercentage: sharePercentage,
+                allocatedAmount: allocatedAmount,
+                earning: earning,
+                masterShare: highApp.index === 0 ? masterShare : 0
+              });
+              
+              remainingPool = nextApprenticeShare;
             }
-            earning = sharePerHighApprentice - totalDeductions;
-            console.log(`\n👤 1-shogird: ${highApp.apprentice?.name} (${highApp.percentage}%)`);
-            console.log(`   💰 Oladi: ${earning.toFixed(2)} so'm (kichik shogirdlar ayirildi)`);
-          } else {
-            console.log(`\n👤 ${highApp.index + 1}-shogird: ${highApp.apprentice?.name} (${highApp.percentage}%)`);
-            console.log(`   💰 Oladi: ${earning.toFixed(2)} so'm`);
           }
-
-          assignmentsWithPercentage.push({
-            apprentice: highApp.apprenticeId,
-            percentage: highApp.percentage,
-            allocatedAmount: apprenticePool,
-            earning: earning,
-            masterShare: highApp.index === 0 ? masterShare : 0
-          });
         }
         
         // 5. Kichik shogirdlarga pul taqsimlash (1-shogirtning pulidan)
-        for (const lowApp of lowPercentageApprentices) {
-          const earning = (sharePerHighApprentice * lowApp.percentage) / 100;
+        if (lowPercentageApprentices.length > 0 && highPercentageApprentices.length > 0) {
+          const firstHighApp = highPercentageApprentices[0];
+          const firstHighEarning = assignmentsWithPercentage.find(a => a.apprentice === firstHighApp.apprenticeId)?.earning || 0;
+          const baseAmount = firstHighEarning / (1 - lowPercentageApprentices.reduce((sum, app) => sum + app.percentage, 0) / 100);
           
-          console.log(`\n👤 ${lowApp.index + 1}-shogird: ${lowApp.apprentice?.name} (${lowApp.percentage}%)`);
-          console.log(`   💰 1-shogirtning pulidan: ${earning.toFixed(2)} so'm`);
+          for (const lowApp of lowPercentageApprentices) {
+            const earning = (baseAmount * lowApp.percentage) / 100;
+            
+            console.log(`\n👤 ${lowApp.index + 1}-shogird (kichik): ${lowApp.apprentice?.name} (${lowApp.percentage}%)`);
+            console.log(`   💰 1-shogirtning pulidan: ${earning.toFixed(2)} so'm`);
 
-          assignmentsWithPercentage.push({
-            apprentice: lowApp.apprenticeId,
-            percentage: lowApp.percentage,
-            allocatedAmount: sharePerHighApprentice,
-            earning: earning,
-            masterShare: 0
-          });
+            assignmentsWithPercentage.push({
+              apprentice: lowApp.apprenticeId,
+              percentage: lowApp.percentage,
+              sharePercentage: undefined,
+              allocatedAmount: baseAmount,
+              earning: earning,
+              masterShare: 0
+            });
+          }
         }
 
         taskData.assignments = assignmentsWithPercentage;

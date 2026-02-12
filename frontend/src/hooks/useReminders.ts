@@ -27,15 +27,18 @@ export const useReminders = () => {
   // Audio instance yaratish (bir marta)
   useEffect(() => {
     audioRef.current = getAudioInstance();
-    
+  }, []);
+
+  // LocalStorage dan notified reminders ni yuklash
+  useEffect(() => {
     // LocalStorage dan notified reminders ni yuklash
     const savedNotifiedIds = localStorage.getItem(NOTIFIED_REMINDERS_KEY);
     if (savedNotifiedIds) {
       try {
         const ids = JSON.parse(savedNotifiedIds);
         notifiedRemindersRef.current = new Set(ids);
-      } catch (error) {
-        console.error('Notified IDs ni yuklashda xato:', error);
+      } catch {
+        // Invalid JSON, ignore
       }
     }
   }, []);
@@ -94,8 +97,8 @@ export const useReminders = () => {
       setLoading(true);
       const data = await reminderService.getAll();
       setReminders(data);
-    } catch (error) {
-      console.error('Eslatmalarni yuklashda xato:', error);
+    } catch {
+      // Error handling
     } finally {
       setLoading(false);
     }
@@ -116,8 +119,8 @@ export const useReminders = () => {
 
     // Musiqa chalinish
     audioRef.current.currentTime = 0;
-    audioRef.current.play().catch((error) => {
-      console.error('Musiqa chalinishda xato:', error);
+    audioRef.current.play().catch(() => {
+      // Autoplay blocked
     });
 
     // EXACTLY 10 sekunddan keyin to'xtasin (10000ms)
@@ -146,11 +149,8 @@ export const useReminders = () => {
   const updateReminderStatus = async (reminderId: string) => {
     try {
       await reminderService.update(reminderId, { status: 'completed' });
-      console.log('✅ Backend status yangilandi (completed):', reminderId);
-    } catch (error: any) {
-      console.error('Eslatma statusini yangilashda xato:', error);
-      console.warn('⚠️ Backend xatosi, lekin musiqa chalingan. LocalStorage da saqlanadi.');
-      // Xato bo'lsa ham davom etish - LocalStorage da allaqachon saqlangan
+    } catch {
+      // Error handling - LocalStorage da allaqachon saqlangan
     }
   };
 
@@ -160,26 +160,12 @@ export const useReminders = () => {
       const data = await reminderService.getAll('active');
       const now = new Date();
 
-      console.log('🔍 Eslatmalarni tekshirish:', {
-        totalReminders: data.length,
-        notifiedIds: Array.from(notifiedRemindersRef.current),
-        localStorageIds: localStorage.getItem(NOTIFIED_REMINDERS_KEY)
-      });
-
       for (const reminder of data) {
-        // reminderDate va reminderTime ni birlashtirish
-        if (!reminder.reminderDate || !reminder.reminderTime) {
-          console.warn('⚠️ Eslatma sanasi yoki vaqti yo\'q:', reminder);
-          continue;
-        }
+        if (!reminder.reminderDate || !reminder.reminderTime) continue;
 
-        // reminderDate ni Date obyektiga aylantirish
         const reminderDate = new Date(reminder.reminderDate);
-        
-        // reminderTime ni parse qilish (HH:mm format)
         const [hours, minutes] = reminder.reminderTime.split(':');
         
-        // To'liq vaqtni yaratish
         const reminderTime = new Date(
           reminderDate.getFullYear(),
           reminderDate.getMonth(),
@@ -190,46 +176,23 @@ export const useReminders = () => {
           0
         );
 
-        // Invalid date ni tekshirish
-        if (isNaN(reminderTime.getTime())) {
-          console.warn('⚠️ Noto\'g\'ri vaqt formati:', reminder.reminderDate, reminder.reminderTime);
-          continue;
-        }
+        if (isNaN(reminderTime.getTime())) continue;
 
-        console.log('📋 Eslatma:', {
-          id: reminder._id,
-          title: reminder.title,
-          status: reminder.status,
-          reminderDate: reminder.reminderDate,
-          reminderTime: reminder.reminderTime,
-          fullDateTime: reminderTime.toISOString(),
-          now: now.toISOString(),
-          isTimeReached: reminderTime <= now,
-          isInLocalStorage: notifiedRemindersRef.current.has(reminder._id)
-        });
-
-        // Skip qilish - agar allaqachon chalingan bo'lsa
         const thirtyMinKey = `${reminder._id}_30min`;
         const exactTimeKey = `${reminder._id}_exact`;
-        
-        // 30 daqiqa oldin chalinishi
         const thirtyMinutesBefore = new Date(reminderTime.getTime() - 30 * 60 * 1000);
         
-        // 30 daqiqa oldin vaqt kelgan va hali chalinmagan bo'lsa
+        // 30 daqiqa oldin
         if (
           thirtyMinutesBefore <= now &&
-          now < reminderTime && // Hali o'z vaqti kelmagan
+          now < reminderTime &&
           reminder.status === 'active' &&
           !notifiedRemindersRef.current.has(thirtyMinKey)
         ) {
-          console.log('🔊 30 daqiqa oldin musiqa chalinmoqda:', reminder.title);
-          
-          // LocalStorage ga qo'shish
           notifiedRemindersRef.current.add(thirtyMinKey);
           const ids = Array.from(notifiedRemindersRef.current);
           localStorage.setItem(NOTIFIED_REMINDERS_KEY, JSON.stringify(ids));
           
-          // Musiqa chalinish
           playSound(reminder);
           
           toast.success(`⏰ 30 daqiqadan keyin: ${reminder.title}`, {
@@ -245,31 +208,24 @@ export const useReminders = () => {
           });
         }
         
-        // O'z vaqtida chalinishi
+        // O'z vaqtida
         if (
           reminderTime <= now &&
           reminder.status === 'active' &&
           !notifiedRemindersRef.current.has(exactTimeKey)
         ) {
-          console.log('🔊 O\'z vaqtida musiqa chalinmoqda:', reminder.title);
-          
-          // LocalStorage ga qo'shish
           notifiedRemindersRef.current.add(exactTimeKey);
           const ids = Array.from(notifiedRemindersRef.current);
           localStorage.setItem(NOTIFIED_REMINDERS_KEY, JSON.stringify(ids));
           
-          // Musiqa chalinish
           playSound(reminder);
-          
-          // Backend statusini yangilash
           await updateReminderStatus(reminder._id);
-          console.log('✅ Backend status yangilandi:', reminder._id);
         }
       }
 
       setReminders(data);
-    } catch (error) {
-      console.error('Eslatmalarni tekshirishda xato:', error);
+    } catch {
+      // Error handling
     }
   };
 

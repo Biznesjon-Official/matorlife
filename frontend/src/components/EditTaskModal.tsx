@@ -31,6 +31,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
   const [assignments, setAssignments] = useState<Array<{
     apprenticeId: string;
     percentage: number;
+    sharePercentage?: number;
     earning: number;
   }>>([]);
 
@@ -76,6 +77,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
         setAssignments(task.assignments.map((a: any) => ({
           apprenticeId: typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice,
           percentage: a.percentage || 50,
+          sharePercentage: a.sharePercentage !== undefined ? a.sharePercentage : 0,
           earning: a.earning || 0
         })));
       } else {
@@ -156,6 +158,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
     setAssignments(prev => [...prev, {
       apprenticeId: '',
       percentage: 50,
+      sharePercentage: 0,
       earning: 0
     }]);
   };
@@ -164,54 +167,90 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
     setAssignments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleApprenticeChange = (index: number, field: 'apprenticeId' | 'percentage', value: string | number) => {
+  const handleApprenticeChange = (index: number, field: 'apprenticeId' | 'percentage' | 'sharePercentage', value: string | number) => {
     setAssignments(prev => {
       const updated = [...prev];
       if (field === 'apprenticeId') {
         // Foydalanuvchi tanlaganda uning foizini User modelidan olish
         const selectedUser = allAvailableUsers?.find((u: any) => u._id === value || u.id === value);
         const userPercentage = selectedUser?.percentage || (selectedUser?.role === 'master' ? 100 : 50);
+        const userSharePercentage = selectedUser?.sharePercentageToNext !== undefined ? selectedUser.sharePercentageToNext : 0;
         
         updated[index].apprenticeId = value as string;
         updated[index].percentage = userPercentage;
+        updated[index].sharePercentage = userSharePercentage;
         
-        // TO'G'RI KASKAD: Pulni qayta hisoblash
+        console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Share: ${userSharePercentage}%`);
+      } else if (field === 'sharePercentage') {
+        updated[index].sharePercentage = value as number;
+      }
+      
+      // Pulni qayta hisoblash - YANGI LOGIKA (sharePercentage bilan)
+      if (formData.payment > 0 && updated.length > 0) {
         const totalPayment = formData.payment;
+        const firstPercentage = updated[0].percentage;
+        const apprenticePool = (totalPayment * firstPercentage) / 100;
         
-        if (index === 0) {
-          // 1-foydalanuvchi (ustoz yoki shogird)
-          const firstEarning = (totalPayment * userPercentage) / 100;
-          let firstRemaining = firstEarning;
+        // Katta shogirdlar (50%+)
+        const highPercentageApprentices = updated.filter(a => a.percentage > 50);
+        const lowPercentageApprentices = updated.filter(a => a.percentage <= 50);
+        
+        // Katta shogirdlar uchun sharePercentage asosida hisoblash
+        let remainingPool = apprenticePool;
+        for (let i = 0; i < highPercentageApprentices.length; i++) {
+          const highIdx = updated.findIndex(a => a.apprenticeId === highPercentageApprentices[i].apprenticeId);
+          const sharePerc = updated[highIdx].sharePercentage !== undefined ? updated[highIdx].sharePercentage : 0;
           
-          // Qolgan shogirdlarning pulini ayirish
-          for (let i = 1; i < updated.length; i++) {
-            const nextEarning = (firstRemaining * updated[i].percentage) / 100;
-            firstRemaining -= nextEarning;
+          if (i === highPercentageApprentices.length - 1) {
+            // Oxirgi katta shogirt
+            let earning = remainingPool;
+            
+            // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+            if (highIdx === 0 && lowPercentageApprentices.length > 0) {
+              let totalDeductions = 0;
+              for (const lowApp of lowPercentageApprentices) {
+                const lowIdx = updated.findIndex(a => a.apprenticeId === lowApp.apprenticeId);
+                const deduction = (remainingPool * updated[lowIdx].percentage) / 100;
+                totalDeductions += deduction;
+              }
+              earning = remainingPool - totalDeductions;
+            }
+            
+            updated[highIdx].earning = earning;
+          } else {
+            // Keyingi shogirtga sharePercentage beradi
+            const nextShare = (remainingPool * sharePerc) / 100;
+            let earning = remainingPool - nextShare;
+            
+            // Agar 1-shogirt bo'lsa va kichik shogirdlar bo'lsa
+            if (highIdx === 0 && lowPercentageApprentices.length > 0) {
+              let totalDeductions = 0;
+              for (const lowApp of lowPercentageApprentices) {
+                const lowIdx = updated.findIndex(a => a.apprenticeId === lowApp.apprenticeId);
+                const deduction = (earning * updated[lowIdx].percentage) / 100;
+                totalDeductions += deduction;
+              }
+              earning = earning - totalDeductions;
+            }
+            
+            updated[highIdx].earning = earning;
+            remainingPool = nextShare;
           }
-          updated[0].earning = firstRemaining;
-        } else {
-          // Keyingi shogirdlar - 1-foydalanuvchidan oladi
-          const firstEarning = (totalPayment * updated[0].percentage) / 100;
-          let firstRem = firstEarning;
-          
-          for (let i = 1; i < index; i++) {
-            const prevEarning = (firstRem * updated[i].percentage) / 100;
-            firstRem -= prevEarning;
-          }
-          
-          updated[index].earning = (firstRem * userPercentage) / 100;
-          
-          // 1-foydalanuvchining pulini qayta hisoblash
-          let firstRemaining = firstEarning;
-          for (let i = 1; i < updated.length; i++) {
-            const nextEarning = (firstRemaining * updated[i].percentage) / 100;
-            firstRemaining -= nextEarning;
-          }
-          updated[0].earning = firstRemaining;
         }
         
-        console.log(`✅ Foydalanuvchi tanlandi: ${selectedUser?.name}, Foiz: ${userPercentage}%, Rol: ${selectedUser?.role || 'apprentice'}`);
+        // Kichik shogirdlar uchun hisoblash
+        if (lowPercentageApprentices.length > 0 && highPercentageApprentices.length > 0) {
+          const firstHighIdx = updated.findIndex(a => a.apprenticeId === highPercentageApprentices[0].apprenticeId);
+          const firstHighEarning = updated[firstHighIdx].earning;
+          const baseAmount = firstHighEarning / (1 - lowPercentageApprentices.reduce((sum, app) => sum + app.percentage, 0) / 100);
+          
+          for (const lowApp of lowPercentageApprentices) {
+            const lowIdx = updated.findIndex(a => a.apprenticeId === lowApp.apprenticeId);
+            updated[lowIdx].earning = (baseAmount * updated[lowIdx].percentage) / 100;
+          }
+        }
       }
+      
       return updated;
     });
   };
@@ -317,7 +356,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
 
               {assignments.length > 0 ? (
                 <div className="space-y-1.5">
-                  {assignments.map((assignment, index) => (
+                  {assignments.map((assignment, index) => {
+                    // Katta shogirdlar (50%+) ni aniqlash
+                    const highPercentageApprentices = assignments.filter(a => a.percentage > 50);
+                    const isHighPercentage = assignment.percentage > 50;
+                    const isLastHighPercentage = isHighPercentage && index === assignments.findIndex(a => a.apprenticeId === highPercentageApprentices[highPercentageApprentices.length - 1].apprenticeId);
+                    
+                    return (
                     <div key={index} className="bg-white p-1.5 rounded border border-blue-200">
                       <div className="grid grid-cols-12 gap-1.5 items-center">
                         <div className="col-span-6">
@@ -353,6 +398,38 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                           </button>
                         </div>
                       </div>
+                      
+                      {/* SharePercentage - faqat katta shogirtlar uchun va oxirgi shogirtdan tashqari */}
+                      {isHighPercentage && !isLastHighPercentage && (
+                        <div className="mt-1.5">
+                          <label className="block text-xs font-semibold text-purple-700 mb-0.5">
+                            Keyingi shogirtga % (0 = hech narsa)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={assignment.sharePercentage || ''}
+                            onChange={(e) => handleApprenticeChange(index, 'sharePercentage', Number(e.target.value))}
+                            onFocus={(e) => {
+                              if (e.target.value === '0') {
+                                e.target.value = '';
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '') {
+                                handleApprenticeChange(index, 'sharePercentage', 0);
+                              }
+                            }}
+                            className="w-full px-1.5 py-1 text-xs border-2 border-purple-300 rounded focus:ring-1 focus:ring-purple-500 bg-purple-50"
+                            placeholder="0"
+                          />
+                          <p className="text-xs text-purple-600 mt-0.5">
+                            O'zingizga: {100 - (assignment.sharePercentage || 0)}%
+                          </p>
+                        </div>
+                      )}
+                      
                       {assignment.earning > 0 && (
                         <div className="flex items-center justify-center gap-1 text-xs text-green-600 font-semibold mt-1">
                           <DollarSign className="h-3 w-3" />
@@ -360,7 +437,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, task, on
                         </div>
                       )}
                     </div>
-                  ))}
+                  )})}
                   
                   {/* Umumiy hisob - TO'G'RI KASKAD */}
                   {formData.payment > 0 && assignments.length > 0 && (
