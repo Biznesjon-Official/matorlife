@@ -123,8 +123,10 @@ function DashboardRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
-  // Global reminder notifications
-  useReminders();
+  const { user } = useAuth();
+  
+  // Global reminder notifications - faqat login qilgan foydalanuvchilar uchun
+  useReminders(!!user);
 
   return (
     <Routes>
