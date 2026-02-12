@@ -57,7 +57,9 @@ const corsOptions = {
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5177',
       'https://matorlife.uz',
-      'http://matorlife.uz'
+      'https://www.matorlife.uz',
+      'http://matorlife.uz',
+      'http://www.matorlife.uz'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
@@ -82,10 +84,20 @@ app.use(express.urlencoded({ extended: true }));
 // Static files - rasmlar uchun
 app.use('/uploads', express.static('uploads'));
 
+// Health check (before rate limiting)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    message: 'Car Repair Workshop API is running!',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 // Security middleware (production only)
 if (process.env.NODE_ENV === 'production') {
   setupSecurity(app);
-  app.use('/api/', apiLimiter);
+  // Rate limiter o'chirilgan - juda ko'p so'rov muammosi uchun
+  // app.use('/api/', apiLimiter);
 }
 
 // Routes
@@ -106,16 +118,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/reminders', reminderRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    message: 'Car Repair Workshop API is running!',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Error handling middleware
+// 404 handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   res.status(err.status || 500).json({
     message: err.message || 'Internal server error',

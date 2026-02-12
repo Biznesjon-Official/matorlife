@@ -31,7 +31,8 @@
     "reset-all-earnings": "ts-node src/scripts/resetAllEarnings.ts",
     "delete-apprentice-tasks": "ts-node src/scripts/deleteApprenticeTasksAndResetStats.ts",
     "delete-all-cars": "ts-node src/scripts/deleteAllCars.ts",
-    "clear-archived-cars": "ts-node src/scripts/clearArchivedCars.ts"
+    "clear-archived-cars": "ts-node src/scripts/clearArchivedCars.ts",
+    "drop-duplicate-indexes": "ts-node src/scripts/dropDuplicateIndexes.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

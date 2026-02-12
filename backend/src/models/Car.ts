@@ -153,9 +153,9 @@ const carSchema = new Schema<ICar>({
   licensePlate: {
     type: String,
     required: true,
-    unique: true,
     uppercase: true,
-    trim: true
+    trim: true,
+    index: true
   },
   ownerName: {
     type: String,
@@ -222,7 +222,6 @@ const carSchema = new Schema<ICar>({
 });
 
 // Index'lar qo'shish - tezroq qidirish uchun
-carSchema.index({ licensePlate: 1 });
 carSchema.index({ status: 1, createdAt: -1 });
 carSchema.index({ isDeleted: 1, createdAt: -1 });
 carSchema.index({ ownerName: 1 });

@@ -16,7 +16,7 @@ const getAudioInstance = (): HTMLAudioElement => {
 // LocalStorage keys
 const NOTIFIED_REMINDERS_KEY = 'reminder_notified_ids';
 
-export const useReminders = () => {
+export const useReminders = (isAuthenticated: boolean = false) => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -229,8 +229,14 @@ export const useReminders = () => {
     }
   };
 
-  // Har 5 sekundda eslatmalarni tekshirish (boshqa sahifada bo'lsa ham)
+  // Har 5 sekundda eslatmalarni tekshirish (faqat authenticated bo'lsa)
   useEffect(() => {
+    // Agar foydalanuvchi login qilmagan bo'lsa, hech narsa qilma
+    if (!isAuthenticated) {
+      console.log('⚠️ Foydalanuvchi login qilmagan, eslatmalar yuklanmaydi');
+      return;
+    }
+
     fetchReminders();
 
     intervalRef.current = setInterval(() => {
@@ -249,7 +255,7 @@ export const useReminders = () => {
         clearTimeout(timeoutRef.current);
       }
     };
-  }, []);
+  }, [isAuthenticated]); // isAuthenticated dependency qo'shildi
 
   return {
     reminders,
