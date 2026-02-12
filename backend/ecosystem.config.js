@@ -11,8 +11,14 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: 4000,
       HOST: '0.0.0.0',
-      // IMPORTANT: MONGODB_URI va boshqa sensitive variables ni .env.production dan o'qiladi
-      // Agar PM2 env_file ni to'g'ri o'qimasa, bu yerga to'g'ridan-to'g'ri qo'shing
+      // IMPORTANT: Bu yerga production environment variables ni qo'shing
+      // MONGODB_URI: 'mongodb+srv://username:password@cluster.mongodb.net/database',
+      // JWT_SECRET: 'your-jwt-secret-key-here',
+      // GROQ_API_KEY: 'your-groq-api-key',
+      // TELEGRAM_BOT_TOKEN_CAR: 'your-telegram-bot-token',
+      // TELEGRAM_BOT_TOKEN_DEBT: 'your-telegram-bot-token',
+      // TELEGRAM_CHAT_ID: 'your-telegram-chat-id',
+      // FRONTEND_URL: 'https://matorlife.uz'
     },
     env_development: {
       NODE_ENV: 'development',

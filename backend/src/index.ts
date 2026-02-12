@@ -96,7 +96,8 @@ app.get('/api/health', (req, res) => {
 // Security middleware (production only)
 if (process.env.NODE_ENV === 'production') {
   setupSecurity(app);
-  app.use('/api/', apiLimiter);
+  // Rate limiter o'chirilgan - juda ko'p so'rov muammosi uchun
+  // app.use('/api/', apiLimiter);
 }
 
 // Routes
