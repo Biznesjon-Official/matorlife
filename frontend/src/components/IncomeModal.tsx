@@ -55,23 +55,16 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
       .map((debt: any) => debt.car._id)
   );
   
-  // 1. Avtomobil to'lovi uchun: FAQAT FAOL mashinalar (qarzi bo'lmagan)
+  // 1. Avtomobil to'lovi uchun: FAQAT FAOL mashinalar
   const activeCarsForPayment = allCars.filter((car: any) => {
+    // ✅ Faqat faol mashinalarni ko'rsatish (arxivda emas)
     // Arxivdagi mashinalarni chiqarib tashlash
     if (car.isDeleted || car.status === 'completed' || car.status === 'delivered') {
       return false;
     }
     
-    // Qarzi bor mashinalarni chiqarib tashlash (ular qarzlar sahifasida)
-    if (carsWithDebtIds.has(car._id)) {
-      return false;
-    }
-    
-    // Qarzi bor mashinalarni filtrlash (hali to'lanmagan)
-    const totalPrice = car.totalEstimate || 0;
-    const paidAmount = car.paidAmount || 0;
-    const remaining = totalPrice - paidAmount;
-    return remaining > 0; // Faqat qarzi bor mashinalar
+    // ✅ Barcha faol mashinalarni ko'rsatish (qarz yoki to'lov holatidan qat'iy nazar)
+    return true;
   });
   
   // 2. Qarz to'lovi uchun: FAQAT qarzlar sahifasida mavjud mashinalar

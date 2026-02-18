@@ -599,6 +599,12 @@ export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
         if (service.paymentStatus === 'paid') {
           car.paymentStatus = 'paid';
           
+          // ✨ YANGI: To'liq to'langanda mashina statusini 'completed' ga o'zgartirish
+          if (car.status !== 'completed' && car.status !== 'delivered') {
+            car.status = 'completed';
+            console.log(`✅ Mashina to'liq to'landi va 'completed' statusiga o'tkazildi: ${car.licensePlate}`);
+          }
+          
           // ✨ YANGI: To'liq to'langanda qarzni "paid" ga o'zgartirish (Muammo 1.6 yechimi)
           await debtService.markDebtsAsPaid(car._id);
           console.log(`✅ Qarzlar to'liq to'landi va Qarzdaftarchadan o'chirildi`);
@@ -619,7 +625,7 @@ export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
         });
         
         await car.save();
-        console.log(`🚗 Car modeli yangilandi: paymentStatus = ${car.paymentStatus}`);
+        console.log(`🚗 Car modeli yangilandi: status = ${car.status}, paymentStatus = ${car.paymentStatus}`);
       }
     } catch (carError: any) {
       console.error('⚠️ Car modelini yangilashda xatolik:', carError.message);
