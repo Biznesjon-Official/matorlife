@@ -847,13 +847,13 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
             assignment.apprentice,
             { 
               $inc: { 
-                earnings: assignment.earning  // Faqat joriy oylikka qo'shish
+                earnings: assignment.earning  // Faqat jami daromadka qo'shish
               } 
             },
             { new: true }
           );
           
-          console.log(`   ✅ Joriy oylik: ${updatedUser?.earnings.toFixed(2)} so'm`);
+          console.log(`   ✅ Jami daromad: ${updatedUser?.earnings.toFixed(2)} so'm`);
           console.log(`   ✅ Jami daromad: ${updatedUser?.totalEarnings.toFixed(2)} so'm`);
         }
         
@@ -867,12 +867,12 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
           task.assignedTo,
           { 
             $inc: { 
-              earnings: task.apprenticeEarning  // Faqat joriy oylikka qo'shish
+              earnings: task.apprenticeEarning  // Faqat jami daromadka qo'shish
             } 
           },
           { new: true }
         );
-        console.log(`  ✅ Joriy oylik: ${updatedUser?.earnings}`);
+        console.log(`  ✅ Jami daromad: ${updatedUser?.earnings}`);
         console.log(`  ✅ Jami daromad: ${updatedUser?.totalEarnings}`);
       } else {
         console.log('⚠️ Hech qanday shogird topilmadi yoki earning 0!');

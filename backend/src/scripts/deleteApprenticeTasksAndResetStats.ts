@@ -59,7 +59,7 @@ const deleteApprenticeTasksAndResetStats = async () => {
     const updatedApprentices = await User.find({ role: 'apprentice' });
     updatedApprentices.forEach((apprentice, index) => {
       console.log(`\n   ${index + 1}. ${apprentice.name}:`);
-      console.log(`      💰 Joriy oylik: ${apprentice.earnings} so'm`);
+      console.log(`      💰 Jami daromad: ${apprentice.totalEarnings} so'm`);
       console.log(`      💎 Jami daromad: ${apprentice.totalEarnings} so'm`);
     });
 

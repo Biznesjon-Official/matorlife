@@ -64,7 +64,7 @@ const deleteAllApprenticeTasks = async () => {
     console.log(`\n👥 Shogirtlar holati:`);
     apprentices.forEach((apprentice, index) => {
       console.log(`${index + 1}. ${apprentice.name}:`);
-      console.log(`   💰 Joriy oylik: ${apprentice.earnings} so'm`);
+      console.log(`   💰 Jami daromad: ${apprentice.totalEarnings} so'm`);
       console.log(`   💎 Jami daromad: ${apprentice.totalEarnings} so'm`);
     });
 

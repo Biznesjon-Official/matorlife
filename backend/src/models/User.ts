@@ -11,8 +11,7 @@ export interface IUser extends Document {
   sharePercentageToNext?: number; // Keyingi katta shogirtga beradigan foiz (faqat 50%+ uchun)
   role: 'master' | 'apprentice';
   masterId?: mongoose.Types.ObjectId; // Shogird qaysi ustoz tomonidan qo'shilgan
-  earnings: number; // Joriy oylik daromad
-  totalEarnings: number; // Jami daromad (barcha vaqt davomida)
+  totalEarnings: number; // Jami daromad (to'lanmagan pul)
   profileImage?: string; // Profil rasmi
   profession?: string; // Kasbi
   experience?: number; // Tajriba (yillarda)
@@ -69,11 +68,6 @@ const userSchema = new Schema<IUser>({
     type: String,
     enum: ['master', 'apprentice'],
     required: true
-  },
-  earnings: {
-    type: Number,
-    default: 0,
-    min: 0
   },
   totalEarnings: {
     type: Number,

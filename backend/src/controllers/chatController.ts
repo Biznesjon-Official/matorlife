@@ -424,14 +424,14 @@ export const sendChatMessage = async (req: AuthRequest, res: Response) => {
           projectContext += 'Ustalar:\n';
           masters.forEach((user: any, index: number) => {
             projectContext += `${index + 1}. ${user.name} (@${user.username})\n`;
-            projectContext += `   Daromad: ${user.earnings.toLocaleString()} so'm\n\n`;
+            projectContext += `   Daromad: ${user.totalEarnings.toLocaleString()} so'm\n\n`;
           });
         }
         if (apprentices.length > 0) {
           projectContext += 'Shogirtlar:\n';
           apprentices.forEach((user: any, index: number) => {
             projectContext += `${index + 1}. ${user.name} (@${user.username})\n`;
-            projectContext += `   Daromad: ${user.earnings.toLocaleString()} so'm\n\n`;
+            projectContext += `   Daromad: ${user.totalEarnings.toLocaleString()} so'm\n\n`;
           });
         }
       }

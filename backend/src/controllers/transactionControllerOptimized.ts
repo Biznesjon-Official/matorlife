@@ -43,7 +43,7 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
       // Update user earnings atomically
       const user = req.user!;
       const earningsUpdate = type === 'income' ? amount : -amount;
-      const newEarnings = Math.max(0, user.earnings + earningsUpdate);
+      const newEarnings = Math.max(0, user.totalEarnings + earningsUpdate);
       
       await User.findByIdAndUpdate(
         user._id,
@@ -458,7 +458,7 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
       // Reverse the earnings update
       const user = req.user!;
       const earningsUpdate = transaction.type === 'income' ? -transaction.amount : transaction.amount;
-      const newEarnings = Math.max(0, user.earnings + earningsUpdate);
+      const newEarnings = Math.max(0, user.totalEarnings + earningsUpdate);
       
       await User.findByIdAndUpdate(
         user._id,
@@ -519,7 +519,7 @@ export const bulkDeleteTransactions = async (req: AuthRequest, res: Response) =>
     try {
       // Update user earnings
       const user = req.user!;
-      const newEarnings = Math.max(0, user.earnings + earningsChange);
+      const newEarnings = Math.max(0, user.totalEarnings + earningsChange);
       
       await User.findByIdAndUpdate(
         user._id,

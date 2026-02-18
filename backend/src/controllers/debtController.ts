@@ -24,7 +24,7 @@ export const createDebt = async (req: AuthRequest, res: Response) => {
     
     if (type === 'payable') {
       // Bizning qarzimiz yaratilganda - daromaddan kamayadi (chiqim)
-      user.earnings = Math.max(0, user.earnings - amount);
+      user.totalEarnings = Math.max(0, user.totalEarnings - amount);
       await user.save();
     }
     // receivable type uchun hech narsa qilmaymiz, chunki bu faqat qarz yozuvi
@@ -49,7 +49,7 @@ export const createDebt = async (req: AuthRequest, res: Response) => {
     res.status(201).json({
       message: 'Debt record created successfully',
       debt,
-      updatedEarnings: user.earnings
+      updatedEarnings: user.totalEarnings
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });

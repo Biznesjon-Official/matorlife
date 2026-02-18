@@ -79,7 +79,7 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
     const apprenticeEarnings = await Promise.all(
       apprentices.map(async (apprentice) => {
         // 1. User modelidagi earnings (asosiy daromad)
-        const savedEarnings = apprentice.earnings || 0;
+        const savedTotalEarnings = apprentice.totalEarnings || 0;
 
         // 2. Eski tizim: Faqat tasdiqlangan (approved) vazifalarning apprenticeEarning qiymatlari
         const oldTaskFilter = {
@@ -130,7 +130,7 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
         const taskEarnings = oldTaskEarnings + newTaskEarnings;
 
         // Jami daromad = User earnings + Task earnings
-        const totalEarnings = savedEarnings + taskEarnings;
+        const totalEarnings = savedTotalEarnings + taskEarnings;
 
         // Barcha vazifalarni birlashtirish
         const allTasks = [
@@ -149,7 +149,7 @@ export const getEarningsStats = async (req: AuthRequest, res: Response) => {
           _id: apprentice._id,
           name: apprentice.name,
           earnings: totalEarnings,
-          savedEarnings: savedEarnings, // User modelidagi
+          savedTotalEarnings: savedTotalEarnings, // User modelidagi
           taskEarnings: taskEarnings, // Vazifalardan (foiz asosida)
           taskCount: allTasks.length,
           tasks: allTasks

@@ -67,7 +67,6 @@ export const register = async (req: Request, res: Response) => {
         phone: user.phone,
         percentage: user.percentage,
         role: user.role,
-        earnings: user.earnings || 0,
         totalEarnings: user.totalEarnings || 0,
         profileImage: user.profileImage,
         profession: user.profession,
@@ -128,7 +127,6 @@ export const login = async (req: Request, res: Response) => {
           phone: user.phone,
           percentage: user.percentage,
           role: user.role,
-          earnings: user.earnings || 0,
           totalEarnings: user.totalEarnings || 0,
           profileImage: user.profileImage,
           profession: user.profession,
@@ -183,7 +181,6 @@ export const login = async (req: Request, res: Response) => {
         phone: user.phone,
         percentage: user.percentage,
         role: user.role,
-        earnings: user.earnings || 0,
         totalEarnings: user.totalEarnings || 0,
         profileImage: user.profileImage,
         profession: user.profession,
@@ -208,7 +205,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
         email: user!.email,
         username: user!.username,
         role: user!.role,
-        earnings: user!.earnings || 0,
+        totalEarnings: user!.totalEarnings || 0,
         createdAt: user!.createdAt,
         updatedAt: user!.updatedAt
       }
@@ -380,7 +377,7 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
         };
         
         console.log(`👤 ${apprentice.name}:`);
-        console.log(`   💰 Joriy oylik: ${apprentice.earnings} so'm`);
+        console.log(`   💰 Jami daromad: ${apprentice.totalEarnings} so'm`);
         console.log(`   💎 Jami daromad: ${apprentice.totalEarnings} so'm`);
         console.log(`   ✅ Tasdiqlangan: ${stats.approvedTasks} ta`);
         

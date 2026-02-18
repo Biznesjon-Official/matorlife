@@ -45,35 +45,40 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     // Agar oylik maosh to'lansa va apprenticeId berilgan bo'lsa
     if (type === 'expense' && isSalaryCategory && apprenticeId) {
       const apprentice = await User.findById(apprenticeId);
-      if (apprentice) {
-        console.log(`\n💰 MAOSH TO'LOVI BOSHLANDI:`);
-        console.log(`   Shogird: ${apprentice.name}`);
-        console.log(`   Joriy oylik (oldin): ${apprentice.earnings} so'm`);
-        console.log(`   Jami daromad (oldin): ${apprentice.totalEarnings} so'm`);
-        console.log(`   To'lanayotgan summa: ${amount} so'm`);
-        
-        // YANGI LOGIKA: 
-        // - Joriy oylikdan (earnings) ayriladi (chunki pul berildi)
-        // - Jami daromadga (totalEarnings) qo'shiladi (berilgan maoshlar yig'indisi)
-        apprentice.earnings = Math.max(0, apprentice.earnings - amount);
-        apprentice.totalEarnings += amount;
-        
-        await apprentice.save();
-        
-        console.log(`   ✅ Joriy oylik (keyin): ${apprentice.earnings} so'm`);
-        console.log(`   ✅ Jami daromad (keyin): ${apprentice.totalEarnings} so'm`);
-        console.log(`   📊 Shogirdga ${amount} so'm maosh to'landi\n`);
-        
-        // Master daromadidan ayirish (chunki bu chiqim)
-        user.earnings = Math.max(0, user.earnings - amount);
+      if (!apprentice) {
+        return res.status(404).json({ message: 'Shogird topilmadi' });
       }
+
+      console.log(`\n💰 MAOSH TO'LOVI BOSHLANDI:`);
+      console.log(`   Shogird: ${apprentice.name}`);
+      console.log(`   Jami daromad (oldin): ${apprentice.totalEarnings} so'm`);
+      console.log(`   To'lanayotgan summa: ${amount} so'm`);
+      
+      // ✅ VALIDATSIYA: Shogirtning daromadidan ko'p pul to'lash mumkin emas
+      if (amount > apprentice.totalEarnings) {
+        console.log(`   ❌ XATO: Shogirtda faqat ${apprentice.totalEarnings} so'm bor!`);
+        return res.status(400).json({ 
+          message: `Shogirtning daromadi ${apprentice.totalEarnings} so'm. ${amount} so'm to'lab bo'lmaydi!` 
+        });
+      }
+      
+      // ✅ TO'G'RI LOGIKA: totalEarnings dan ayriladi (pul berildi)
+      apprentice.totalEarnings -= amount;
+      
+      await apprentice.save();
+      
+      console.log(`   ✅ Jami daromad (keyin): ${apprentice.totalEarnings} so'm`);
+      console.log(`   📊 Shogirdga ${amount} so'm maosh to'landi\n`);
+      
+      // Master daromadidan ayirish (chunki bu chiqim)
+      user.totalEarnings = Math.max(0, user.totalEarnings - amount);
     } else {
       // Oddiy kirim/chiqim logikasi
       if (type === 'income') {
-        user.earnings += amount;
+        user.totalEarnings += amount;
       } else {
         // Oddiy chiqimlar uchun master daromadidan ayirish
-        user.earnings = Math.max(0, user.earnings - amount);
+        user.totalEarnings = Math.max(0, user.totalEarnings - amount);
       }
     }
     
@@ -102,7 +107,7 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     res.status(201).json({
       message: 'Transaction created successfully',
       transaction,
-      updatedEarnings: user.earnings
+      updatedEarnings: user.totalEarnings
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -309,9 +314,9 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
     // Reverse the earnings update
     const user = req.user!;
     if (transaction.type === 'income') {
-      user.earnings = Math.max(0, user.earnings - transaction.amount);
+      user.totalEarnings = Math.max(0, user.totalEarnings - transaction.amount);
     } else {
-      user.earnings += transaction.amount;
+      user.totalEarnings += transaction.amount;
     }
     await user.save();
 
@@ -319,7 +324,7 @@ export const deleteTransaction = async (req: AuthRequest, res: Response) => {
 
     res.json({
       message: 'Transaction deleted successfully',
-      updatedEarnings: user.earnings
+      updatedEarnings: user.totalEarnings
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Server error', error: error.message });

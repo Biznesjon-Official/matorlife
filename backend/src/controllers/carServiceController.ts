@@ -578,7 +578,7 @@ export const addCarServicePayment = async (req: AuthRequest, res: Response) => {
       
       // Daromadni yangilash
       const user = req.user!;
-      user.earnings += amount;
+      user.totalEarnings += amount;
       await user.save();
       
       console.log(`💰 Transaction yaratildi va daromad yangilandi: +${amount} so'm`);

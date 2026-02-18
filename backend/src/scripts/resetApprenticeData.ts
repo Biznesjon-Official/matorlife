@@ -30,7 +30,7 @@ const resetApprenticeData = async () => {
       });
       
       console.log(`👤 ${apprentice.name}`);
-      console.log(`   Joriy daromad: ${apprentice.earnings || 0} so'm`);
+      console.log(`   Jami daromad: ${apprentice.totalEarnings || 0} so'm`);
       console.log(`   Jami daromad: ${apprentice.totalEarnings || 0} so'm`);
       console.log(`   Vazifalar soni: ${tasks} ta\n`);
     }
@@ -68,7 +68,7 @@ const resetApprenticeData = async () => {
       });
       
       console.log(`👤 ${apprentice.name}`);
-      console.log(`   Joriy daromad: ${apprentice.earnings} so'm`);
+      console.log(`   Jami daromad: ${apprentice.totalEarnings} so'm`);
       console.log(`   Jami daromad: ${apprentice.totalEarnings} so'm`);
       console.log(`   Vazifalar soni: ${tasks} ta\n`);
     }

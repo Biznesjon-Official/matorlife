@@ -105,7 +105,7 @@ async function saveMonthlyHistoryAndReset(resetBy: any) {
       userId: user._id,
       name: user.name,
       role: user.role,
-      earnings: user.earnings, // Joriy oylik (to'lanmagan)
+      earnings: user.totalEarnings, // Jami daromad (to'lanmagan)
       totalEarnings: user.totalEarnings || 0, // Jami to'langan maoshlar (barcha oylar)
       totalFromTasks: paidSalaryThisMonth // FAQAT shu oydagi to'langan maoshlar
     };
@@ -147,10 +147,10 @@ async function saveMonthlyHistoryAndReset(resetBy: any) {
   // 5. Barcha foydalanuvchilarning daromadlarini 0 ga qaytarish
   let resetCount = 0;
   for (const user of users) {
-    if (user.earnings > 0) {
-      user.totalEarnings += user.earnings;
-      const oldEarnings = user.earnings;
-      user.earnings = 0;
+    if (user.totalEarnings > 0) {
+      user.totalEarnings += user.totalEarnings;
+      const oldEarnings = user.totalEarnings;
+      user.totalEarnings = 0;
       await user.save();
       
       console.log(`✅ ${user.name}: ${oldEarnings} so'm → 0 so'm (Jami: ${user.totalEarnings} so'm)`);
