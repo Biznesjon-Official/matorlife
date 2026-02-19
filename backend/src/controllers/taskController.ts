@@ -840,21 +840,27 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
           const assignment = task.assignments[i];
           const apprentice = await User.findById(assignment.apprentice);
           
+          const earning = assignment.earning || 0;
+          
           console.log(`\n👤 ${i + 1}-shogird: ${apprentice?.name}`);
-          console.log(`   💵 Olgan pul: ${assignment.earning.toFixed(2)} so'm`);
+          console.log(`   💵 Olgan pul: ${earning.toFixed(2)} so'm`);
           
-          const updatedUser = await User.findByIdAndUpdate(
-            assignment.apprentice,
-            { 
-              $inc: { 
-                earnings: assignment.earning  // Faqat jami daromadka qo'shish
-              } 
-            },
-            { new: true }
-          );
-          
-          console.log(`   ✅ Jami daromad: ${updatedUser?.earnings.toFixed(2)} so'm`);
-          console.log(`   ✅ Jami daromad: ${updatedUser?.totalEarnings.toFixed(2)} so'm`);
+          if (earning > 0) {
+            const updatedUser = await User.findByIdAndUpdate(
+              assignment.apprentice,
+              { 
+                $inc: { 
+                  earnings: earning  // Faqat jami daromadka qo'shish
+                } 
+              },
+              { new: true }
+            );
+            
+            console.log(`   ✅ Jami daromad: ${(updatedUser?.earnings || 0).toFixed(2)} so'm`);
+            console.log(`   ✅ Jami daromad: ${(updatedUser?.totalEarnings || 0).toFixed(2)} so'm`);
+          } else {
+            console.log(`   ⚠️ Daromad 0 so'm - yangilanmadi`);
+          }
         }
         
         console.log('\n✅ Barcha shogirdlarga pul qo\'shildi (YANGI LOGIKA)\n');
