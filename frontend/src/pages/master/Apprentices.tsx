@@ -324,7 +324,7 @@ const Apprentices: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-emerald-600 font-medium">{t("Jami daromad", language)}</p>
                         <p className="text-sm sm:text-base font-bold text-emerald-900 truncate">
-                          {((apprentice.earnings || 0) + (apprentice.totalEarnings || 0)).toLocaleString()} {t("so'm", language)}
+                          {(apprentice.stats?.taskEarnings || 0).toLocaleString()} {t("so'm", language)}
                         </p>
                         <p className="text-xs text-emerald-600 mt-0.5">
                           {t("Tasdiqlangan ishlar", language)}

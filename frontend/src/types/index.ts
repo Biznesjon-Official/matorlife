@@ -180,6 +180,9 @@ export interface ApprenticeStats {
   rejectedTasks: number;
   performance: number;
   awards: number;
+  taskEarnings?: number; // Vazifalardan topilgan pul
+  paidSalaries?: number; // To'langan maoshlar
+  availableEarnings?: number; // Qolgan pul (taskEarnings - paidSalaries)
 }
 
 export interface ServiceItem {
