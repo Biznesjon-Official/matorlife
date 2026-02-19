@@ -101,8 +101,15 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
 
   const handleSalarySuccess = async (salaryData: any) => {
     setLoading(true);
+    
+    console.log('\n🔵 FRONTEND: Maosh to\'lovi yuborilmoqda');
+    console.log('   Category:', selectedCategory.nameUz);
+    console.log('   Amount:', salaryData.amount);
+    console.log('   ApprenticeId:', salaryData.apprenticeId);
+    console.log('   Description:', salaryData.description);
+    
     try {
-      await createTransactionMutation.mutateAsync({
+      const transactionData = {
         type: 'expense',
         category: selectedCategory.nameUz,
         categoryId: selectedCategory._id,
@@ -114,8 +121,13 @@ const ExpenseModal: React.FC<ExpenseModalProps> = ({ isOpen, onClose }) => {
           type: 'expense_category',
           id: selectedCategory._id
         }
-      } as Partial<Transaction>);
+      } as Partial<Transaction>;
+      
+      console.log('   📦 To\'liq transaction data:', JSON.stringify(transactionData, null, 2));
+      
+      await createTransactionMutation.mutateAsync(transactionData);
 
+      console.log('   ✅ Transaction muvaffaqiyatli yaratildi');
       handleClose();
     } catch (error: any) {
       console.error('Error creating salary expense:', error);

@@ -15,7 +15,15 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    const { type, category, categoryId, amount, description, paymentMethod, relatedTo } = req.body;
+    const { type, category, categoryId, amount, description, paymentMethod, relatedTo, apprenticeId } = req.body;
+
+    console.log('\n🔍 CREATE TRANSACTION (OPTIMIZED):');
+    console.log('   Type:', type);
+    console.log('   Category:', category);
+    console.log('   Amount:', amount);
+    console.log('   ApprenticeId:', apprenticeId);
+    console.log('   Description:', description);
+    console.log('   📦 FULL REQUEST BODY:', JSON.stringify(req.body, null, 2));
 
     // Validate amount
     if (amount <= 0) {
@@ -35,10 +43,15 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
         description: description.trim(),
         paymentMethod,
         relatedTo,
+        apprenticeId: apprenticeId || undefined, // Maosh to'langan shogirt
         createdBy: req.user!._id
       });
 
       await transaction.save({ session });
+      
+      console.log('   ✅ Transaction saved to database');
+      console.log('   Transaction ID:', transaction._id);
+      console.log('   ApprenticeId in saved transaction:', transaction.apprenticeId);
 
       // Update user earnings atomically
       const user = req.user!;

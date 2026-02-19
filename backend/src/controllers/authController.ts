@@ -347,6 +347,7 @@ export const getMyApprenticesWithStats = async (req: AuthRequest, res: Response)
 export const getApprenticesWithStats = async (req: AuthRequest, res: Response) => {
   try {
     const Task = require('../models/Task').default;
+    const Transaction = require('../models/Transaction').default;
     
     const apprentices = await User.find({ role: 'apprentice' }).select('-password').lean();
     
@@ -363,23 +364,82 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
           ]
         });
         
+        // ✅ VAZIFALARDAN DAROMAD (faqat tasdiqlangan vazifalar)
+        const approvedTasks = tasks.filter((t: any) => t.status === 'approved');
+        const taskEarnings = approvedTasks.reduce((total: number, task: any) => {
+          // Yangi tizim: assignments orqali
+          if (task.assignments && task.assignments.length > 0) {
+            const myAssignment = task.assignments.find((a: any) => {
+              const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+              return apprenticeId.toString() === apprentice._id.toString();
+            });
+            if (myAssignment) {
+              return total + (myAssignment.earning || 0);
+            }
+          }
+          // Eski tizim: apprenticeEarning
+          if (task.apprenticeEarning) {
+            return total + task.apprenticeEarning;
+          }
+          return total;
+        }, 0);
+        
+        // ✅ TO'LANGAN MAOSHLAR (transaction history dan)
+        const paidSalaries = await Transaction.aggregate([
+          {
+            $match: {
+              type: 'expense',
+              apprenticeId: apprentice._id,
+              $or: [
+                { category: { $regex: /maosh/i } },
+                { category: { $regex: /oylik/i } },
+                { category: { $regex: /salary/i } },
+                { category: { $regex: /ish.*haqi/i } }, // "Ish haqi"
+                { category: { $regex: /xodim/i } }, // "Xodimlar"
+                { category: 'Oyliklar' },
+                { category: 'Maosh' },
+                { category: 'Oylik' },
+                { category: 'Oylik maoshlar' },
+                { category: 'Ish haqi' }
+              ]
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: '$amount' }
+            }
+          }
+        ]);
+        
+        const totalPaidSalaries = paidSalaries.length > 0 ? paidSalaries[0].total : 0;
+        
+        console.log(`   💸 To'langan (DB): ${totalPaidSalaries.toLocaleString()} so'm`);
+        
+        // ✅ QOLGAN PUL
+        const availableEarnings = taskEarnings - totalPaidSalaries;
+        
         const stats = {
           totalTasks: tasks.length,
           completedTasks: tasks.filter((t: any) => t.status === 'completed' || t.status === 'approved').length,
-          approvedTasks: tasks.filter((t: any) => t.status === 'approved').length,
+          approvedTasks: approvedTasks.length,
           inProgressTasks: tasks.filter((t: any) => t.status === 'in-progress').length,
           assignedTasks: tasks.filter((t: any) => t.status === 'assigned').length,
           rejectedTasks: tasks.filter((t: any) => t.status === 'rejected').length,
           performance: tasks.length > 0 
-            ? Math.round((tasks.filter((t: any) => t.status === 'approved').length / tasks.length) * 100)
+            ? Math.round((approvedTasks.length / tasks.length) * 100)
             : 0,
-          awards: tasks.filter((t: any) => t.status === 'approved').length // Mukofotlar = tasdiqlangan vazifalar
+          awards: approvedTasks.length, // Mukofotlar = tasdiqlangan vazifalar
+          taskEarnings: taskEarnings, // ✅ Vazifalardan daromad
+          paidSalaries: totalPaidSalaries, // ✅ To'langan maoshlar
+          availableEarnings: availableEarnings // ✅ Qolgan pul
         };
         
         console.log(`👤 ${apprentice.name}:`);
-        console.log(`   💰 Jami daromad: ${apprentice.totalEarnings} so'm`);
-        console.log(`   💎 Jami daromad: ${apprentice.totalEarnings} so'm`);
-        console.log(`   ✅ Tasdiqlangan: ${stats.approvedTasks} ta`);
+        console.log(`   💰 Vazifalardan: ${taskEarnings.toLocaleString()} so'm`);
+        console.log(`   💸 To'langan: ${totalPaidSalaries.toLocaleString()} so'm`);
+        console.log(`   ✅ Qolgan: ${availableEarnings.toLocaleString()} so'm`);
+        console.log(`   📋 Tasdiqlangan: ${stats.approvedTasks} ta`);
         
         return {
           ...apprentice,
@@ -392,6 +452,7 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
     
     res.json({ users: apprenticesWithStats });
   } catch (error: any) {
+    console.error('❌ getApprenticesWithStats xatolik:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

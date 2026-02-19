@@ -14,6 +14,8 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     console.log('   Category:', category);
     console.log('   Amount:', amount);
     console.log('   ApprenticeId:', apprenticeId);
+    console.log('   Description:', description);
+    console.log('   📦 FULL REQUEST BODY:', JSON.stringify(req.body, null, 2));
 
     const transaction = new Transaction({
       type,
@@ -33,10 +35,15 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
     const isSalaryCategory = categoryLower.includes('maosh') || 
                             categoryLower.includes('oylik') || 
                             categoryLower.includes('salary') ||
+                            categoryLower.includes('ish') && categoryLower.includes('haqi') ||
+                            categoryLower.includes('xodim') ||
                             category === 'Oyliklar' ||
                             category === 'Maosh' ||
-                            category === 'Oylik';
+                            category === 'Oylik' ||
+                            category === 'Oylik maoshlar' ||
+                            category === 'Ish haqi';
 
+    console.log('   Category:', category);
     console.log('   Is Salary Category:', isSalaryCategory);
 
     // Update user earnings
@@ -51,24 +58,12 @@ export const createTransaction = async (req: AuthRequest, res: Response) => {
 
       console.log(`\n💰 MAOSH TO'LOVI BOSHLANDI:`);
       console.log(`   Shogird: ${apprentice.name}`);
-      console.log(`   Jami daromad (oldin): ${apprentice.totalEarnings} so'm`);
       console.log(`   To'lanayotgan summa: ${amount} so'm`);
+      console.log(`   ℹ️ Validatsiya frontend da amalga oshiriladi (taskEarnings - paidSalaries)`);
+      console.log(`   📊 Transaction yaratildi, totalEarnings o'zgartirilmadi\n`);
       
-      // ✅ VALIDATSIYA: Shogirtning daromadidan ko'p pul to'lash mumkin emas
-      if (amount > apprentice.totalEarnings) {
-        console.log(`   ❌ XATO: Shogirtda faqat ${apprentice.totalEarnings} so'm bor!`);
-        return res.status(400).json({ 
-          message: `Shogirtning daromadi ${apprentice.totalEarnings} so'm. ${amount} so'm to'lab bo'lmaydi!` 
-        });
-      }
-      
-      // ✅ TO'G'RI LOGIKA: totalEarnings dan ayriladi (pul berildi)
-      apprentice.totalEarnings -= amount;
-      
-      await apprentice.save();
-      
-      console.log(`   ✅ Jami daromad (keyin): ${apprentice.totalEarnings} so'm`);
-      console.log(`   📊 Shogirdga ${amount} so'm maosh to'landi\n`);
+      // ❌ totalEarnings dan ayirmaymiz! Faqat transaction yaratamiz
+      // Frontend transaction history orqali hisoblaydi
       
       // Master daromadidan ayirish (chunki bu chiqim)
       user.totalEarnings = Math.max(0, user.totalEarnings - amount);

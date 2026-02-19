@@ -53,9 +53,11 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:5174',
       'http://localhost:5177',
+      'http://localhost:5178',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5177',
+      'http://127.0.0.1:5178',
       'https://matorlife.uz',
       'https://www.matorlife.uz',
       'http://matorlife.uz',
@@ -177,9 +179,9 @@ const startServer = async () => {
   try {
     await connectDatabase();
     
-    // Bind to 0.0.0.0 for production (accepts connections from all interfaces)
-    // This is required for VPS/Docker environments and avoids Windows permission issues
-    const HOST = process.env.HOST || '0.0.0.0';
+    // Bind to 127.0.0.1 for development (avoids Windows permission issues)
+    // Use 0.0.0.0 only in production for VPS/Docker environments
+    const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
     
     server = app.listen(PORT, HOST, () => {
       console.log('🚀 Server ishga tushdi!');

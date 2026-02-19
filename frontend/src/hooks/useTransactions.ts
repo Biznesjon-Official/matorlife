@@ -69,15 +69,16 @@ export const useCreateTransaction = () => {
       const response = await api.post('/transactions', transactionData);
       return response.data;
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: async (_data, variables) => {
       // Faqat kerakli query'larni yangilash
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      await queryClient.invalidateQueries({ queryKey: ['transaction-summary'] });
       
-      // Agar maosh to'lansa, shogirdlar ma'lumotlarini yangilash
+      // Agar maosh to'lansa, shogirdlar ma'lumotlarini DARHOL yangilash
       if (variables.apprenticeId) {
-        queryClient.invalidateQueries({ queryKey: ['apprentices'] });
-        queryClient.invalidateQueries({ queryKey: ['users'] });
+        console.log('🔄 Maosh to\'landi - shogirdlar ma\'lumotlari yangilanmoqda...');
+        await queryClient.refetchQueries({ queryKey: ['apprentices'] });
+        await queryClient.refetchQueries({ queryKey: ['users'] });
       }
       
       toast.success('Tranzaksiya muvaffaqiyatli qo\'shildi');
