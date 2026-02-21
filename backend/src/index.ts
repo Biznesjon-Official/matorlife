@@ -25,6 +25,7 @@ import serviceRoutes from './routes/services';
 import transactionRoutes from './routes/transactions';
 import expenseCategoryRoutes from './routes/expenseCategories';
 import reminderRoutes from './routes/reminders';
+import weeklyHistoryRoutes from './routes/weeklyHistory';
 
 // Initialize Telegram Service (must be after dotenv.config())
 // Only initialize if Telegram tokens are provided
@@ -39,6 +40,10 @@ if (process.env.TELEGRAM_BOT_TOKEN_CAR || process.env.TELEGRAM_BOT_TOKEN_DEBT) {
 // Initialize Monthly Reset Cron Job
 import { startMonthlyResetJob } from './services/monthlyResetService';
 startMonthlyResetJob();
+
+// Initialize Weekly Reset Cron Job (Yakshanba kuni)
+import { startWeeklyResetJob } from './services/weeklyResetService';
+startWeeklyResetJob();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 4000;
@@ -119,6 +124,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/expense-categories', expenseCategoryRoutes);
 app.use('/api/reminders', reminderRoutes);
+app.use('/api/weekly-history', weeklyHistoryRoutes);
 
 // 404 handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -5,15 +5,18 @@ import {
   Award, 
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  History
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
+import WeeklyHistoryModal from '@/components/WeeklyHistoryModal';
 
 const ApprenticeAchievements: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks } = useTasks();
   const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' yoki 'YYYY-MM' format
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -199,11 +202,20 @@ const ApprenticeAchievements: React.FC = () => {
   return (
     <div className="space-y-3 sm:space-y-6 p-2 sm:p-0 pb-20">
       {/* Mobile-First Header */}
-      <div className="text-center sm:text-left">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('Mening daromadim', language)}</h1>
-        <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-          {t('Sizning professional rivojlanishingiz va erishgan yutuqlaringiz.', language)}
-        </p>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('Mening daromadim', language)}</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+            {t('Sizning professional rivojlanishingiz va erishgan yutuqlaringiz.', language)}
+          </p>
+        </div>
+        <button
+          onClick={() => setIsHistoryModalOpen(true)}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+        >
+          <History className="h-5 w-5 mr-2" />
+          {t('Haftalik Tarix', language)}
+        </button>
       </div>
 
       {/* Mobile-Optimized Statistics Overview */}
@@ -490,6 +502,14 @@ const ApprenticeAchievements: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Weekly History Modal */}
+      <WeeklyHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        userId={user?.id || ''}
+        userName={user?.name || ''}
+      />
     </div>
   );
 };

@@ -12,6 +12,7 @@ export interface IUser extends Document {
   role: 'master' | 'apprentice';
   masterId?: mongoose.Types.ObjectId; // Shogird qaysi ustoz tomonidan qo'shilgan
   totalEarnings: number; // Jami daromad (to'lanmagan pul)
+  taskEarnings?: number; // Vazifalardan topilgan pul (haftalik reset uchun)
   profileImage?: string; // Profil rasmi
   profession?: string; // Kasbi
   experience?: number; // Tajriba (yillarda)
@@ -70,6 +71,11 @@ const userSchema = new Schema<IUser>({
     required: true
   },
   totalEarnings: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  taskEarnings: {
     type: Number,
     default: 0,
     min: 0

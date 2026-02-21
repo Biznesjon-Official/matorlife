@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApprentices } from '@/hooks/useUsers';
 import CreateApprenticeModal from '@/components/CreateApprenticeModal';
 import ViewApprenticeModal from '@/components/ViewApprenticeModal';
 import EditApprenticeModal from '@/components/EditApprenticeModal';
 import DeleteApprenticeModal from '@/components/DeleteApprenticeModal';
-import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail, Wallet } from 'lucide-react';
-import { User } from '@/types';
+import WeeklyHistoryModal from '@/components/WeeklyHistoryModal';
+import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail, Wallet, Clock, History } from 'lucide-react';
+import { User, CurrentDateInfo } from '@/types';
 import { t } from '@/lib/transliteration';
+import { getCurrentDateInfo } from '@/services/weeklyHistory';
 
 
 const Apprentices: React.FC = () => {
@@ -15,8 +17,23 @@ const Apprentices: React.FC = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedApprentice, setSelectedApprentice] = useState<User | null>(null);
+  const [currentDate, setCurrentDate] = useState<CurrentDateInfo | null>(null);
   const { data: apprenticesData, isLoading, refetch } = useApprentices();
+
+  // Joriy sana va kun ma'lumotlarini olish
+  useEffect(() => {
+    const fetchDateInfo = async () => {
+      try {
+        const dateInfo = await getCurrentDateInfo();
+        setCurrentDate(dateInfo);
+      } catch (error) {
+        console.error('Sana ma\'lumotlarini olishda xato:', error);
+      }
+    };
+    fetchDateInfo();
+  }, []);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -74,6 +91,11 @@ const Apprentices: React.FC = () => {
     refetch();
   };
 
+  const handleViewHistory = (apprentice: User) => {
+    setSelectedApprentice(apprentice);
+    setIsHistoryModalOpen(true);
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8 pb-6 sm:pb-8 px-4 sm:px-0">
       {/* Header with Gradient Background */}
@@ -86,6 +108,25 @@ const Apprentices: React.FC = () => {
               <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
                 {t("Shogirdlarni boshqaring va ularning rivojlanishini kuzating", language)}
               </p>
+              {/* Joriy kun va sana */}
+              {currentDate && (
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-2 text-blue-100">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {currentDate.dayName}, {currentDate.date}
+                  </span>
+                  {currentDate.daysUntilReset > 0 && (
+                    <span className="ml-2 px-2 py-0.5 bg-yellow-500 text-yellow-900 text-xs font-semibold rounded-full">
+                      {t("Reset", language)}: {currentDate.daysUntilReset} {t("kun", language)}
+                    </span>
+                  )}
+                  {currentDate.isSunday && (
+                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-semibold rounded-full animate-pulse">
+                      {t("Bugun reset kuni!", language)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -334,29 +375,38 @@ const Apprentices: React.FC = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
                     <button 
                       onClick={() => handleViewApprentice(apprentice)}
-                      className="flex-1 flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                      className="flex items-center justify-center px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
                       title={t("Ko'rish", language)}
                     >
-                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">{t("Ko'rish", language)}</span>
-                      <span className="sm:hidden">{t("Ko'rish", language)}</span>
+                      <Eye className="h-4 w-4 mr-1" />
+                      {t("Ko'rish", language)}
                     </button>
                     <button 
+                      onClick={() => handleViewHistory(apprentice)}
+                      className="flex items-center justify-center px-3 py-2 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                      title={t("Haftalik Tarix", language)}
+                    >
+                      <History className="h-4 w-4 mr-1" />
+                      {t("Tarix", language)}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
                       onClick={() => handleEditApprentice(apprentice)}
-                      className="flex items-center justify-center p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all duration-200"
+                      className="flex-1 flex items-center justify-center p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-all duration-200"
                       title={t("Tahrirlash", language)}
                     >
-                      <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <Edit className="h-4 w-4" />
                     </button>
                     <button 
                       onClick={() => handleDeleteApprentice(apprentice)}
-                      className="flex items-center justify-center p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
+                      className="flex-1 flex items-center justify-center p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all duration-200"
                       title={t("O'chirish", language)}
                     >
-                      <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -411,6 +461,17 @@ const Apprentices: React.FC = () => {
         }}
         apprentice={selectedApprentice}
         onDelete={handleDelete}
+      />
+
+      {/* Weekly History Modal */}
+      <WeeklyHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => {
+          setIsHistoryModalOpen(false);
+          setSelectedApprentice(null);
+        }}
+        userId={selectedApprentice?.id || ''}
+        userName={selectedApprentice?.name || ''}
       />
     </div>
   );

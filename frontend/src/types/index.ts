@@ -334,3 +334,23 @@ export interface DebtSummary {
   };
   netPosition: number;
 }
+
+// Weekly History Types
+export interface WeeklyHistory {
+  _id: string;
+  userId: string;
+  weekEndDate: string;
+  totalEarnings: number;
+  taskEarnings: number;
+  completedTasks: number;
+  createdAt: string;
+}
+
+export interface CurrentDateInfo {
+  dayName: string;
+  date: string;
+  fullDate: string;
+  dayOfWeek: number;
+  daysUntilReset: number;
+  isSunday: boolean;
+}
