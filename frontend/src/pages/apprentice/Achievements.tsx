@@ -5,18 +5,15 @@ import {
   Award, 
   TrendingUp,
   Clock,
-  CheckCircle,
-  History
+  CheckCircle
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
-import WeeklyHistoryModal from '@/components/WeeklyHistoryModal';
 
 const ApprenticeAchievements: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks } = useTasks();
   const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' yoki 'YYYY-MM' format
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -209,13 +206,6 @@ const ApprenticeAchievements: React.FC = () => {
             {t('Sizning professional rivojlanishingiz va erishgan yutuqlaringiz.', language)}
           </p>
         </div>
-        <button
-          onClick={() => setIsHistoryModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
-        >
-          <History className="h-5 w-5 mr-2" />
-          {t('Haftalik Tarix', language)}
-        </button>
       </div>
 
       {/* Mobile-Optimized Statistics Overview */}
@@ -502,14 +492,6 @@ const ApprenticeAchievements: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Weekly History Modal */}
-      <WeeklyHistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        userId={user?.id || ''}
-        userName={user?.name || ''}
-      />
     </div>
   );
 };
