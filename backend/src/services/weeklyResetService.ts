@@ -4,7 +4,7 @@ import WeeklyHistory from '../models/WeeklyHistory';
 import Task from '../models/Task';
 
 export const startWeeklyResetJob = () => {
-  // Har yakshanba kuni soat 00:00 da ishga tushadi
+  // Har yakshanba kuni soat 00:00 da ishga tushadi (O'zbekiston vaqti - UTC+5)
   cron.schedule('0 0 * * 0', async () => {
     try {
       console.log('🔄 Haftalik reset boshlandi...');
@@ -44,7 +44,9 @@ export const startWeeklyResetJob = () => {
     } catch (error) {
       console.error('❌ Haftalik reset xatosi:', error);
     }
+  }, {
+    timezone: 'Asia/Tashkent' // O'zbekiston vaqti (UTC+5)
   });
 
-  console.log('📅 Haftalik reset cron job ishga tushdi (Har yakshanba 00:00)');
+  console.log('📅 Haftalik reset cron job ishga tushdi (Har yakshanba 00:00 - Toshkent vaqti)');
 };
