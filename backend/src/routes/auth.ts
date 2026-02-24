@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { register, login, getProfile, getApprentices, getAvailableApprentices, getUsers, getApprenticesWithStats, updateUser, deleteUser } from '../controllers/authController';
+import { register, login, getProfile, getApprentices, getAvailableApprentices, getUsers, getApprenticesWithStats, getMyStats, updateUser, deleteUser } from '../controllers/authController';
 import { authenticate, authorize } from '../middleware/auth';
 import { handleValidationErrors } from '../middleware/validation';
 import { upload } from '../middleware/upload';
@@ -78,6 +78,9 @@ router.get('/public/apprentices', async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+// Get my own earnings stats (apprentice can use this)
+router.get('/my-stats', authenticate, getMyStats);
 
 // Get apprentices with stats (master only)
 router.get('/apprentices/stats', authenticate, authorize('master'), getApprenticesWithStats);

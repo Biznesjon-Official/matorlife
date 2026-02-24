@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/useTasks';
-import { 
-  Award, 
+import { useMyStats } from '@/hooks/useUsers';
+import {
+  Award,
   TrendingUp,
   Clock,
   CheckCircle
@@ -12,6 +13,7 @@ import { t } from '@/lib/transliteration';
 const ApprenticeAchievements: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks } = useTasks();
+  const { data: myStats } = useMyStats();
   const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' yoki 'YYYY-MM' format
 
@@ -246,40 +248,49 @@ const ApprenticeAchievements: React.FC = () => {
           </div>
         </div>
 
-        <div className="card p-3 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 col-span-2 sm:col-span-2 lg:col-span-1">
+        <div className="card p-3 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 col-span-2 sm:col-span-2 lg:col-span-1">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left">
-            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-500 mb-2 sm:mb-0">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-green-500 mb-2 sm:mb-0">
               <Award className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
             </div>
             <div className="sm:ml-4">
-              <p className="text-xs sm:text-sm font-medium text-blue-700">{t('Jami daromad', language)}</p>
-              <p className="text-xl sm:text-2xl font-bold text-blue-900">
-                {new Intl.NumberFormat('uz-UZ').format(totalEarningsFromTasks)}
+              <p className="text-xs sm:text-sm font-medium text-green-700">{t("Qolgan daromad", language)}</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-900">
+                {new Intl.NumberFormat('uz-UZ').format(myStats?.availableEarnings ?? 0)}
               </p>
-              <p className="text-xs text-blue-600">{t('so\'m', language)}</p>
+              <p className="text-xs text-green-600">{t('so\'m', language)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Jami daromad kartasi - yangi */}
-      <div className="card p-4 sm:p-6 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl">
+      {/* Qolgan daromad kartasi */}
+      <div className="card p-4 sm:p-6 bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
               <Award className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
             <div>
-              <p className="text-sm sm:text-base text-blue-100 mb-1">{t('Jami daromad', language)}</p>
+              <p className="text-sm sm:text-base text-green-100 mb-1">{t("Qolgan daromad", language)}</p>
               <p className="text-3xl sm:text-4xl font-bold">
-                {new Intl.NumberFormat('uz-UZ').format(totalEarningsFromTasks)}
+                {new Intl.NumberFormat('uz-UZ').format(myStats?.availableEarnings ?? 0)}
               </p>
-              <p className="text-xs sm:text-sm text-blue-100 mt-1">{t('so\'m (tasdiqlangan ishlar)', language)}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs sm:text-sm text-green-100">
+                  {t("Jami:", language)} {new Intl.NumberFormat('uz-UZ').format(myStats?.taskEarnings ?? totalEarningsFromTasks)} {t("so'm", language)}
+                </p>
+                {(myStats?.paidSalaries ?? 0) > 0 && (
+                  <p className="text-xs sm:text-sm text-green-200">
+                    − {new Intl.NumberFormat('uz-UZ').format(myStats!.paidSalaries)} {t("to'langan", language)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <div className="text-right hidden sm:block">
             <div className="text-2xl font-bold">{approvedTasks.length}</div>
-            <div className="text-sm text-blue-100">{t('ta vazifa', language)}</div>
+            <div className="text-sm text-green-100">{t('ta vazifa', language)}</div>
           </div>
         </div>
       </div>

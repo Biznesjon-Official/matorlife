@@ -26,6 +26,16 @@ export const useApprentices = () => {
 };
 
 // Dinamik shogirdlar ro'yxati - har kim o'zini va kichikларni ko'radi
+export const useMyStats = () => {
+  return useQuery({
+    queryKey: ['my-stats'],
+    queryFn: async () => {
+      const response = await api.get('/auth/my-stats');
+      return response.data as { taskEarnings: number; paidSalaries: number; availableEarnings: number };
+    },
+  });
+};
+
 export const useAvailableApprentices = () => {
   return useQuery({
     queryKey: ['available-apprentices'],

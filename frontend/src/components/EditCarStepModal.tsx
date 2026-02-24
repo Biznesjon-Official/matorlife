@@ -56,18 +56,20 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
   const [parts, setParts] = useState<Part[]>([]);
   const [usedSpareParts, setUsedSpareParts] = useState<UsedSparePart[]>([]);
   const [editingPartIndex, setEditingPartIndex] = useState<number | null>(null);
+  const [editPartData, setEditPartData] = useState<Part>({ name: '', quantity: 1, price: 0 });
   const [newPart, setNewPart] = useState<Part>({
     name: '',
     quantity: 1,
     price: 0
   });
-  
+
   // Autocomplete states for spare parts
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const [selectedSparePartId, setSelectedSparePartId] = useState<string>('');
   const [serviceItems, setServiceItems] = useState<ServiceItem[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null);
+  const [editServiceData, setEditServiceData] = useState<ServiceItem>({ name: '', price: 0, quantity: 1, category: 'labor' });
   const [newServiceItem, setNewServiceItem] = useState<ServiceItem>({
     name: '',
     price: 0,
@@ -263,33 +265,27 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
   };
 
   const handleEditPart = (index: number) => {
-    const part = parts[index];
-    setNewPart(part);
+    setEditPartData({ ...parts[index] });
     setEditingPartIndex(index);
   };
 
-  const handleUpdatePart = () => {
+  const handleSaveEditPart = () => {
     if (editingPartIndex === null) return;
-    
-    if (!newPart.name || newPart.quantity <= 0 || newPart.price < 0) {
+    if (!editPartData.name || editPartData.quantity <= 0 || editPartData.price < 0) {
       alert(t("Qism ma'lumotlarini to'g'ri kiriting", language));
       return;
     }
-    
-    const updatedParts = [...parts];
-    updatedParts[editingPartIndex] = { 
-      name: String(newPart.name).trim(),
-      quantity: Number(newPart.quantity),
-      price: Number(newPart.price)
+    const updated = [...parts];
+    updated[editingPartIndex] = {
+      name: String(editPartData.name).trim(),
+      quantity: Number(editPartData.quantity),
+      price: Number(editPartData.price)
     };
-    
-    setParts(updatedParts);
-    setNewPart({ name: '', quantity: 1, price: 0 });
+    setParts(updated);
     setEditingPartIndex(null);
   };
 
   const handleCancelEditPart = () => {
-    setNewPart({ name: '', quantity: 1, price: 0 });
     setEditingPartIndex(null);
   };
 
@@ -323,34 +319,28 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
   };
 
   const handleEditServiceItem = (index: number) => {
-    const item = serviceItems[index];
-    setNewServiceItem(item);
+    setEditServiceData({ ...serviceItems[index] });
     setEditingServiceIndex(index);
   };
 
-  const handleUpdateServiceItem = () => {
+  const handleSaveEditService = () => {
     if (editingServiceIndex === null) return;
-    
-    if (!newServiceItem.name || newServiceItem.quantity <= 0 || newServiceItem.price < 0) {
+    if (!editServiceData.name || editServiceData.quantity <= 0 || editServiceData.price < 0) {
       alert(t("Xizmat ma'lumotlarini to'g'ri kiriting", language));
       return;
     }
-    
-    const updatedItems = [...serviceItems];
-    updatedItems[editingServiceIndex] = {
-      name: String(newServiceItem.name).trim(),
-      price: Number(newServiceItem.price),
-      quantity: Number(newServiceItem.quantity),
-      category: newServiceItem.category
+    const updated = [...serviceItems];
+    updated[editingServiceIndex] = {
+      name: String(editServiceData.name).trim(),
+      price: Number(editServiceData.price),
+      quantity: Number(editServiceData.quantity),
+      category: editServiceData.category
     };
-    
-    setServiceItems(updatedItems);
-    setNewServiceItem({ name: '', price: 0, quantity: 1, category: 'labor' });
+    setServiceItems(updated);
     setEditingServiceIndex(null);
   };
 
   const handleCancelEditServiceItem = () => {
-    setNewServiceItem({ name: '', price: 0, quantity: 1, category: 'labor' });
     setEditingServiceIndex(null);
   };
 
@@ -706,12 +696,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                     <input
                       type="number"
                       min="1"
-                      value={newPart.quantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === '' ? 1 : Math.max(1, Number(value));
-                        setNewPart({ ...newPart, quantity: numValue });
-                      }}
+                      value={newPart.quantity || ''}
+                      onChange={(e) => setNewPart({ ...newPart, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder={t('Soni', language)}
                     />
@@ -720,11 +706,7 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       min="0"
                       step="1000"
                       value={newPart.price || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === '' ? 0 : Math.max(0, Number(value));
-                        setNewPart({ ...newPart, price: numValue });
-                      }}
+                      onChange={(e) => setNewPart({ ...newPart, price: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       placeholder={t("Narx (so'm)", language) + ' *'}
                     />
@@ -735,23 +717,14 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                     </div>
                     <button
                       type="button"
-                      onClick={editingPartIndex !== null ? handleUpdatePart : handleAddPart}
+                      onClick={handleAddPart}
                       disabled={!newPart.name.trim() || newPart.quantity <= 0 || newPart.price < 0}
                       className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-all flex items-center justify-center py-2 px-3 col-span-2 sm:col-span-1"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      <span className="text-sm">{editingPartIndex !== null ? t('Saqlash', language) : t("Qo'shish", language)}</span>
+                      <span className="text-sm">{t("Qo'shish", language)}</span>
                     </button>
                   </div>
-                  {editingPartIndex !== null && (
-                    <button
-                      type="button"
-                      onClick={handleCancelEditPart}
-                      className="w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-2 transition-all text-sm"
-                    >
-                      {t('Bekor qilish', language)}
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -767,7 +740,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                     const isFromSpareParts = !!correspondingUsedPart;
                     
                     return (
-                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-3 gap-3 sm:gap-0">
+                      <div key={index} className="flex flex-col gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-3 gap-3 sm:gap-0">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           <div className="bg-blue-100 p-2 rounded-lg flex-shrink-0">
                             <Edit className="h-4 w-4 text-blue-600" />
@@ -798,8 +772,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                         <div className="flex items-center space-x-1 self-end sm:self-auto flex-shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleEditPart(index)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            onClick={() => editingPartIndex === index ? handleCancelEditPart() : handleEditPart(index)}
+                            className={`p-1.5 rounded-lg transition-all ${editingPartIndex === index ? 'text-orange-500 hover:bg-orange-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}
                           >
                             <Edit className="h-4 w-4" />
                           </button>
@@ -812,6 +786,59 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                           </button>
                         </div>
                       </div>
+
+                      {/* Inline edit form — below this item */}
+                      {editingPartIndex === index && (
+                        <div className="mt-2 bg-green-50 rounded-lg p-3 border border-green-300 space-y-2">
+                          <input
+                            type="text"
+                            value={editPartData.name}
+                            onChange={(e) => setEditPartData({ ...editPartData, name: e.target.value })}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder={t('Qism nomi', language)}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <input
+                              type="number"
+                              min="1"
+                              value={editPartData.quantity || ''}
+                              onChange={(e) => setEditPartData({ ...editPartData, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                              placeholder={t('Soni', language)}
+                            />
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={editPartData.price || ''}
+                              onChange={(e) => setEditPartData({ ...editPartData, price: e.target.value === '' ? 0 : Number(e.target.value) })}
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                              placeholder={t("Narx", language)}
+                            />
+                            <div className="flex items-center justify-center bg-white rounded-lg border border-gray-200 px-2">
+                              <span className="text-xs text-gray-600">= {((editPartData.quantity || 1) * (editPartData.price || 0)).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSaveEditPart}
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-1.5 text-sm flex items-center justify-center gap-1"
+                            >
+                              <Save className="h-3.5 w-3.5" />
+                              {t('Saqlash', language)}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelEditPart}
+                              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg py-1.5 text-sm"
+                            >
+                              {t('Bekor', language)}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     );
                   })
                 )}
@@ -856,23 +883,15 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       min="0"
                       step="1000"
                       value={newServiceItem.price || ''}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === '' ? 0 : Math.max(0, Number(value));
-                        setNewServiceItem({ ...newServiceItem, price: numValue });
-                      }}
+                      onChange={(e) => setNewServiceItem({ ...newServiceItem, price: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder={t("Narx (so'm)", language) + ' *'}
                     />
                     <input
                       type="number"
                       min="1"
-                      value={newServiceItem.quantity}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const numValue = value === '' ? 1 : Math.max(1, Number(value));
-                        setNewServiceItem({ ...newServiceItem, quantity: numValue });
-                      }}
+                      value={newServiceItem.quantity || ''}
+                      onChange={(e) => setNewServiceItem({ ...newServiceItem, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                       placeholder={t('Soni', language) + ' *'}
                     />
@@ -883,23 +902,14 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                     </div>
                     <button
                       type="button"
-                      onClick={editingServiceIndex !== null ? handleUpdateServiceItem : handleAddServiceItem}
+                      onClick={handleAddServiceItem}
                       disabled={!newServiceItem.name.trim() || newServiceItem.quantity <= 0}
                       className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-all flex items-center justify-center py-2 px-3 col-span-2 sm:col-span-1"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      <span className="text-sm">{editingServiceIndex !== null ? t('Saqlash', language) : t("Qo'shish", language)}</span>
+                      <span className="text-sm">{t("Qo'shish", language)}</span>
                     </button>
                   </div>
-                  {editingServiceIndex !== null && (
-                    <button
-                      type="button"
-                      onClick={handleCancelEditServiceItem}
-                      className="w-full bg-gray-500 hover:bg-gray-600 text-white rounded-lg py-2 transition-all text-sm"
-                    >
-                      {t('Bekor qilish', language)}
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -910,7 +920,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                   <p className="text-sm text-gray-500 text-center py-8">{t("Xizmatlar qo'shilmagan", language)}</p>
                 ) : (
                   serviceItems.map((item, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-3 gap-3 sm:gap-0">
+                    <div key={index} className="flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-lg p-3 gap-3 sm:gap-0">
                       <div className="flex items-center space-x-3 flex-1 min-w-0">
                         <div className="bg-purple-100 p-2 rounded-lg flex-shrink-0">
                           <Edit className="h-4 w-4 text-purple-600" />
@@ -934,8 +945,8 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                       <div className="flex items-center space-x-1 self-end sm:self-auto">
                         <button
                           type="button"
-                          onClick={() => handleEditServiceItem(index)}
-                          className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
+                          onClick={() => editingServiceIndex === index ? handleCancelEditServiceItem() : handleEditServiceItem(index)}
+                          className={`p-1.5 rounded-lg transition-all ${editingServiceIndex === index ? 'text-orange-500 hover:bg-orange-50' : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'}`}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
@@ -947,6 +958,59 @@ const EditCarStepModal: React.FC<EditCarStepModalProps> = ({ isOpen, onClose, ca
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
+                      </div>
+
+                      {/* Inline edit form — below this item */}
+                      {editingServiceIndex === index && (
+                        <div className="mt-2 bg-purple-50 rounded-lg p-3 border border-purple-300 space-y-2">
+                          <input
+                            type="text"
+                            value={editServiceData.name}
+                            onChange={(e) => setEditServiceData({ ...editServiceData, name: e.target.value })}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder={t('Xizmat nomi', language)}
+                          />
+                          <div className="grid grid-cols-3 gap-2">
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={editServiceData.price || ''}
+                              onChange={(e) => setEditServiceData({ ...editServiceData, price: e.target.value === '' ? 0 : Number(e.target.value) })}
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              placeholder={t("Narx", language)}
+                            />
+                            <input
+                              type="number"
+                              min="1"
+                              value={editServiceData.quantity || ''}
+                              onChange={(e) => setEditServiceData({ ...editServiceData, quantity: e.target.value === '' ? 0 : Number(e.target.value) })}
+                              className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              placeholder={t('Soni', language)}
+                            />
+                            <div className="flex items-center justify-center bg-white rounded-lg border border-gray-200 px-2">
+                              <span className="text-xs text-gray-600">= {((editServiceData.quantity || 1) * (editServiceData.price || 0)).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSaveEditService}
+                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-1.5 text-sm flex items-center justify-center gap-1"
+                            >
+                              <Save className="h-3.5 w-3.5" />
+                              {t('Saqlash', language)}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCancelEditServiceItem}
+                              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg py-1.5 text-sm"
+                            >
+                              {t('Bekor', language)}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}

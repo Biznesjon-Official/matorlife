@@ -457,6 +457,46 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
   }
 };
 
+export const getMyStats = async (req: AuthRequest, res: Response) => {
+  try {
+    const Task        = require('../models/Task').default;
+    const Transaction = require('../models/Transaction').default;
+    const userId = req.user!._id;
+
+    const tasks = await Task.find({
+      $or: [
+        { assignedTo: userId },
+        { 'assignments.apprentice': userId }
+      ]
+    });
+
+    const approvedTasks = tasks.filter((t: any) => t.status === 'approved');
+    const taskEarnings = approvedTasks.reduce((total: number, task: any) => {
+      if (task.assignments && task.assignments.length > 0) {
+        const mine = task.assignments.find((a: any) => {
+          const id = (a.apprentice?._id ?? a.apprentice)?.toString();
+          return id === userId.toString();
+        });
+        if (mine) return total + (mine.earning || 0);
+      }
+      if (task.apprenticeEarning) return total + task.apprenticeEarning;
+      return total;
+    }, 0);
+
+    const salaryAgg = await Transaction.aggregate([
+      { $match: { type: 'expense', apprenticeId: userId } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+
+    const paidSalaries = salaryAgg.length > 0 ? salaryAgg[0].total : 0;
+    const availableEarnings = taskEarnings - paidSalaries;
+
+    res.json({ taskEarnings, paidSalaries, availableEarnings });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
