@@ -35,7 +35,7 @@
     <link rel="manifest" href="/manifest.json" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Mator Life" />
     
     <!-- iOS Safari Specific Meta Tags -->
@@ -53,23 +53,21 @@
         width: 100%;
         overflow-x: hidden;
       }
-      
+
       body {
         height: 100%;
         width: 100%;
         overflow-x: hidden;
-        position: fixed;
         -webkit-overflow-scrolling: touch;
+        background-color: #f8fafc;
       }
-      
+
       #root {
-        height: 100%;
+        min-height: 100%;
         width: 100%;
-        overflow-y: auto;
         overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
       }
-      
+
       /* iOS Safari select fix */
       select {
         -webkit-appearance: menulist-button !important;
@@ -77,12 +75,12 @@
         font-size: 16px !important;
         min-height: 44px !important;
       }
-      
+
       /* Prevent zoom on input focus */
       input, textarea, select {
         font-size: 16px !important;
       }
-      
+
       /* iOS PWA safe area support */
       @supports (padding: max(0px)) {
         body {
@@ -90,17 +88,11 @@
           padding-right: max(0px, env(safe-area-inset-right));
         }
       }
-      
-      /* Fix for iOS PWA viewport */
+
+      /* Fix for iOS PWA standalone mode */
       @media (display-mode: standalone) {
-        html, body {
-          height: 100vh;
-          height: -webkit-fill-available;
-        }
-        
         #root {
-          min-height: 100vh;
-          min-height: -webkit-fill-available;
+          padding-bottom: env(safe-area-inset-bottom, 0px);
         }
       }
     </style>

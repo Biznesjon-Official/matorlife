@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks, useUpdateTaskStatus } from '@/hooks/useTasks';
-import { 
-  Clock, 
+import {
+  Clock,
   CheckCircle,
   Calendar,
   Award,
@@ -20,7 +20,9 @@ import {
   Trophy,
   Rocket,
   Activity,
-  Gift
+  Gift,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 
@@ -29,6 +31,7 @@ const ApprenticeDashboard: React.FC = () => {
   const { data: tasks, isLoading: tasksLoading } = useTasks();
   const updateTaskStatus = useUpdateTaskStatus();
   const [processingTaskId, setProcessingTaskId] = useState<string | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -39,7 +42,14 @@ const ApprenticeDashboard: React.FC = () => {
   const allTasks = tasks?.tasks || [];
   const myTasks = allTasks.filter((task: any) => {
     const assignedToId = typeof task.assignedTo === 'object' ? task.assignedTo._id : task.assignedTo;
-    return assignedToId === user?.id;
+    if (assignedToId === user?.id) return true;
+    if (task.assignments && task.assignments.length > 0) {
+      return task.assignments.some((a: any) => {
+        const aId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+        return aId === user?.id;
+      });
+    }
+    return false;
   });
 
   const todayTasks = myTasks.filter((task: any) => {
@@ -110,7 +120,53 @@ const ApprenticeDashboard: React.FC = () => {
   };
 
   // Statistika hisoblash
-  const totalEarnings = user?.earnings || 0;
+  const getMyEarning = (task: any): number => {
+    if (task.assignments && task.assignments.length > 0) {
+      const mine = task.assignments.find((a: any) => {
+        const aId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+        return aId === user?.id;
+      });
+      return mine?.earning || 0;
+    }
+    return task.apprenticeEarning || 0;
+  };
+
+  // Hafta oralig'ini hisoblash
+  const getWeekRange = (offset: number) => {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayDiff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayDiff - offset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const currentWeek = getWeekRange(weekOffset);
+
+  const formatWeekLabel = (range: { start: Date; end: Date }) => {
+    const s = range.start;
+    const e = range.end;
+    const monthNames = language === 'latin'
+      ? ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+      : ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    if (s.getMonth() === e.getMonth()) {
+      return `${s.getDate()}-${e.getDate()} ${monthNames[s.getMonth()]}`;
+    }
+    return `${s.getDate()} ${monthNames[s.getMonth()]} - ${e.getDate()} ${monthNames[e.getMonth()]}`;
+  };
+
+  // Haftalik daromad
+  const weeklyApproved = approvedTasks.filter((task: any) => {
+    if (!task.approvedAt) return false;
+    const d = new Date(task.approvedAt);
+    return d >= currentWeek.start && d <= currentWeek.end;
+  });
+  const totalEarnings = weeklyApproved.reduce((sum: number, task: any) => sum + getMyEarning(task), 0);
+
   const completionRate = myTasks.length > 0 ? Math.round(((completedTasks.length + approvedTasks.length) / myTasks.length) * 100) : 0;
   const weeklyProgress = Math.min(100, (approvedTasks.length * 20));
 
@@ -183,7 +239,7 @@ const ApprenticeDashboard: React.FC = () => {
                 </p>
                 <div className="mt-1 sm:mt-1.5 md:mt-2 flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-xs text-blue-200">
                   <Trophy className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-yellow-300 text-yellow-300 flex-shrink-0" />
-                  <span className="truncate">{t('Joriy oylik', language)}</span>
+                  <span className="truncate">{weekOffset === 0 ? t('Joriy hafta', language) : formatWeekLabel(currentWeek)}</span>
                 </div>
               </div>
             </div>
@@ -471,26 +527,38 @@ const ApprenticeDashboard: React.FC = () => {
               <h3 className="text-sm sm:text-base md:text-lg font-bold truncate">{t('Daromad tarixi', language)}</h3>
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-base sm:text-lg md:text-xl font-bold truncate">{new Intl.NumberFormat('uz-UZ').format(user?.earnings || 0)}</div>
-              <div className="text-[10px] sm:text-xs text-blue-100 whitespace-nowrap">{t('Joriy oylik', language)}</div>
+              <div className="text-base sm:text-lg md:text-xl font-bold truncate">{new Intl.NumberFormat('uz-UZ').format(totalEarnings)}</div>
             </div>
           </div>
+          {/* Week navigation */}
+          <div className="flex items-center justify-between mt-2 bg-white/10 rounded-lg px-2 py-1.5">
+            <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-xs sm:text-sm font-medium">
+              {weekOffset === 0 ? t('Joriy hafta', language) : formatWeekLabel(currentWeek)}
+            </span>
+            <button
+              onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
+              disabled={weekOffset === 0}
+              className="p-1 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-        
+
         <div className="p-3 sm:p-4 md:p-5">
-          <h4 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2 sm:mb-3">{t('Oxirgi daromadlar', language)}</h4>
-          
-          {approvedTasks.length === 0 ? (
+          {weeklyApproved.filter((task: any) => getMyEarning(task) > 0).length === 0 ? (
             <div className="text-center py-5 sm:py-6">
               <Award className="h-9 w-9 sm:h-10 sm:w-10 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 text-xs sm:text-sm">{t('Hali daromad yo\'q', language)}</p>
+              <p className="text-gray-500 text-xs sm:text-sm">{t('Bu haftada daromad yo\'q', language)}</p>
             </div>
           ) : (
             <div className="space-y-2 sm:space-y-2.5">
-              {approvedTasks
-                .filter((task: any) => task.payment && task.payment > 0)
+              {weeklyApproved
+                .filter((task: any) => getMyEarning(task) > 0)
                 .sort((a: any, b: any) => new Date(b.approvedAt || b.createdAt).getTime() - new Date(a.approvedAt || a.createdAt).getTime())
-                .slice(0, 5)
                 .map((task: any) => (
                   <div key={task._id} className="flex items-center justify-between gap-2 p-2.5 sm:p-3 bg-blue-50 rounded-lg sm:rounded-xl border border-blue-200">
                     <div className="flex-1 min-w-0">
@@ -501,17 +569,11 @@ const ApprenticeDashboard: React.FC = () => {
                     </div>
                     <div className="text-right ml-2 flex-shrink-0">
                       <p className="text-sm sm:text-base font-bold text-blue-600 whitespace-nowrap">
-                        +{new Intl.NumberFormat('uz-UZ').format(task.payment)}
+                        +{new Intl.NumberFormat('uz-UZ').format(getMyEarning(task))}
                       </p>
                     </div>
                   </div>
                 ))}
-              
-              {approvedTasks.filter((task: any) => task.payment && task.payment > 0).length === 0 && (
-                <div className="text-center py-5 sm:py-6">
-                  <p className="text-gray-500 text-xs sm:text-sm">{t('To\'lovli vazifalar yo\'q', language)}</p>
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -294,7 +294,7 @@ export default function AIChatWidget() {
       <button
         data-ai-chat-button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-4 sm:right-6 lg:bottom-6 lg:right-6 transition-all duration-300 hover:scale-105 z-30 group ${
+        className={`fixed [bottom:calc(1.5rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-6 transition-all duration-300 hover:scale-105 z-30 group ${
           shouldAnimate ? 'animate-bounce-attention' : ''
         }`}
       >
@@ -353,7 +353,7 @@ export default function AIChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-2 sm:right-6 lg:bottom-6 lg:right-6 w-[calc(100vw-16px)] sm:w-96 h-[calc(100vh-80px)] sm:h-[600px] lg:h-[600px] bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col z-30 border border-gray-200">
+    <div className="fixed [bottom:calc(1.5rem+env(safe-area-inset-bottom,0px))] right-2 sm:right-6 w-[calc(100vw-16px)] sm:w-96 h-[calc(100dvh-5rem-env(safe-area-inset-bottom,0px)-env(safe-area-inset-top,0px))] sm:h-[600px] bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col z-30 border border-gray-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 sm:p-4 rounded-t-xl sm:rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">

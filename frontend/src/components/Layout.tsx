@@ -111,7 +111,7 @@ const Layout: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Mobile Header */}
       {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50">
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-200/50 [padding-top:env(safe-area-inset-top,0px)]">
           <div className="flex items-center justify-between px-4 py-3">
             {/* Menu Button */}
             <button
@@ -412,7 +412,7 @@ const Layout: React.FC = () => {
 
       {/* Main content */}
       <div className={`transition-all duration-300 ${isMobile ? 'pl-0' : (isExpanded ? 'pl-72' : 'pl-20')}`}>
-        <main className={`py-8 ${isMobile ? 'pt-20 pb-8' : ''}`}>
+        <main className={`py-8 ${isMobile ? 'pb-8 [padding-top:calc(5rem+env(safe-area-inset-top,0px))]' : ''}`}>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <Outlet />
           </div>

@@ -183,6 +183,7 @@ export interface ApprenticeStats {
   taskEarnings?: number; // Vazifalardan topilgan pul
   paidSalaries?: number; // To'langan maoshlar
   availableEarnings?: number; // Qolgan pul (taskEarnings - paidSalaries)
+  weeklyEarnings?: number; // Joriy hafta daromadi
 }
 
 export interface ServiceItem {

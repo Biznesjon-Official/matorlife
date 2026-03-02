@@ -45,7 +45,7 @@ export default function PWAInstallPrompt() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 animate-slide-up">
+    <div className="fixed [bottom:calc(1rem+env(safe-area-inset-bottom,0px))] left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 animate-slide-up">
       <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl shadow-2xl p-4 text-white">
         <button
           onClick={handleDismiss}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Calendar, Target, CheckCircle, Award, Clock, DollarSign, Phone, TrendingUp, ChevronRight } from 'lucide-react';
+import { X, Mail, Calendar, Target, CheckCircle, Award, Clock, DollarSign, Phone, TrendingUp, ChevronRight, ChevronLeft } from 'lucide-react';
 import { User as UserType } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { formatPhoneNumber } from '@/lib/phoneUtils';
@@ -42,6 +42,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [activeTab, setActiveTab] = useState<'stats' | 'tasks'>('stats');
   const [showEarningsBreakdown, setShowEarningsBreakdown] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -104,6 +105,40 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
   const approvedTasks = tasks.filter(task => task.status === 'approved');
   const totalFromTasks = approvedTasks.reduce((sum, task) => sum + getMyEarning(task).earning, 0);
 
+  // Hafta oralig'ini hisoblash
+  const getWeekRange = (offset: number) => {
+    const now = new Date();
+    const day = now.getDay();
+    const mondayDiff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayDiff - offset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
+  };
+
+  const currentWeek = getWeekRange(weekOffset);
+
+  const formatWeekLabel = (range: { start: Date; end: Date }) => {
+    const s = range.start;
+    const e = range.end;
+    const monthNames = language === 'latin'
+      ? ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek']
+      : ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+    if (s.getMonth() === e.getMonth()) {
+      return `${s.getDate()}-${e.getDate()} ${monthNames[s.getMonth()]}`;
+    }
+    return `${s.getDate()} ${monthNames[s.getMonth()]} - ${e.getDate()} ${monthNames[e.getMonth()]}`;
+  };
+
+  const weeklyApproved = approvedTasks.filter(task => {
+    const d = new Date(task.approvedAt || task.createdAt);
+    return d >= currentWeek.start && d <= currentWeek.end;
+  });
+  const weeklyTotal = weeklyApproved.reduce((sum, task) => sum + getMyEarning(task).earning, 0);
+
   const getStatusIcon = (status: string) => {
     const config: Record<string, { icon: string; className: string }> = {
       'approved': { icon: '✓', className: 'bg-green-500' },
@@ -157,21 +192,40 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </button>
           </div>
 
-          {/* Summary bar */}
-          <div className="bg-green-50 border-b border-green-200 px-4 py-2 flex items-center justify-between">
-            <span className="text-xs text-green-700">{approvedTasks.length} {t('ta tasdiqlangan vazifa', language)}</span>
-            <span className="text-sm font-bold text-green-900">{formatCurrency(totalFromTasks)}</span>
+          {/* Week navigation */}
+          <div className="bg-green-50 border-b border-green-200 px-4 py-2">
+            <div className="flex items-center justify-between">
+              <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-green-200 rounded-lg transition-colors">
+                <ChevronLeft className="h-4 w-4 text-green-700" />
+              </button>
+              <div className="text-center">
+                <span className="text-xs font-semibold text-green-800">
+                  {weekOffset === 0 ? t('Joriy hafta', language) : formatWeekLabel(currentWeek)}
+                </span>
+                <div className="flex items-center justify-center gap-2 mt-0.5">
+                  <span className="text-[10px] text-green-600">{weeklyApproved.length} {t('ta vazifa', language)}</span>
+                  <span className="text-xs font-bold text-green-900">{formatCurrency(weeklyTotal)}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setWeekOffset(Math.max(0, weekOffset - 1))}
+                disabled={weekOffset === 0}
+                className="p-1 hover:bg-green-200 rounded-lg transition-colors disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4 text-green-700" />
+              </button>
+            </div>
           </div>
 
           {/* Task list */}
           <div className="max-h-[65vh] overflow-y-auto p-3 space-y-2">
-            {approvedTasks.length === 0 ? (
+            {weeklyApproved.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-500">{t("Tasdiqlangan vazifalar yo'q", language)}</p>
+                <p className="text-xs text-gray-500">{t("Bu haftada vazifalar yo'q", language)}</p>
               </div>
             ) : (
-              approvedTasks.map((task, idx) => {
+              weeklyApproved.map((task, idx) => {
                 const { earning: myEarning, percentage: myPct } = getMyEarning(task);
                 const coWorkers = getCoWorkers(task);
                 const coWorkerTotal = coWorkers.reduce((s, a) => s + a.earning, 0);
@@ -236,22 +290,24 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Footer total */}
-          {approvedTasks.length > 0 && (
+          {weeklyApproved.length > 0 && (
             <div className="border-t border-gray-200 px-4 py-3 bg-green-50 rounded-b-xl">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-semibold text-green-800">{t('Jami daromad', language)}</span>
-                <span className="text-base font-bold text-green-900">{formatCurrency(totalFromTasks)}</span>
+                <span className="text-sm font-semibold text-green-800">{t('Haftalik daromad', language)}</span>
+                <span className="text-base font-bold text-green-900">{formatCurrency(weeklyTotal)}</span>
               </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-[10px] text-green-600">{t("To'langan maosh", language)}</span>
-                <span className="text-[10px] font-semibold text-green-700">
-                  −{formatCurrency(totalFromTasks - (stats.availableEarnings || 0))}
-                </span>
-              </div>
-              <div className="flex justify-between items-center mt-1 pt-1 border-t border-green-200">
-                <span className="text-xs font-semibold text-green-700">{t("Qolgan (to'lanmagan)", language)}</span>
-                <span className="text-sm font-bold text-green-900">{formatCurrency(stats.availableEarnings || 0)}</span>
-              </div>
+              {weekOffset === 0 && (
+                <>
+                  <div className="flex justify-between items-center mt-1 pt-1 border-t border-green-200">
+                    <span className="text-[10px] text-green-600">{t('Jami daromad', language)}</span>
+                    <span className="text-xs font-semibold text-green-700">{formatCurrency(totalFromTasks)}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-0.5">
+                    <span className="text-[10px] text-green-600">{t("Qolgan (to'lanmagan)", language)}</span>
+                    <span className="text-xs font-bold text-green-900">{formatCurrency(stats.availableEarnings || 0)}</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -412,8 +468,8 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <div className="text-[10px] text-green-600 mb-0.5">{t('Vazifadan daromad', language)}</div>
-                        <div className="text-sm font-bold text-green-900">{formatCurrency(stats.taskEarnings || 0)}</div>
+                        <div className="text-[10px] text-green-600 mb-0.5">{t('Joriy hafta', language)}</div>
+                        <div className="text-sm font-bold text-green-900">{formatCurrency(weeklyTotal)}</div>
                       </div>
                       <div className="bg-white rounded-lg p-2 border border-green-200">
                         <div className="text-[10px] text-green-600 mb-0.5">{t("Qolgan (to'lanmagan)", language)}</div>

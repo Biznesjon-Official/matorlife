@@ -6,7 +6,15 @@ import {
   Award,
   TrendingUp,
   Clock,
-  CheckCircle
+  CheckCircle,
+  X,
+  Car,
+  User,
+  DollarSign,
+  Percent,
+  Calendar,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { t } from '@/lib/transliteration';
 
@@ -14,8 +22,8 @@ const ApprenticeAchievements: React.FC = () => {
   const { user } = useAuth();
   const { data: tasks } = useTasks();
   const { data: myStats } = useMyStats();
-  const [timeFilter, setTimeFilter] = useState<'today' | 'yesterday' | 'week' | 'month' | 'year' | 'all' | string>('all');
-  const [monthFilter, setMonthFilter] = useState<string>('all'); // 'all' yoki 'YYYY-MM' format
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   // localStorage'dan tilni o'qish
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
@@ -45,73 +53,34 @@ const ApprenticeAchievements: React.FC = () => {
   const approvedTasks = myTasks.filter((task: any) => task.status === 'approved');
   const completedTasks = myTasks.filter((task: any) => task.status === 'completed' || task.status === 'approved');
 
-  // Mavjud oylarni olish (tasdiqlangan vazifalar bo'lgan oylar)
-  const getAvailableMonths = () => {
-    const months = new Set<string>();
-    approvedTasks.forEach((task: any) => {
-      if (task.approvedAt) {
-        const date = new Date(task.approvedAt);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        months.add(monthKey);
-      }
-    });
-    return Array.from(months).sort().reverse(); // Eng yangi oylar birinchi
-  };
-
-  const availableMonths = getAvailableMonths();
-
-  // Oy nomini olish
-  const getMonthName = (monthKey: string) => {
-    const [year, month] = monthKey.split('-');
-    const monthNames = language === 'latin' 
-      ? ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr']
-      : ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-    return `${monthNames[parseInt(month) - 1]} ${year}`;
-  };
-
-  // Vaqt bo'yicha filtrlash
-  const getFilteredTasks = () => {
+  // Haftalik navigatsiya
+  const getWeekRange = (offset: number) => {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(today);
-    monthAgo.setMonth(monthAgo.getMonth() - 1);
-    const yearAgo = new Date(today);
-    yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-
-    return approvedTasks.filter((task: any) => {
-      if (!task.approvedAt) return false;
-      const approvedDate = new Date(task.approvedAt);
-
-      // Agar oylik filter tanlangan bo'lsa
-      if (monthFilter !== 'all') {
-        const taskMonthKey = `${approvedDate.getFullYear()}-${String(approvedDate.getMonth() + 1).padStart(2, '0')}`;
-        return taskMonthKey === monthFilter;
-      }
-
-      // Aks holda vaqt filtri
-      switch (timeFilter) {
-        case 'today':
-          return approvedDate >= today;
-        case 'yesterday':
-          return approvedDate >= yesterday && approvedDate < today;
-        case 'week':
-          return approvedDate >= weekAgo;
-        case 'month':
-          return approvedDate >= monthAgo;
-        case 'year':
-          return approvedDate >= yearAgo;
-        case 'all':
-        default:
-          return true;
-      }
-    });
+    const day = now.getDay();
+    const mondayDiff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + mondayDiff - offset * 7);
+    monday.setHours(0, 0, 0, 0);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+    return { start: monday, end: sunday };
   };
 
-  const filteredTasks = getFilteredTasks();
+  const formatWeekLabel = (offset: number) => {
+    if (offset === 0) return t('Joriy hafta', language);
+    const { start, end } = getWeekRange(offset);
+    const fmt = (d: Date) => `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    return `${fmt(start)} - ${fmt(end)}`;
+  };
+
+  const { start: weekStart, end: weekEnd } = getWeekRange(weekOffset);
+
+  const filteredTasks = approvedTasks.filter((task: any) => {
+    if (!task.approvedAt) return false;
+    const d = new Date(task.approvedAt);
+    return d >= weekStart && d <= weekEnd;
+  });
   
   // Shogird daromadini hisoblash - faqat foizga hisoblangan pul
   const filteredEarnings = filteredTasks.reduce((total: number, task: any) => {
@@ -297,45 +266,24 @@ const ApprenticeAchievements: React.FC = () => {
 
       {/* Mobile-First Daromad Section */}
       <div className="card p-3 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Award className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
             {t('Daromad tarixi', language)}
           </h3>
-          
-          {/* Month Filter Select */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <select
-              value={monthFilter}
-              onChange={(e) => {
-                setMonthFilter(e.target.value);
-                if (e.target.value !== 'all') {
-                  setTimeFilter('all'); // Oylik filter tanlanganda vaqt filtrini o'chirish
-                }
-              }}
-              className="px-3 sm:px-4 py-2 border-2 border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm"
-            >
-              <option value="all">{t('Barcha oylar', language)}</option>
-              {availableMonths.map((monthKey) => (
-                <option key={monthKey} value={monthKey}>
-                  {getMonthName(monthKey)}
-                </option>
-              ))}
-            </select>
-            
-            {monthFilter === 'all' && (
-              <select
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value as any)}
-                className="px-3 sm:px-4 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white font-medium text-gray-700 text-sm"
-              >
-                <option value="yesterday">{t('Kecha', language)}</option>
-                <option value="today">{t('Bugun', language)}</option>
-                <option value="week">{t('1 hafta', language)}</option>
-                <option value="month">{t('1 oy', language)}</option>
-                <option value="year">{t('1 yil', language)}</option>
-                <option value="all">{t('Hammasi', language)}</option>
-              </select>
+
+          {/* Week navigation */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200">
+              <ChevronLeft className="h-4 w-4 text-gray-600" />
+            </button>
+            <span className="text-xs sm:text-sm font-medium text-gray-700 min-w-[100px] text-center">
+              {formatWeekLabel(weekOffset)}
+            </span>
+            {weekOffset > 0 && (
+              <button onClick={() => setWeekOffset(weekOffset - 1)} className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200">
+                <ChevronRight className="h-4 w-4 text-gray-600" />
+              </button>
             )}
           </div>
         </div>
@@ -343,7 +291,7 @@ const ApprenticeAchievements: React.FC = () => {
         {/* Mobile-Optimized Earnings Summary */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
-            <p className="text-xs sm:text-sm text-blue-700 mb-1">{t('Tanlangan davr', language)}</p>
+            <p className="text-xs sm:text-sm text-blue-700 mb-1">{formatWeekLabel(weekOffset)}</p>
             <p className="text-2xl sm:text-3xl font-bold text-blue-900">
               {new Intl.NumberFormat('uz-UZ').format(filteredEarnings)}
             </p>
@@ -372,12 +320,7 @@ const ApprenticeAchievements: React.FC = () => {
           <div className="text-center py-12">
             <Award className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">
-              {timeFilter === 'today' ? t('Bugun daromad yo\'q', language) :
-               timeFilter === 'yesterday' ? t('Kecha daromad yo\'q', language) :
-               timeFilter === 'week' ? t('Bu haftada daromad yo\'q', language) :
-               timeFilter === 'month' ? t('Bu oyda daromad yo\'q', language) :
-               timeFilter === 'year' ? t('Bu yilda daromad yo\'q', language) :
-               t('Hali daromad yo\'q', language)}
+              {t('Bu haftada daromad yo\'q', language)}
             </p>
             <p className="text-sm text-gray-400 mt-2">{t('Vazifalarni bajaring va daromad oling!', language)}</p>
           </div>
@@ -414,7 +357,7 @@ const ApprenticeAchievements: React.FC = () => {
                 if (taskEarning === 0) return null;
                 
                 return (
-                  <div key={task._id} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow gap-3">
+                  <div key={task._id} onClick={() => setSelectedTask(task)} className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow gap-3 cursor-pointer active:bg-blue-100">
                     <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                       <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-blue-500 text-white font-bold text-sm sm:text-lg flex-shrink-0">
                         {index + 1}
@@ -440,14 +383,17 @@ const ApprenticeAchievements: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-lg sm:text-2xl font-bold text-blue-600">
-                        +{new Intl.NumberFormat('uz-UZ').format(taskEarning)}
-                      </p>
-                      <p className="text-xs text-blue-700">so'm</p>
-                      {taskPercentage && (
-                        <p className="text-xs text-gray-600">({taskPercentage}%)</p>
-                      )}
+                    <div className="text-right flex-shrink-0 flex items-center gap-1">
+                      <div>
+                        <p className="text-lg sm:text-2xl font-bold text-blue-600">
+                          +{new Intl.NumberFormat('uz-UZ').format(taskEarning)}
+                        </p>
+                        <p className="text-xs text-blue-700">so'm</p>
+                        {taskPercentage && (
+                          <p className="text-xs text-gray-600">({taskPercentage}%)</p>
+                        )}
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
                     </div>
                   </div>
                 );
@@ -474,6 +420,134 @@ const ApprenticeAchievements: React.FC = () => {
       </div>
 
 
+
+      {/* Task Detail Modal */}
+      {selectedTask && (() => {
+        const myAssignment = selectedTask.assignments?.find((a: any) => {
+          const aId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+          return aId === user?.id;
+        });
+        const earning = myAssignment?.earning ?? selectedTask.apprenticeEarning ?? 0;
+        const percentage = myAssignment?.percentage ?? selectedTask.apprenticePercentage ?? 0;
+        const totalPayment = selectedTask.payment ?? 0;
+        const masterShare = totalPayment - (selectedTask.assignments?.reduce((s: number, a: any) => s + (a.earning || 0), 0) ?? earning);
+        const masterName = typeof selectedTask.createdBy === 'object'
+          ? (selectedTask.createdBy.name || `${selectedTask.createdBy.firstName || ''} ${selectedTask.createdBy.lastName || ''}`.trim())
+          : (typeof selectedTask.assignedBy === 'object' ? selectedTask.assignedBy.name : null);
+        const otherAssignments = selectedTask.assignments?.filter((a: any) => {
+          const aId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+          return aId !== user?.id;
+        }) ?? [];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => setSelectedTask(null)}>
+            <div className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white">
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-lg font-bold truncate pr-2">{selectedTask.title}</h2>
+                  <button onClick={() => setSelectedTask(null)} className="p-1 hover:bg-white/20 rounded-lg flex-shrink-0">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <p className="text-blue-100 text-sm">
+                  {selectedTask.car?.make} {selectedTask.car?.carModel} — {selectedTask.car?.licensePlate}
+                </p>
+              </div>
+
+              <div className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
+                {/* Sana */}
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Calendar className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  <span>
+                    {selectedTask.approvedAt
+                      ? new Date(selectedTask.approvedAt).toLocaleString('uz-UZ', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                      : 'Sana noma\'lum'}
+                  </span>
+                </div>
+
+                {/* Ustoz */}
+                {masterName && (
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <User className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                    <span>{t('Ustoz:', language)} <span className="font-medium text-gray-900">{masterName}</span></span>
+                  </div>
+                )}
+
+                <hr className="border-gray-100" />
+
+                {/* To'lov taqsimoti */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t("To'lov taqsimoti", language)}</p>
+
+                  {/* Jami */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-700">{t("Jami to'lov", language)}</span>
+                    </div>
+                    <span className="font-bold text-gray-900">{new Intl.NumberFormat('uz-UZ').format(totalPayment)} so'm</span>
+                  </div>
+
+                  {/* Mening ulushim */}
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <Percent className="h-4 w-4 text-blue-500" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">{t("Mening ulushim", language)}</p>
+                        <p className="text-xs text-blue-600">{percentage}%</p>
+                      </div>
+                    </div>
+                    <span className="text-lg font-bold text-blue-700">+{new Intl.NumberFormat('uz-UZ').format(earning)} so'm</span>
+                  </div>
+
+                  {/* Boshqa shogirtlar */}
+                  {otherAssignments.map((a: any, i: number) => {
+                    const name = typeof a.apprentice === 'object'
+                      ? (a.apprentice.name || `${a.apprentice.firstName || ''} ${a.apprentice.lastName || ''}`.trim() || 'Shogirt')
+                      : 'Shogirt';
+                    return (
+                      <div key={i} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-purple-500" />
+                          <div>
+                            <p className="text-sm font-medium text-purple-800">{name}</p>
+                            <p className="text-xs text-purple-600">{t("Hamkor shogirt", language)} • {a.percentage}%</p>
+                          </div>
+                        </div>
+                        <span className="font-bold text-purple-700">+{new Intl.NumberFormat('uz-UZ').format(a.earning || 0)} so'm</span>
+                      </div>
+                    );
+                  })}
+
+                  {/* Ustoza qolgan */}
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <Car className="h-4 w-4 text-green-500" />
+                      <div>
+                        <p className="text-sm font-medium text-green-800">{t("Ustoza qolgan", language)}</p>
+                        {masterName && <p className="text-xs text-green-600">{masterName}</p>}
+                      </div>
+                    </div>
+                    <span className="font-bold text-green-700">{new Intl.NumberFormat('uz-UZ').format(Math.max(0, masterShare))} so'm</span>
+                  </div>
+                </div>
+
+                {/* Tavsif */}
+                {selectedTask.description && (
+                  <>
+                    <hr className="border-gray-100" />
+                    <div>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{t('Tavsif', language)}</p>
+                      <p className="text-sm text-gray-700">{selectedTask.description}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Progress Chart */}
       <div className="card p-3 sm:p-6">

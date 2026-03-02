@@ -4,7 +4,7 @@ import CreateApprenticeModal from '@/components/CreateApprenticeModal';
 import ViewApprenticeModal from '@/components/ViewApprenticeModal';
 import EditApprenticeModal from '@/components/EditApprenticeModal';
 import DeleteApprenticeModal from '@/components/DeleteApprenticeModal';
-import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail, Wallet } from 'lucide-react';
+import { Plus, Search, Users, Calendar, TrendingUp, Award, Eye, Edit, Trash2, CheckCircle, Target, Mail, Wallet, ArrowUp } from 'lucide-react';
 import { User } from '@/types';
 import { t } from '@/lib/transliteration';
 
@@ -316,19 +316,33 @@ const Apprentices: React.FC = () => {
                   </div>
 
                   {/* Earnings Display */}
-                  <div className="mb-4 p-2.5 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
-                        <Wallet className="h-4 w-4 text-white" />
+                  <div className="mb-4 space-y-2">
+                    {/* Joriy hafta daromadi */}
+                    <div className="p-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500 shadow-sm">
+                          <ArrowUp className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-blue-600 font-medium">{t("Joriy hafta", language)}</p>
+                          <p className="text-sm sm:text-base font-bold text-blue-900 truncate">
+                            {(apprentice.stats?.weeklyEarnings || 0).toLocaleString()} {t("so'm", language)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-emerald-600 font-medium">{t("Qolgan pul", language)}</p>
-                        <p className="text-sm sm:text-base font-bold text-emerald-900 truncate">
-                          {(apprentice.stats?.availableEarnings || 0).toLocaleString()} {t("so'm", language)}
-                        </p>
-                        <p className="text-xs text-emerald-600 mt-0.5">
-                          {t("To'lash mumkin", language)}
-                        </p>
+                    </div>
+                    {/* Qolgan pul */}
+                    <div className="p-2.5 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 shadow-sm">
+                          <Wallet className="h-4 w-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-emerald-600 font-medium">{t("Qolgan pul", language)}</p>
+                          <p className="text-sm sm:text-base font-bold text-emerald-900 truncate">
+                            {(apprentice.stats?.availableEarnings || 0).toLocaleString()} {t("so'm", language)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>

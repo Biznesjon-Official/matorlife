@@ -418,7 +418,33 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
         
         // ✅ QOLGAN PUL
         const availableEarnings = taskEarnings - totalPaidSalaries;
-        
+
+        // ✅ JORIY HAFTALIK DAROMAD (dushanba-yakshanba)
+        const now = new Date();
+        const day = now.getDay();
+        const mondayDiff = day === 0 ? -6 : 1 - day;
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() + mondayDiff);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+
+        const weeklyEarnings = approvedTasks.reduce((total: number, task: any) => {
+          const approvedDate = task.approvedAt ? new Date(task.approvedAt) : null;
+          if (!approvedDate || approvedDate < weekStart || approvedDate > weekEnd) return total;
+
+          if (task.assignments && task.assignments.length > 0) {
+            const myAssignment = task.assignments.find((a: any) => {
+              const apprenticeId = typeof a.apprentice === 'object' ? a.apprentice._id : a.apprentice;
+              return apprenticeId.toString() === apprentice._id.toString();
+            });
+            if (myAssignment) return total + (myAssignment.earning || 0);
+          }
+          if (task.apprenticeEarning) return total + task.apprenticeEarning;
+          return total;
+        }, 0);
+
         const stats = {
           totalTasks: tasks.length,
           completedTasks: tasks.filter((t: any) => t.status === 'completed' || t.status === 'approved').length,
@@ -432,7 +458,8 @@ export const getApprenticesWithStats = async (req: AuthRequest, res: Response) =
           awards: approvedTasks.length, // Mukofotlar = tasdiqlangan vazifalar
           taskEarnings: taskEarnings, // ✅ Vazifalardan daromad
           paidSalaries: totalPaidSalaries, // ✅ To'langan maoshlar
-          availableEarnings: availableEarnings // ✅ Qolgan pul
+          availableEarnings: availableEarnings, // ✅ Qolgan pul
+          weeklyEarnings: weeklyEarnings // ✅ Joriy hafta daromadi
         };
         
         console.log(`👤 ${apprentice.name}:`);
