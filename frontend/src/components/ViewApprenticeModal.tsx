@@ -171,10 +171,9 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
 
   // Earnings breakdown modal
   const EarningsBreakdownModal = () => (
-    <div className="fixed inset-0 z-[10000] overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
-        <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4">
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
+        <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2 max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 rounded-t-xl flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -218,7 +217,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Task list */}
-          <div className="max-h-[65vh] overflow-y-auto p-3 space-y-2">
+          <div className="overflow-y-auto flex-1 min-h-0 p-3 space-y-2">
             {weeklyApproved.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
@@ -311,7 +310,6 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 
@@ -319,11 +317,10 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     <>
       {showEarningsBreakdown && <EarningsBreakdownModal />}
 
-      <div className="fixed inset-0 z-[9999] overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2 max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className={`relative bg-gradient-to-r ${getPerformanceGradient(stats.performance)} px-4 py-3 rounded-t-xl`}>
               <button
@@ -373,7 +370,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
 
             {/* Content */}
-            <div className="p-4 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 overflow-y-auto flex-1 min-h-0">
               {activeTab === 'stats' ? (
                 <div className="space-y-3">
                   {/* Profile Info */}
@@ -616,7 +613,6 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
               </button>
             </div>
           </div>
-        </div>
       </div>
     </>
   );
