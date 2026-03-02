@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Mail, Calendar, Target, CheckCircle, Award, Clock, DollarSign, Phone, TrendingUp, ChevronRight, ChevronLeft } from 'lucide-react';
 import { User as UserType } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 import { formatPhoneNumber } from '@/lib/phoneUtils';
-import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useEffect } from 'react';
 import { t } from '@/lib/transliteration';
 import api from '@/lib/api';
 
@@ -49,7 +49,13 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     return (savedLanguage as 'latin' | 'cyrillic') || 'latin';
   }, []);
 
-  useBodyScrollLock(isOpen);
+  // iOS Safari compatible scroll lock (position:fixed buzadi)
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && apprentice) {
