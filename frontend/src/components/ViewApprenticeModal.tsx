@@ -171,8 +171,9 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
 
   // Earnings breakdown modal
   const EarningsBreakdownModal = () => (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4">
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
+    <div className="fixed inset-0 z-[10000] overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
         <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
           {/* Header */}
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 rounded-t-xl flex items-center justify-between">
@@ -310,6 +311,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
           )}
         </div>
+      </div>
     </div>
   );
 
@@ -317,8 +319,9 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     <>
       {showEarningsBreakdown && <EarningsBreakdownModal />}
 
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[9999] overflow-y-auto">
+        <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
           <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
             {/* Header */}
@@ -370,7 +373,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
 
             {/* Content */}
-            <div className="p-4 overflow-y-auto max-h-[calc(90vh-180px)]">
+            <div className="p-4 overflow-y-auto max-h-[calc(100vh-120px)]">
               {activeTab === 'stats' ? (
                 <div className="space-y-3">
                   {/* Profile Info */}
@@ -613,6 +616,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
               </button>
             </div>
           </div>
+        </div>
       </div>
     </>
   );
