@@ -272,7 +272,7 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ isOpen, onClose }) =>
 
   return (
     <div className="fixed inset-0 z-[9999] overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-2 sm:p-4">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
         
         <div className="relative bg-white rounded-lg sm:rounded-xl shadow-2xl max-w-sm sm:max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">

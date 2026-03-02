@@ -154,7 +154,7 @@ const Debts: React.FC = () => {
 
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-screen items-center justify-center p-3 sm:p-4">
+        <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedDebt(null)} />
 
           <div className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden">

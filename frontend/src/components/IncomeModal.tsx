@@ -255,7 +255,7 @@ const IncomeModal: React.FC<IncomeModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-4">
         <div className="fixed inset-0 bg-black bg-opacity-50" onClick={handleClose} />
         
         <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
