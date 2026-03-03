@@ -177,12 +177,11 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
 
   // Earnings breakdown modal
   const EarningsBreakdownModal = () => (
-    <div className="fixed inset-0 z-[10000] overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4">
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
-        <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
+        <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2 max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 rounded-t-xl flex items-center justify-between">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3 rounded-t-xl flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-white" />
               <div>
@@ -199,7 +198,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Week navigation */}
-          <div className="bg-green-50 border-b border-green-200 px-4 py-2">
+          <div className="bg-green-50 border-b border-green-200 px-4 py-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <button onClick={() => setWeekOffset(weekOffset + 1)} className="p-1 hover:bg-green-200 rounded-lg transition-colors">
                 <ChevronLeft className="h-4 w-4 text-green-700" />
@@ -224,7 +223,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Task list */}
-          <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-3 space-y-2">
+          <div className="overflow-y-auto flex-1 min-h-0 overscroll-contain p-3 space-y-2">
             {weeklyApproved.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
@@ -297,7 +296,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
 
           {/* Footer total */}
           {weeklyApproved.length > 0 && (
-            <div className="border-t border-gray-200 px-4 py-3 bg-green-50 rounded-b-xl">
+            <div className="border-t border-gray-200 px-4 py-3 bg-green-50 rounded-b-xl flex-shrink-0">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-semibold text-green-800">{t('Haftalik daromad', language)}</span>
                 <span className="text-base font-bold text-green-900">{formatCurrency(weeklyTotal)}</span>
@@ -317,7 +316,6 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 
@@ -325,13 +323,12 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     <>
       {showEarningsBreakdown && <EarningsBreakdownModal />}
 
-      <div className="fixed inset-0 z-[9999] overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2 max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className={`relative bg-gradient-to-r ${getPerformanceGradient(stats.performance)} px-4 py-3 rounded-t-xl`}>
+            <div className={`relative bg-gradient-to-r ${getPerformanceGradient(stats.performance)} px-4 py-3 rounded-t-xl flex-shrink-0`}>
               <button
                 onClick={onClose}
                 className="absolute top-2 right-2 z-10 text-white/90 hover:text-white hover:bg-white/20 rounded-lg p-1 transition-all"
@@ -355,7 +352,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 px-4">
+            <div className="flex border-b border-gray-200 px-4 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('stats')}
                 className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors ${
@@ -379,7 +376,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
 
             {/* Content */}
-            <div className="p-4 overflow-y-auto max-h-[calc(100vh-120px)]">
+            <div className="p-4 overflow-y-auto flex-1 min-h-0 overscroll-contain">
               {activeTab === 'stats' ? (
                 <div className="space-y-3">
                   {/* Profile Info */}
@@ -613,7 +610,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 px-4 py-2 rounded-b-xl bg-gray-50">
+            <div className="border-t border-gray-200 px-4 py-2 rounded-b-xl bg-gray-50 flex-shrink-0">
               <button
                 onClick={onClose}
                 className="w-full px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors text-xs"
@@ -622,7 +619,6 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
               </button>
             </div>
           </div>
-        </div>
       </div>
     </>
   );

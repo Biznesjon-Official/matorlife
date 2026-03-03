@@ -135,25 +135,19 @@ async function saveMonthlyHistoryAndReset(resetBy: any) {
   await history.save();
   console.log(`📊 Tarix saqlandi: ${currentMonth}/${currentYear}`);
   
-  // 4. ✨ YANGI: Joriy oy transaksiyalarini o'chirish
-  const deleteResult = await Transaction.deleteMany({
-    createdAt: {
-      $gte: monthStart,
-      $lte: monthEnd
-    }
-  });
-  console.log(`🗑️ ${deleteResult.deletedCount} ta transaksiya o'chirildi`);
-  
+  // 4. Transaksiyalar O'CHIRILMAYDI - maosh tarixi saqlanishi kerak
+  // Stats API taskEarnings va paidSalaries ni transactions dan hisoblaydi
+  console.log(`📋 ${transactions.length} ta transaksiya saqlandi (o'chirilmadi)`);
+
   // 5. Barcha foydalanuvchilarning daromadlarini 0 ga qaytarish
   let resetCount = 0;
   for (const user of users) {
-    if (user.totalEarnings > 0) {
-      user.totalEarnings += user.totalEarnings;
-      const oldEarnings = user.totalEarnings;
+    const oldEarnings = user.totalEarnings || 0;
+    if (oldEarnings > 0) {
       user.totalEarnings = 0;
       await user.save();
-      
-      console.log(`✅ ${user.name}: ${oldEarnings} so'm → 0 so'm (Jami: ${user.totalEarnings} so'm)`);
+
+      console.log(`✅ ${user.name}: ${oldEarnings.toLocaleString()} so'm → 0 so'm`);
       resetCount++;
     }
   }
@@ -163,7 +157,7 @@ async function saveMonthlyHistoryAndReset(resetBy: any) {
   return {
     success: true,
     resetCount,
-    deletedTransactions: deleteResult.deletedCount,
+    deletedTransactions: 0,
     history: {
       month: currentMonth,
       year: currentYear,
