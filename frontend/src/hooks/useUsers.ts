@@ -22,6 +22,8 @@ export const useApprentices = () => {
       const response = await api.get('/auth/apprentices/stats');
       return response.data;
     },
+    staleTime: 30_000, // 30 soniya ichida qayta so'rov yubormaslik
+    refetchOnWindowFocus: false, // Tab almashtirganida qayta yuklamaslik
   });
 };
 

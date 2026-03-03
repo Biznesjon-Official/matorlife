@@ -57,24 +57,31 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen && apprentice) {
-      fetchApprenticeTasks();
-    }
-  }, [isOpen, apprentice]);
+  const apprenticeId = apprentice?._id;
 
-  const fetchApprenticeTasks = async () => {
-    if (!apprentice) return;
-    setIsLoadingTasks(true);
-    try {
-      const response = await api.get(`/tasks?assignedTo=${apprentice._id}`);
-      setTasks(response.data.tasks || []);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setIsLoadingTasks(false);
-    }
-  };
+  useEffect(() => {
+    if (!isOpen || !apprenticeId) return;
+    let cancelled = false;
+
+    const fetchTasks = async () => {
+      setIsLoadingTasks(true);
+      try {
+        const response = await api.get(`/tasks?assignedTo=${apprenticeId}`);
+        if (!cancelled) {
+          setTasks(response.data.tasks || []);
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingTasks(false);
+        }
+      }
+    };
+
+    fetchTasks();
+    return () => { cancelled = true; };
+  }, [isOpen, apprenticeId]);
 
   if (!isOpen || !apprentice) return null;
 
@@ -175,8 +182,10 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     return 'from-red-500 to-rose-600';
   };
 
-  // Earnings breakdown modal
-  const EarningsBreakdownModal = () => (
+  return (
+    <>
+      {/* Earnings breakdown modal - oddiy JSX (inline komponent EMAS) */}
+      {showEarningsBreakdown && (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4">
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowEarningsBreakdown(false)} />
         <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2 max-h-[90vh] flex flex-col">
@@ -317,11 +326,7 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
           )}
         </div>
     </div>
-  );
-
-  return (
-    <>
-      {showEarningsBreakdown && <EarningsBreakdownModal />}
+      )}
 
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
