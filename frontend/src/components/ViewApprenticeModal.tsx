@@ -325,8 +325,8 @@ const ViewApprenticeModal: React.FC<ViewApprenticeModalProps> = ({ isOpen, onClo
     <>
       {showEarningsBreakdown && <EarningsBreakdownModal />}
 
-      <div className="fixed inset-0 z-[9999] overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+      <div className="fixed inset-0 z-[9999]">
+        <div className="flex h-full items-center justify-center p-2 sm:p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
           <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-2">
