@@ -80,7 +80,7 @@ async function checkAndCompleteCarIfReady(carId: any) {
       console.log(`⏳ Mashina hali tugamagan: vazifalar=${allTasksReviewed}, xizmatlar=${allServicesApproved}`);
     }
     
-    return { completed: false };
+    return { completed: false, car: null };
   } catch (error) {
     console.error('❌ Mashina tugatishda xatolik:', error);
     throw error;
