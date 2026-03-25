@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDebts, useDebtSummary } from '@/hooks/useDebts';
+import AddDebtModal from '@/components/AddDebtModal';
 import EditDebtModal from '@/components/EditDebtModal';
 import DeleteDebtModal from '@/components/DeleteDebtModal';
 import {
@@ -22,6 +23,7 @@ import {
   Scale,
   Filter,
   Inbox,
+  Plus,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Debt } from '@/types';
@@ -33,6 +35,7 @@ const Debts: React.FC = () => {
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const language = React.useMemo<'latin' | 'cyrillic'>(() => {
     const savedLanguage = localStorage.getItem('language');
@@ -367,16 +370,26 @@ const Debts: React.FC = () => {
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
 
-          <div className="relative flex items-center gap-3 sm:gap-5">
-            <div className="bg-white/20 backdrop-blur-xl p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg shrink-0">
-              <Wallet className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="bg-white/20 backdrop-blur-xl p-2.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-lg shrink-0">
+                <Wallet className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">{t("Qarz daftarchasi", language)}</h1>
+                <p className="text-blue-100 text-[11px] sm:text-base lg:text-lg mt-0.5">
+                  {debts.length} {t("ta qarz mavjud", language)}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">{t("Qarz daftarchasi", language)}</h1>
-              <p className="text-blue-100 text-[11px] sm:text-base lg:text-lg mt-0.5">
-                {debts.length} {t("ta qarz mavjud", language)}
-              </p>
-            </div>
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl sm:rounded-xl font-medium transition-all flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm shadow-lg"
+            >
+              <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">{t("Qarz qo'shish", language)}</span>
+              <span className="sm:hidden">{t("Qo'shish", language)}</span>
+            </button>
           </div>
         </div>
 
@@ -770,6 +783,10 @@ const Debts: React.FC = () => {
       </div>
 
       {/* ── Modals ── */}
+      <AddDebtModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
       {selectedDebt && !isEditModalOpen && !isDeleteModalOpen && <DebtDetailModal debt={selectedDebt} />}
       {selectedDebt && (
         <>

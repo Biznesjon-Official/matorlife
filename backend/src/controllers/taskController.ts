@@ -884,24 +884,31 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
         console.log('⚠️ Hech qanday shogird topilmadi yoki earning 0!');
       }
 
-      // Barcha vazifalar va xizmatlar tasdiqlangan yoki yo'qligini tekshirish
+      // Avval vazifani saqlaymiz — to'lov qilinmasa ham arxivga o'tishi kerak
+      await task.save();
+      console.log('✅ Vazifa saqlandi (approved)');
+
+      // Keyin mashina holatini tekshiramiz (xato bo'lsa ham vazifa allaqachon saqlangan)
+      let completionResult = { completed: false, car: null as any };
       if (task.car) {
-        console.log('🚗 Mashina holatini tekshirish...');
-        const completionResult = await checkAndCompleteCarIfReady(task.car);
-        
-        await task.save();
-        await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
-        
-        console.log('✅ APPROVE TASK MUVAFFAQIYATLI YAKUNLANDI');
-        
-        // Response'ga mashina tugatilganligi haqida ma'lumot qo'shish
-        return res.json({
-          message: `Task ${approved ? 'approved' : 'rejected'} successfully`,
-          task,
-          carCompleted: completionResult.completed,
-          carData: completionResult.car
-        });
+        try {
+          console.log('🚗 Mashina holatini tekshirish...');
+          completionResult = await checkAndCompleteCarIfReady(task.car);
+        } catch (carError) {
+          console.error('⚠️ Mashina tekshirishda xatolik (vazifa allaqachon tasdiqlangan):', carError);
+        }
       }
+
+      await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
+
+      console.log('✅ APPROVE TASK MUVAFFAQIYATLI YAKUNLANDI');
+
+      return res.json({
+        message: `Task approved successfully`,
+        task,
+        carCompleted: completionResult.completed,
+        carData: completionResult.car
+      });
     } else {
       console.log('❌ Vazifa rad etildi');
       task.rejectionReason = rejectionReason;
@@ -911,7 +918,7 @@ export const approveTask = async (req: AuthRequest, res: Response) => {
     await task.populate(['assignedTo', 'assignedBy', 'car', 'service', 'assignments.apprentice']);
 
     console.log('✅ APPROVE TASK YAKUNLANDI');
-    
+
     res.json({
       message: `Task ${approved ? 'approved' : 'rejected'} successfully`,
       task

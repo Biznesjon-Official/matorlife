@@ -29,12 +29,17 @@ export function formatCurrency(amount: number) {
 export function formatNumber(value: string): string {
   // Faqat raqamlarni qoldirish
   const numbers = value.replace(/\D/g, '');
-  
+
   // Agar bo'sh bo'lsa, bo'sh string qaytarish
   if (!numbers) return '';
-  
+
+  // Boshidagi 0 larni olib tashlash
+  const trimmed = numbers.replace(/^0+/, '') || '';
+
+  if (!trimmed) return '';
+
   // Raqamlarni 3 ta guruhga bo'lib nuqta bilan ajratish
-  return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return trimmed.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 // Formatlanган stringni raqamga aylantirish
