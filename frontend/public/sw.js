@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mator-life-v4';
+const CACHE_NAME = 'mator-life-v5';
 const staticAssets = [
   '/logo.jpg',
   '/icon-192.png',
@@ -31,20 +31,29 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Navigation requests (HTML) — always network first, no caching
+  // Navigation requests (HTML) — always network first, fallback to cache
   if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
     return;
   }
 
   // API requests — always network, no caching
   if (event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => new Response('{"message":"Offline"}', {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }))
+    );
     return;
   }
 
-  // Static assets — cache first
+  // Static assets — cache first, fallback to network
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) =>
+      response || fetch(event.request).catch(() => new Response('', { status: 503 }))
+    )
   );
 });
