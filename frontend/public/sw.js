@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mator-life-v5';
+const CACHE_NAME = 'mator-life-v6';
 const staticAssets = [
   '/logo.jpg',
   '/icon-192.png',
@@ -23,34 +23,38 @@ self.addEventListener('activate', (event) => {
         )
       )
       .then(() => self.clients.claim())
-      .then(() => self.clients.matchAll({ type: 'window' }))
-      .then((clients) => {
-        clients.forEach((client) => client.navigate(client.url));
-      })
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Navigation requests (HTML) — always network first, fallback to cache
+  // Navigation requests (HTML) — always network first
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).catch(() => caches.match('/index.html'))
     );
     return;
   }
 
   // API requests — always network, no caching
   if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // JS/CSS bundles (hashed filenames) — network first, then cache
+  if (event.request.url.match(/\.(js|css)$/)) {
     event.respondWith(
-      fetch(event.request).catch(() => new Response('{"message":"Offline"}', {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      }))
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
 
-  // Static assets — cache first, fallback to network
+  // Images and other static assets — cache first
   event.respondWith(
     caches.match(event.request).then((response) =>
       response || fetch(event.request).catch(() => new Response('', { status: 503 }))
